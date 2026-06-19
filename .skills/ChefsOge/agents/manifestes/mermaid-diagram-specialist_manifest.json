@@ -1,0 +1,14 @@
+{
+  "id": "mermaid-diagram-specialist",
+  "manager": "ChefsOge",
+  "skills": ["mermaid_syntax", "diagram_generation", "visual_architecture"],
+  "attached_skills": [
+    {
+      "id": "skill-mermaidH",
+      "path": "banques_skills/skills-globales/skill-mermaidH/SKILL.md",
+      "role": "Skill unifié Mermaid — flux, architecture, UX, onboarding, workflows",
+      "triggers": ["diagramme", "mermaid", "flux", "architecture", "brainstorming", "nouvelle fonctionnalité", "modification", "workflow", "onboarding", "UX", "ERD", "C4", "séquence"]
+    }
+  ],
+  "delegation_policy": "require_manager_approval"
+}

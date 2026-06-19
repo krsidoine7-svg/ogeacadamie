@@ -1,0 +1,6 @@
+{
+  "id": "ascii-ui-mockup-generator",
+  "manager": "ChefsOge",
+  "skills": ["ascii_mockup", "text_layout", "ui_wireframing"],
+  "delegation_policy": "require_manager_approval"
+}

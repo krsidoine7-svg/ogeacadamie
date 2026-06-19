@@ -1,0 +1,93 @@
+{
+  "manager": "ChefsOge",
+  "description": "Manifeste structuré des compétences et sous-agents pour la gestion de projet.",
+  "categories": [
+    {
+      "name": "Design & Visuel",
+      "agents": [
+        {
+          "id": "ui-ux-designer",
+          "path": "agents/ui-ux-designer.md",
+          "role": "Designer UI/UX",
+          "manifest_path": "agents/manifestes/ui-ux-designer_manifest.json"
+        },
+        {
+          "id": "ascii-ui-mockup-generator",
+          "path": "agents/ascii-ui-mockup-generator.md",
+          "role": "Générateur de maquettes UI en ASCII",
+          "manifest_path": "agents/manifestes/ascii-ui-mockup-generator_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "Code & Architecture",
+      "agents": [
+        {
+          "id": "codebase-pattern-finder",
+          "path": "agents/codebase-pattern-finder.md",
+          "role": "Analyseur de motifs de code",
+          "manifest_path": "agents/manifestes/codebase-pattern-finder_manifest.json",
+          "attached_skills": [
+            {
+              "id": "veille-securite",
+              "path": "banques_skills/skills-globales/veille-securite/SKILL.md",
+              "role": "Expert cybersécurité, conformité RGPD, OWASP et veille CVE",
+              "triggers": ["audit sécurité", "npm audit", "CVE", "RGPD", "RLS", "XSS", "injection SQL", "VDOS.md", "incident sécurité"]
+            }
+          ]
+        },
+        {
+          "id": "mermaid-diagram-specialist",
+          "path": "agents/mermaid-diagram-specialist.md",
+          "role": "Spécialiste de diagrammes Mermaid",
+          "manifest_path": "agents/manifestes/mermaid-diagram-specialist_manifest.json",
+          "attached_skills": [
+            {
+              "id": "skill-mermaidH",
+              "path": "banques_skills/skills-globales/skill-mermaidH/SKILL.md",
+              "role": "Skill unifié Mermaid — flux, architecture, UX, onboarding, workflows",
+              "triggers": ["diagramme", "mermaid", "flux", "architecture", "brainstorming", "nouvelle fonctionnalité", "modification", "workflow", "onboarding", "UX", "ERD", "C4", "séquence"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Support & Communication",
+      "agents": [
+        {
+          "id": "communication-excellence-coach",
+          "path": "agents/communication-excellence-coach.md",
+          "role": "Coach de communication et rédaction",
+          "manifest_path": "agents/manifestes/communication-excellence-coach_manifest.json"
+        },
+        {
+          "id": "general-purpose",
+          "path": "agents/general-purpose.md",
+          "role": "Agent polyvalent",
+          "manifest_path": "agents/manifestes/general-purpose_manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "Ressources & Mémoire",
+      "banks": [
+        {
+          "id": "skills-globales",
+          "path": "banques_skills/skills-globales/",
+          "role": "Grande banque de compétences unifiée (outils, scripts, skills)"
+        },
+        {
+          "id": "memoire-oge-academie",
+          "path": "banques_skills/memoire-oge-academie/",
+          "role": "Système de mémoire et guide"
+        }
+      ]
+    }
+  ],
+  "delegation_rules": {
+    "requires_validation": true,
+    "validator": "ChefsOge",
+    "global_manifest_access": "read-only"
+  }
+}

@@ -1,0 +1,1131 @@
+"use server";
+
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/utils/supabase/server";
+import { db } from "@/lib/db";
+import { profiles, zoneConfig, notifications, concoursInscrits, paiements, pageSections, temoignages, blogArticles, documents } from "@/drizzle/schema";
+import { eq, and, isNull, inArray } from "drizzle-orm";
+import { createCalendarEvent, deleteCalendarEvent } from "@/lib/googleCalendar";
+import { triggerNewDocumentWebhook } from "@/lib/webhooks";
+
+/**
+ * Helper to verify if the logged-in user is an Admin or Super Admin
+ */
+async function verifyAdminSession() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error("Non autorisé. Session expirée.");
+  }
+
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id),
+  });
+
+  if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
+    throw new Error("Accès refusé. Privilèges insuffisants.");
+  }
+
+  return { user, profile };
+}
+
+/**
+ * Helper to verify if the logged-in user is a Super Admin
+ */
+async function verifySuperAdminSession() {
+  const { user, profile } = await verifyAdminSession();
+  if (profile.role !== "super_admin") {
+    throw new Error("Accès refusé. Cette action requiert le rôle Super Administrateur.");
+  }
+  return { user, profile };
+}
+
+/**
+ * Toggles a candidate's active status
+ */
+export async function toggleUserActive(userId: string, active: boolean) {
+  try {
+    await verifyAdminSession();
+
+    await db
+      .update(profiles)
+      .set({
+        isActive: active,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, userId));
+
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in toggleUserActive action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Soft deletes a candidate profile
+ */
+export async function softDeleteUser(userId: string) {
+  try {
+    await verifyAdminSession();
+
+    await db
+      .update(profiles)
+      .set({
+        deletedAt: new Date(),
+        isActive: false, // Deactivate on deletion
+      })
+      .where(eq(profiles.id, userId));
+
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in softDeleteUser action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Promotes an existing candidate or user to manager_zone and links them to a zone
+ */
+export async function promoteUserToManager(
+  email: string,
+  zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake"
+) {
+  try {
+    await verifySuperAdminSession();
+
+    // Find the user profile by email
+    const targetProfile = await db.query.profiles.findFirst({
+      where: and(
+        eq(profiles.email, email.trim().toLowerCase()),
+        isNull(profiles.deletedAt)
+      ),
+    });
+
+    if (!targetProfile) {
+      return { success: false, error: "Aucun utilisateur trouvé avec cette adresse e-mail." };
+    }
+
+    // Update profile role and zone
+    await db
+      .update(profiles)
+      .set({
+        role: "manager_zone",
+        zone: zone,
+        isActive: true, // Auto-activate managers
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, targetProfile.id));
+
+    // Update zone configuration
+    await db
+      .update(zoneConfig)
+      .set({
+        managerId: targetProfile.id,
+        updatedAt: new Date(),
+      })
+      .where(eq(zoneConfig.zone, zone));
+
+    revalidatePath("/admin/managers");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in promoteUserToManager action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Assigns a manager profile to a zone config (Super Admin only)
+ */
+export async function assignZoneManager(
+  zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake",
+  managerId: string | null
+) {
+  try {
+    await verifySuperAdminSession();
+
+    if (managerId) {
+      // 1. Verify manager profile
+      const manager = await db.query.profiles.findFirst({
+        where: eq(profiles.id, managerId),
+      });
+
+      if (!manager || manager.role !== "manager_zone") {
+        return { success: false, error: "Profil introuvable ou le rôle n'est pas Manager." };
+      }
+
+      // 2. Set zone for the manager profile
+      await db
+        .update(profiles)
+        .set({
+          zone: zone,
+          updatedAt: new Date(),
+        })
+        .where(eq(profiles.id, managerId));
+
+      // 3. Assign manager to the zoneConfig
+      await db
+        .update(zoneConfig)
+        .set({
+          managerId: managerId,
+          updatedAt: new Date(),
+        })
+        .where(eq(zoneConfig.zone, zone));
+    } else {
+      // Unassigning
+      // Find the current manager for this zone
+      const currentConfig = await db.query.zoneConfig.findFirst({
+        where: eq(zoneConfig.zone, zone),
+      });
+
+      if (currentConfig?.managerId) {
+        // Reset their profile zone
+        await db
+          .update(profiles)
+          .set({
+            zone: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(profiles.id, currentConfig.managerId));
+      }
+
+      // Clear the managerId in config
+      await db
+        .update(zoneConfig)
+        .set({
+          managerId: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(zoneConfig.zone, zone));
+    }
+
+    revalidatePath("/admin/managers");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in assignZoneManager action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates banking/contact configurations for a local zone
+ */
+export async function updateZoneConfig(
+  zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake",
+  data: {
+    lienWave: string;
+    lienMomo: string;
+    adresse: string;
+    telephone: string;
+  }
+) {
+  try {
+    await verifyAdminSession();
+
+    await db
+      .update(zoneConfig)
+      .set({
+        lienWave: data.lienWave,
+        lienMomo: data.lienMomo,
+        adresse: data.adresse,
+        telephone: data.telephone,
+        updatedAt: new Date(),
+      })
+      .where(eq(zoneConfig.zone, zone));
+
+    revalidatePath("/admin/zones");
+    revalidatePath("/dashboard"); // For candidates to see updated info instantly
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateZoneConfig action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Sends a bulk, targeted in-app notification to candidates
+ */
+export async function sendGroupNotification(
+  filters: {
+    zone?: string;
+    concours?: string;
+    all?: boolean;
+  },
+  title: string,
+  message: string,
+  type: "info" | "alerte" | "cours" = "info"
+) {
+  try {
+    await verifyAdminSession();
+
+    if (!title.trim() || !message.trim()) {
+      return { success: false, error: "Le titre et le message ne peuvent pas être vides." };
+    }
+
+    // 1. Gather target candidate IDs based on filtering
+    let targetUserIds: string[] = [];
+
+    if (filters.concours) {
+      // Find candidate user IDs registered in this contest
+      const registrations = await db.query.concoursInscrits.findMany({
+        where: eq(concoursInscrits.concours, filters.concours as any),
+      });
+      targetUserIds = registrations.map((r) => r.userId);
+
+      // If no candidate is registered to this contest, we can stop early
+      if (targetUserIds.length === 0) {
+        return { success: true, count: 0 };
+      }
+    }
+
+    // 2. Query target profile list
+    const conditions = [
+      eq(profiles.role, "user"), // Candidates only
+      isNull(profiles.deletedAt),
+    ];
+
+    if (filters.zone && filters.zone !== "all") {
+      conditions.push(eq(profiles.zone, filters.zone as any));
+    }
+
+    if (filters.concours) {
+      conditions.push(inArray(profiles.id, targetUserIds));
+    }
+
+    const matchedProfiles = await db.query.profiles.findMany({
+      where: and(...conditions),
+    });
+
+    if (matchedProfiles.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    // 3. Bulk insert notifications
+    const notificationValues = matchedProfiles.map((p) => ({
+      destinataireId: p.id,
+      titre: title.trim(),
+      message: message.trim(),
+      type: type,
+      lu: false,
+    }));
+
+    await db.insert(notifications).values(notificationValues);
+
+    revalidatePath("/dashboard/notifications");
+    revalidatePath("/dashboard");
+    return { success: true, count: matchedProfiles.length };
+  } catch (error: any) {
+    console.error("Error in sendGroupNotification action:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Admins can globally approve candidate payments and activate their accounts
+ */
+export async function adminApprovePayment(paymentId: string, candidateId: string) {
+  try {
+    const { user } = await verifyAdminSession();
+
+    // 1. Fetch candidate profile and payment
+    const candidateProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, candidateId),
+    });
+
+    if (!candidateProfile) {
+      return { success: false, error: "Le candidat spécifié n'existe pas." };
+    }
+
+    // 2. Update payment in database
+    await db
+      .update(paiements)
+      .set({
+        statut: "valide",
+        validePar: user.id,
+        valideAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(paiements.id, paymentId));
+
+    // 3. Activate candidate profile
+    await db
+      .update(profiles)
+      .set({
+        isActive: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, candidateId));
+
+    // 4. Send Success Email via Resend if API Key exists
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: process.env.SENDER_EMAIL || "onboarding@resend.dev",
+            to: [candidateProfile.email],
+            subject: "✅ Inscription validée — OGE Académie",
+            html: `
+              <div style="font-family: sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h1 style="color: #16a34a; text-align: center;">Accès Activé !</h1>
+                <p>Bonjour <strong>${candidateProfile.prenom} ${candidateProfile.nom}</strong>,</p>
+                <p>Bonne nouvelle ! Votre paiement de 15 000 FCFA a été validé avec succès par l'administration.</p>
+                
+                <p style="margin: 20px 0; padding: 15px; background-color: #f0fdf4; border-left: 4px solid #16a34a; font-size: 0.95em; line-height: 1.5; color: #14532d;">
+                  <strong>Félicitations :</strong> Votre compte est désormais pleinement actif. Vous pouvez dès maintenant accéder à l'intégralité des cours, entraînements et documents de préparation sur votre espace candidat.
+                </p>
+
+                <div style="text-align: center; margin-top: 30px;">
+                  <a href="${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/dashboard" 
+                     style="background: linear-gradient(135deg, #16a34a, #15803d); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                    Accéder à mon espace
+                  </a>
+                </div>
+
+                <p style="font-size: 0.8em; color: #64748b; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+                  L'équipe OGE Académie<br />
+                  contact@oge-academie.com
+                </p>
+              </div>
+            `,
+          }),
+        });
+      } catch (emailErr) {
+        console.error("Validation email failed to send:", emailErr);
+      }
+    }
+
+    revalidatePath("/admin/paiements");
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in adminApprovePayment:", error);
+    return { success: false, error: error.message || "Une erreur interne est survenue." };
+  }
+}
+
+/**
+ * Admins can globally reject candidate payments with a feedback note
+ */
+export async function adminRejectPayment(paymentId: string, notes: string) {
+  try {
+    await verifyAdminSession();
+
+    // 1. Fetch payment
+    const payment = await db.query.paiements.findFirst({
+      where: eq(paiements.id, paymentId),
+    });
+
+    if (!payment) {
+      return { success: false, error: "Le paiement spécifié n'existe pas." };
+    }
+
+    const candidateProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, payment.userId),
+    });
+
+    if (!candidateProfile) {
+      return { success: false, error: "Le candidat associé à ce paiement n'existe pas." };
+    }
+
+    // 2. Update payment in database
+    await db
+      .update(paiements)
+      .set({
+        statut: "rejete",
+        notes: notes || "Reçu de paiement illisible ou non valide.",
+        updatedAt: new Date(),
+      })
+      .where(eq(paiements.id, paymentId));
+
+    // 3. Send Rejection Email via Resend if API Key exists
+    if (process.env.RESEND_API_KEY) {
+      try {
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: process.env.SENDER_EMAIL || "onboarding@resend.dev",
+            to: [candidateProfile.email],
+            subject: "⚠️ Reçu de paiement rejeté — OGE Académie",
+            html: `
+              <div style="font-family: sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h1 style="color: #dc2626; text-align: center;">Reçu non validé</h1>
+                <p>Bonjour <strong>${candidateProfile.prenom} ${candidateProfile.nom}</strong>,</p>
+                <p>Le reçu de paiement que vous avez soumis sur votre espace candidat n'a pas pu être validé par l'administration.</p>
+                
+                <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-left: 4px solid #dc2626; font-size: 0.95em; line-height: 1.5; color: #991b1b;">
+                  <strong>Motif du rejet :</strong> ${notes || "Aucun motif spécifique fourni."}
+                </div>
+
+                <p>Nous vous invitons à vous reconnecter sur votre espace pour soumettre à nouveau une preuve de paiement correcte.</p>
+
+                <div style="text-align: center; margin-top: 30px;">
+                  <a href="${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/connexion" 
+                     style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                    Se Connecter & Soumettre à nouveau
+                  </a>
+                </div>
+
+                <p style="font-size: 0.8em; color: #64748b; margin-top: 40px; border-top: 1px solid #f1f5f9; padding-top: 20px; text-align: center;">
+                  L'équipe OGE Académie<br />
+                  contact@oge-academie.com
+                </p>
+              </div>
+            `,
+          }),
+        });
+      } catch (emailErr) {
+        console.error("Rejection email failed to send:", emailErr);
+      }
+    }
+
+    revalidatePath("/admin/paiements");
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in adminRejectPayment:", error);
+    return { success: false, error: error.message || "Une erreur interne est survenue." };
+  }
+}
+
+/**
+ * Admins can update a candidate's profile information
+ */
+export async function updateCandidateProfile(
+  userId: string,
+  data: {
+    nom: string;
+    prenom: string;
+    whatsapp: string;
+    zone: string;
+    modeFormation: string;
+  }
+) {
+  try {
+    await verifyAdminSession();
+
+    // Validate inputs
+    if (!data.nom.trim() || !data.prenom.trim()) {
+      return { success: false, error: "Le nom et le prénom sont obligatoires." };
+    }
+
+    // Verify the target user exists and is a candidate
+    const targetProfile = await db.query.profiles.findFirst({
+      where: and(
+        eq(profiles.id, userId),
+        isNull(profiles.deletedAt)
+      ),
+    });
+
+    if (!targetProfile) {
+      return { success: false, error: "Le candidat spécifié n'existe pas ou a été supprimé." };
+    }
+
+    if (targetProfile.role !== "user") {
+      return { success: false, error: "Seuls les profils candidats peuvent être modifiés ici." };
+    }
+
+    // Update profile
+    await db
+      .update(profiles)
+      .set({
+        nom: data.nom.trim(),
+        prenom: data.prenom.trim(),
+        whatsapp: data.whatsapp.trim() || null,
+        zone: (data.zone as any) || null,
+        modeFormation: (data.modeFormation as any) || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, userId));
+
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateCandidateProfile:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles homepage section visibility
+ */
+export async function toggleSectionActive(sectionId: string, isActive: boolean) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(pageSections)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(pageSections.id, sectionId));
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in toggleSectionActive:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates homepage section content
+ */
+export async function updateSectionContent(sectionId: string, titre: string, contenu: any) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(pageSections)
+      .set({ titre, contenu, updatedAt: new Date() })
+      .where(eq(pageSections.id, sectionId));
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateSectionContent:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Creates a new testimonial
+ */
+export async function createTestimonial(data: {
+  nom: string;
+  prenom?: string;
+  zone?: any;
+  concours?: any;
+  message: string;
+  note?: number;
+  photoUrl?: string;
+}) {
+  try {
+    await verifyAdminSession();
+    if (!data.nom || !data.message) {
+      return { success: false, error: "Le nom et le message sont obligatoires." };
+    }
+    await db.insert(temoignages).values({
+      nom: data.nom,
+      prenom: data.prenom || null,
+      zone: data.zone || null,
+      concours: data.concours || null,
+      message: data.message,
+      note: data.note ?? 5,
+      photoUrl: data.photoUrl || null,
+      isActive: true,
+    });
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in createTestimonial:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates a testimonial
+ */
+export async function updateTestimonial(
+  id: string,
+  data: {
+    nom: string;
+    prenom?: string;
+    zone?: any;
+    concours?: any;
+    message: string;
+    note?: number;
+    photoUrl?: string;
+  }
+) {
+  try {
+    await verifyAdminSession();
+    if (!data.nom || !data.message) {
+      return { success: false, error: "Le nom et le message sont obligatoires." };
+    }
+    await db
+      .update(temoignages)
+      .set({
+        nom: data.nom,
+        prenom: data.prenom || null,
+        zone: data.zone || null,
+        concours: data.concours || null,
+        message: data.message,
+        note: data.note ?? 5,
+        photoUrl: data.photoUrl || null,
+      })
+      .where(eq(temoignages.id, id));
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateTestimonial:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles a testimonial visibility status
+ */
+export async function toggleTestimonialActive(id: string, isActive: boolean) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(temoignages)
+      .set({ isActive })
+      .where(eq(temoignages.id, id));
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in toggleTestimonialActive:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Soft deletes a testimonial
+ */
+export async function deleteTestimonial(id: string) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(temoignages)
+      .set({ deletedAt: new Date() })
+      .where(eq(temoignages.id, id));
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in deleteTestimonial:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Helper to slugify a string
+ */
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+    .trim()
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-"); // Remove duplicate hyphens
+}
+
+/**
+ * Creates a new blog article
+ */
+export async function createBlogArticle(data: {
+  titre: string;
+  contenu: string;
+  extrait?: string;
+  imageUrl?: string;
+  concours?: string;
+  isPublished?: boolean;
+}) {
+  try {
+    const { profile } = await verifyAdminSession();
+    if (!data.titre) {
+      return { success: false, error: "Le titre de l'article est obligatoire." };
+    }
+
+    const baseSlug = slugify(data.titre);
+    // Generate a unique slug if there is a collision
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+      const existing = await db.query.blogArticles.findFirst({
+        where: eq(blogArticles.slug, slug),
+      });
+      if (!existing) break;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    await db.insert(blogArticles).values({
+      titre: data.titre,
+      slug: slug,
+      contenu: data.contenu || "",
+      extrait: data.extrait || data.contenu?.slice(0, 150) || "",
+      imageUrl: data.imageUrl || null,
+      concours: data.concours || "general",
+      auteurId: profile.id,
+      isPublished: data.isPublished || false,
+      publishedAt: data.isPublished ? new Date() : null,
+    });
+
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in createBlogArticle:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates a blog article
+ */
+export async function updateBlogArticle(
+  id: string,
+  data: {
+    titre: string;
+    contenu: string;
+    extrait?: string;
+    imageUrl?: string;
+    concours?: string;
+    isPublished?: boolean;
+  }
+) {
+  try {
+    await verifyAdminSession();
+    if (!data.titre) {
+      return { success: false, error: "Le titre de l'article est obligatoire." };
+    }
+
+    const currentArticle = await db.query.blogArticles.findFirst({
+      where: eq(blogArticles.id, id),
+    });
+
+    if (!currentArticle) {
+      return { success: false, error: "L'article spécifié n'existe pas." };
+    }
+
+    let slug = currentArticle.slug;
+    if (data.titre !== currentArticle.titre) {
+      const baseSlug = slugify(data.titre);
+      slug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const collisionOther = await db.query.blogArticles.findFirst({
+          where: eq(blogArticles.slug, slug),
+        });
+        if (!collisionOther || collisionOther.id === id) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+    }
+
+    await db
+      .update(blogArticles)
+      .set({
+        titre: data.titre,
+        slug: slug,
+        contenu: data.contenu || "",
+        extrait: data.extrait || data.contenu?.slice(0, 150) || "",
+        imageUrl: data.imageUrl || null,
+        concours: data.concours || "general",
+        isPublished: data.isPublished || false,
+        publishedAt: data.isPublished ? (currentArticle.isPublished ? currentArticle.publishedAt : new Date()) : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(blogArticles.id, id));
+
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateBlogArticle:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles dynamic blog article publishing
+ */
+export async function toggleBlogArticlePublished(id: string, isPublished: boolean) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(blogArticles)
+      .set({
+        isPublished: isPublished,
+        publishedAt: isPublished ? new Date() : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(blogArticles.id, id));
+
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in toggleBlogArticlePublished:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Soft deletes a blog article
+ */
+export async function deleteBlogArticle(id: string) {
+  try {
+    await verifyAdminSession();
+    await db
+      .update(blogArticles)
+      .set({ deletedAt: new Date() })
+      .where(eq(blogArticles.id, id));
+
+    revalidatePath("/");
+    revalidatePath("/admin/contenu");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in deleteBlogArticle:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates system parameters (webhooks, calendar ID)
+ */
+export async function updateSystemSettings(settings: any) {
+  try {
+    await verifyAdminSession();
+    
+    const existing = await db.query.pageSections.findFirst({
+      where: eq(pageSections.cle, "parametres"),
+    });
+    
+    if (existing) {
+      await db.update(pageSections)
+        .set({
+          contenu: {
+            webhook_secret: settings.webhook_secret || "",
+            make_webhook_url: settings.make_webhook_url || "",
+            n8n_webhook_url: settings.n8n_webhook_url || "",
+            google_calendar_id: settings.google_calendar_id || "",
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(pageSections.cle, "parametres"));
+    } else {
+      await db.insert(pageSections).values({
+        cle: "parametres",
+        titre: "Paramètres Plateforme",
+        contenu: {
+          webhook_secret: settings.webhook_secret || "",
+          make_webhook_url: settings.make_webhook_url || "",
+          n8n_webhook_url: settings.n8n_webhook_url || "",
+          google_calendar_id: settings.google_calendar_id || "",
+        },
+        ordre: 99,
+        isActive: false,
+      });
+    }
+    
+    revalidatePath("/admin/parametres");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateSystemSettings:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Creates a course or PDF document, schedules Meet session, sends notifications and webhooks
+ */
+export async function createDocument(data: any) {
+  try {
+    const admin = await verifyAdminSession();
+    
+    let meetingUrl = "";
+    let calendarEventId = "";
+    
+    // If it's a live course (date is provided)
+    if (data.type === "cours" && data.scheduledAt) {
+      let targetEmails: string[] = [];
+      
+      if (data.concours && data.concours !== "tous") {
+        const candidates = await db.select({ email: profiles.email })
+          .from(profiles)
+          .innerJoin(concoursInscrits, eq(concoursInscrits.userId, profiles.id))
+          .where(
+            and(
+              eq(concoursInscrits.concours, data.concours),
+              eq(profiles.isActive, true),
+              isNull(profiles.deletedAt)
+            )
+          );
+        targetEmails = candidates.map(c => c.email);
+      } else {
+        const candidates = await db.select({ email: profiles.email })
+          .from(profiles)
+          .where(
+            and(
+              eq(profiles.role, "user"),
+              eq(profiles.isActive, true),
+              isNull(profiles.deletedAt)
+            )
+          );
+        targetEmails = candidates.map(c => c.email);
+      }
+      
+      const startTime = new Date(data.scheduledAt);
+      const endTime = new Date(startTime.getTime() + (Number(data.durationHours) || 2) * 60 * 60 * 1000);
+      
+      const calendarRes = await createCalendarEvent({
+        title: data.titre,
+        description: data.description || `Session de préparation en direct pour le concours ${data.concours.toUpperCase()}`,
+        startTime,
+        endTime,
+        attendees: targetEmails,
+      });
+      
+      if (calendarRes) {
+        meetingUrl = calendarRes.meetingUrl;
+        calendarEventId = calendarRes.eventId;
+      }
+    }
+    
+    // Insert document record in DB
+    const [newDoc] = await db.insert(documents).values({
+      titre: data.titre,
+      description: data.description || null,
+      fichierUrl: data.fichierUrl || null,
+      concours: data.concours || "tous",
+      type: data.type || "cours",
+      ordre: Number(data.ordre) || 0,
+      isActive: true,
+      scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
+      meetingUrl: meetingUrl || null,
+      calendarEventId: calendarEventId || null,
+      createdBy: admin.profile.id,
+    }).returning();
+    
+    // Create notifications for candidates
+    let targetUsers: { id: string }[] = [];
+    if (data.concours && data.concours !== "tous") {
+      targetUsers = await db.select({ id: profiles.id })
+        .from(profiles)
+        .innerJoin(concoursInscrits, eq(concoursInscrits.userId, profiles.id))
+        .where(
+          and(
+            eq(concoursInscrits.concours, data.concours),
+            eq(profiles.isActive, true),
+            isNull(profiles.deletedAt)
+          )
+        );
+    } else {
+      targetUsers = await db.select({ id: profiles.id })
+        .from(profiles)
+        .where(
+          and(
+            eq(profiles.role, "user"),
+            eq(profiles.isActive, true),
+            isNull(profiles.deletedAt)
+          )
+        );
+    }
+    
+    if (targetUsers.length > 0) {
+      const notifType = data.type === "cours" ? "cours" : "info";
+      const notifMessage = data.scheduledAt
+        ? `Un nouveau cours en direct "${data.titre}" a été planifié le ${new Date(data.scheduledAt).toLocaleString("fr-FR")}.`
+        : `Un nouveau document "${data.titre}" (${data.type}) est disponible pour le concours ${data.concours.toUpperCase()}.`;
+      
+      const notificationValues = targetUsers.map(u => ({
+        destinataireId: u.id,
+        titre: data.scheduledAt ? "🔴 Cours en direct planifié" : "📚 Nouveau document disponible",
+        message: notifMessage,
+        type: notifType as any,
+        lu: false,
+        lien: "/dashboard/documents",
+      }));
+      
+      await db.insert(notifications).values(notificationValues);
+    }
+    
+    // Trigger webhook call
+    await triggerNewDocumentWebhook({
+      id: newDoc.id,
+      titre: newDoc.titre,
+      description: newDoc.description,
+      fichierUrl: newDoc.fichierUrl,
+      concours: newDoc.concours,
+      type: newDoc.type,
+      scheduledAt: newDoc.scheduledAt ? newDoc.scheduledAt.toISOString() : null,
+      meetingUrl: newDoc.meetingUrl,
+      createdAt: newDoc.createdAt ? newDoc.createdAt.toISOString() : new Date().toISOString(),
+    });
+    
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/admin/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in createDocument:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles document active status
+ */
+export async function toggleDocumentActive(id: string, isActive: boolean) {
+  try {
+    await verifyAdminSession();
+    
+    await db.update(documents)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(documents.id, id));
+      
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/admin/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in toggleDocumentActive:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Soft deletes document and cleans up Calendar event
+ */
+export async function deleteDocument(id: string) {
+  try {
+    await verifyAdminSession();
+    
+    const doc = await db.query.documents.findFirst({
+      where: eq(documents.id, id),
+    });
+    
+    if (!doc) {
+      throw new Error("Document introuvable.");
+    }
+    
+    if (doc.calendarEventId) {
+      await deleteCalendarEvent(doc.calendarEventId);
+    }
+    
+    await db.update(documents)
+      .set({ deletedAt: new Date(), isActive: false })
+      .where(eq(documents.id, id));
+    
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/admin/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in deleteDocument:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+

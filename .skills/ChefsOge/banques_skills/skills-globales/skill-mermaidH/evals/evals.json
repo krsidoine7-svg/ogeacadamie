@@ -1,0 +1,70 @@
+{
+  "skill_name": "skill-mermaidH",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Documente le flux de connexion de mon API Next.js : l'utilisateur envoie email/mot de passe, le serveur vérifie en base Supabase et renvoie un JWT. Je veux ça dans le README du repo.",
+      "expected_output": "sequenceDiagram correct avec participants nommés, alt succès/échec, bloc mermaid Markdown",
+      "files": [],
+      "expectations": [
+        "Le type choisi est sequenceDiagram (pas flowchart)",
+        "Participants explicites (Utilisateur, API/Next.js, Supabase)",
+        "Bloc alt/else pour succès et échec auth",
+        "Pas de directives style sur sequenceDiagram",
+        "Livrable en bloc ```mermaid pour README"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "On a les tables users, orders, order_items et products. Fais un schéma relationnel pour la doc technique avec les clés PK/FK.",
+      "expected_output": "erDiagram avec cardinalités ||--o{ et attributs PK/FK",
+      "files": [],
+      "expectations": [
+        "Le type choisi est erDiagram",
+        "Les quatre tables sont présentes avec relations",
+        "Cardinalités Mermaid correctes (||--o{ ou équivalent)",
+        "Attributs avec PK et FK indiqués",
+        "Référence erd-diagrams ou entityRelationshipDiagram consultée implicitement"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Architecture C4 de mon SaaS : utilisateurs web, API Node, Postgres, service email SendGrid. Niveau contexte + conteneurs seulement.",
+      "expected_output": "C4Context et C4Container valides, fichier ou blocs mermaid, pas de sur-détail composant",
+      "files": [],
+      "expectations": [
+        "Deux diagrammes ou sections : C4Context et C4Container",
+        "Pas de C4Component sauf demande explicite",
+        "SendGrid en System_Ext ou conteneur externe",
+        "Postgres comme base de données dans le container",
+        "Syntaxe C4 valide (Person, System, Rel, Container_Boundary)"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Pipeline CI : push sur main → tests → build Docker → deploy staging → smoke tests → prod. Flowchart lisible.",
+      "expected_output": "flowchart TD/LR avec étapes et décisions si échec tests",
+      "files": [],
+      "expectations": [
+        "Le type choisi est flowchart",
+        "Étapes du pipeline dans l'ordre logique",
+        "Au moins une branche décision pour échec tests ou smoke tests",
+        "Direction TB ou LR pour lisibilité",
+        "Labels explicites sur les nœuds"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Génère diagram.mmd et exporte en SVG thème sombre pour ma doc (fichier dans docs/diagrams/).",
+      "expected_output": "Fichier .mmd + commande render.mjs ou SVG produit + thème dark/tokyo-night",
+      "files": [],
+      "expectations": [
+        "Fichier .mmd proposé ou créé",
+        "Commande node scripts/render.mjs avec --theme sombre",
+        "Chemin de sortie docs/diagrams/ mentionné",
+        "Thème tokyo-night, dracula, github-dark ou dark",
+        "Syntaxe Mermaid valide avant export"
+      ]
+    }
+  ]
+}

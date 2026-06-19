@@ -1,0 +1,6 @@
+{
+  "id": "general-purpose",
+  "manager": "ChefsOge",
+  "skills": ["general_assistance", "basic_tasks"],
+  "delegation_policy": "require_manager_approval"
+}
