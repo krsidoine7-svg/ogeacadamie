@@ -72,6 +72,9 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[webhooks.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/webhooks.ts)**
   * **Description :** Service sortant d'appel webhook pour envoyer les alertes de nouveaux documents à Make.com et n8n.
   * **Relations :** Consommé par l'action `createDocument`.
+* **[crypto.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/crypto.ts)**
+  * **Description :** Service utilitaire de chiffrement et déchiffrement symétrique AES-256-CBC avec dérivation de clé dynamique via SHA-256.
+  * **Relations :** Importé par les routes API d'upload d'administration et de consultation sécurisée candidat.
 
 ---
 
@@ -210,6 +213,14 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/documents/route.ts)**
   * **Description :** Route API GET de génération sécurisée de liens signés pour les documents (validité 60 min).
   * **Relations :** Appelé côté serveur par le visualiseur ou les requêtes directes autorisées.
+* **[[id]/view/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/documents/[id]/view/route.ts)**
+  * **Description :** Route API GET de consultation sécurisée. Authentifie le candidat, vérifie son concours/paiement, télécharge le PDF chiffré depuis le Storage, le déchiffre à la volée en mémoire et le sert avec en-têtes anti-cache.
+  * **Relations :** Appelée par le visualiseur de documents candidat `viewer/page.tsx` et consomme `lib/crypto.ts`.
+
+#### 📂 app/api/admin/documents/upload
+* **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/documents/upload/route.ts)**
+  * **Description :** Route API POST d'upload sécurisé pour les administrateurs. Chiffre le document PDF entrant avec AES-256-CBC et le téléverse sur Supabase Storage.
+  * **Relations :** Appelée par le formulaire `DocumentsManagerClient.tsx` et consomme `lib/crypto.ts`.
 
 #### 📂 app/api/webhooks
 * **[make/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/webhooks/make/route.ts)**

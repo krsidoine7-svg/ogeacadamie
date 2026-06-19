@@ -78,26 +78,40 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     }
 
     setUploadProgress(0);
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `supports/${fileName}`;
+    
+    // Simulate upload progress since server-side encryption handles uploading
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev === null) return 0;
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 150);
 
     try {
-      const { data, error } = await supabase.storage
-        .from("documents")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+      const formData = new FormData();
+      formData.append("file", file);
 
-      if (error) {
-        throw error;
+      const response = await fetch("/api/admin/documents/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const resData = await response.json();
+
+      if (!response.ok || resData.error) {
+        throw new Error(resData.error || "Une erreur est survenue lors du téléversement.");
       }
 
-      setForm((prev) => ({ ...prev, fichierUrl: filePath }));
+      clearInterval(progressInterval);
+      setForm((prev) => ({ ...prev, fichierUrl: resData.filePath }));
       setUploadProgress(100);
-      toast.success("Fichier PDF téléversé avec succès.");
+      toast.success("Fichier PDF chiffré et téléversé avec succès.");
     } catch (err: any) {
+      clearInterval(progressInterval);
       console.error("Upload error:", err);
       toast.error(err.message || "Erreur de téléversement.");
       setUploadProgress(null);

@@ -121,43 +121,10 @@ export default async function ViewerPage({ searchParams }: ViewerPageProps) {
     }
   }
 
-  // 6. Generate signed URL for Supabase Storage (bucket: 'documents')
-  const { data: signData, error: signError } = await supabase.storage
-    .from("documents")
-    .createSignedUrl(document.fichierUrl, 3600); // 1 hour validity
-
-  if (signError || !signData?.signedUrl) {
-    console.error("Storage signed url generation error:", signError);
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-        <div className="text-center space-y-4 max-w-md bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl">
-          <div className="w-12 h-12 bg-red-500/10 rounded-xl border border-red-500/20 flex items-center justify-center mx-auto text-red-400">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold">Erreur de Chargement</h2>
-          <p className="text-sm text-slate-400">
-            Impossible de charger le flux du fichier de cours. Veuillez réessayer.
-          </p>
-          <Link
-            href="/dashboard/documents"
-            className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retourner aux documents
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // 7. Log document access
-  await db.insert(accesDocuments).values({
-    userId: user.id,
-    documentId: document.id,
-  });
-
-  // Append toolbar parameter to request standard browser PDF viewer to hide toolbar controls
-  const securePdfUrl = `${signData.signedUrl}#toolbar=0&navpanes=0&scrollbar=1`;
+  // Note: The document is stored encrypted on Supabase Storage.
+  // We point the viewer to our server-side decryption endpoint /api/documents/[id]/view
+  // which will decrypt the PDF in memory and stream it securely.
+  const securePdfUrl = `/api/documents/${document.id}/view#toolbar=0&navpanes=0&scrollbar=1`;
 
   return (
     <SecureViewerClient
