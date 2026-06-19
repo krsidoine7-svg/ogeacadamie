@@ -254,7 +254,7 @@ export default async function Home() {
       <main className="flex-1">
         {/* HERO SECTION */}
         {activeMap.hero && (
-          <section id="accueil" className="relative overflow-hidden bg-[#0A0E17] text-white py-28 px-4 sm:px-8 flex items-center border-b border-slate-900">
+          <section id="accueil" className="relative overflow-hidden bg-[#0A0E17] text-white py-16 sm:py-24 lg:py-28 px-4 sm:px-8 lg:px-12 flex items-center border border-white/10 rounded-[24px] sm:rounded-[36px] lg:rounded-[48px] mx-4 sm:mx-8 lg:mx-[100px] mt-4 sm:mt-6 lg:mt-8">
             {/* Red/Orange Glow Backdrops */}
             <div className="absolute top-0 left-0 w-96 h-96 bg-[#F04438]/10 rounded-full blur-[120px] pointer-events-none -z-10" />
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#F04438]/10 rounded-full blur-[120px] pointer-events-none -z-10" />
@@ -317,7 +317,7 @@ export default async function Home() {
                   <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider block">
                     Depuis Bouaké jusqu'à Abidjan & Yamoussoukro
                   </span>
-                  <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-slate-900 leading-tight">
+                  <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     {contentMap.historique.title}
                   </h2>
                   <p className="text-slate-600 text-base sm:text-lg font-light leading-relaxed max-w-2xl mx-auto">
@@ -353,7 +353,7 @@ export default async function Home() {
               {/* Physical locations and direct call contact mappings */}
               <div className="space-y-6 pt-10 border-t border-slate-100 text-center">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-light text-slate-900 tracking-tight text-center">
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-center">
                     Nos Lieux Physiques & Contacts de Zone
                   </h3>
                   <p className="text-xs text-slate-450 font-light text-center">
@@ -379,13 +379,22 @@ export default async function Home() {
                           {center.address}
                         </p>
                       </div>
-                      <div className="pt-3 border-t border-slate-100 flex items-center justify-center w-full">
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-center gap-6 w-full">
                         <a
                           href={`tel:${center.phone.replace(/\s+/g, "")}`}
-                          className="flex items-center justify-center gap-1.5 text-xs font-bold text-[#0F172A] hover:text-[#D4A017] transition-all"
+                          className="flex items-center justify-center gap-1.5 text-xs font-bold text-slate-700 hover:text-[#D4A017] transition-all"
                         >
-                          <Phone className="w-3.5 h-3.5 text-[#D4A017]" />
-                          {center.phone}
+                          <Phone className="w-3.5 h-3.5 text-slate-400 hover:text-[#D4A017]" />
+                          Appeler
+                        </a>
+                        <a
+                          href={`https://wa.me/${center.phone.replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-all"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                          WhatsApp
                         </a>
                       </div>
                     </div>
@@ -404,7 +413,7 @@ export default async function Home() {
                 <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider">
                   Programmes Académiques d'Excellence
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-slate-900">
+                <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
                   {contentMap.formation.title}
                 </h2>
                 <p className="text-slate-500 text-base font-light">
@@ -426,7 +435,7 @@ export default async function Home() {
                 <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider">
                   Chiffres Clés & Tarifs
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-white">
+                <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
                   {contentMap.resultats.title}
                 </h2>
                 <p className="text-slate-300 text-base font-light">
@@ -529,21 +538,77 @@ export default async function Home() {
           </section>
         )}
 
+        {/* HIGH-IMPACT MARKETING OPPORTUNITY SECTION */}
+        {activeMap.inscription && (
+          <section className="py-24 px-4 sm:px-8 bg-slate-50 border-t border-slate-200">
+            <div className="max-w-5xl mx-auto space-y-16">
+              <div className="text-center max-w-3xl mx-auto space-y-6">
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold bg-red-50 text-red-650 border border-red-200 uppercase tracking-widest animate-pulse">
+                  🚨 L'OPPORTUNITÉ D'UNE VIE
+                </span>
+                <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase leading-tight text-slate-900">
+                  Ne gâchez pas votre unique chance d'intégrer l'élite
+                </h2>
+                <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-normal">
+                  Les places à l'<strong>INP-HB</strong>, l'<strong>ESATIC</strong> et au <strong>CME</strong> sont extrêmement chères et limitées. Chaque année, des milliers d’élèves brillants ratent ces concours simplement parce qu'ils n’ont pas eu la bonne préparation stratégique. Rater ce concours maintenant, c'est compromettre vos ambitions et risquer de passer à côté d'une carrière exceptionnelle.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-red-500/30 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-extrabold text-lg">
+                    01
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Le Succès ou le Regret</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
+                    Intégrer ces écoles d'élite garantit une bourse d’études, un diplôme prestigieux et une insertion professionnelle assurée. Ne pas vous donner tous les moyens de réussir aujourd’hui est le plus grand risque pour votre avenir.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-red-500/30 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-extrabold text-lg">
+                    02
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Une Compétition Impitoyable</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
+                    Les autres candidats se préparent déjà jour et nuit. Sans nos corrigés d'examens officiels, nos méthodes de résolution rapide et notre accompagnement par zone WhatsApp, vous partez avec un immense désavantage.
+                  </p>
+                </div>
+
+                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-gold/30 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 font-extrabold text-lg">
+                    03
+                  </div>
+                  <h3 className="text-lg font-bold text-amber-700 uppercase tracking-tight">L'Investissement Décisif</h3>
+                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
+                    Pour seulement 15 000 FCFA (frais tout inclus), vous accédez à l'arme absolue pour forcer les portes du succès. C'est l'investissement le plus rentable et le plus décisif que vous ferez pour votre carrière.
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center pt-4">
+                <p className="text-xs sm:text-sm font-bold text-red-650 italic uppercase tracking-wider">
+                  ⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* INSCRIPTION BANNER CTA SECTION */}
         {activeMap.inscription && (
-          <section className="py-16 px-4 sm:px-8 bg-white">
-            <div className="max-w-5xl mx-auto p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white border border-slate-800 shadow-xl relative overflow-hidden text-center space-y-6">
-              <div className="absolute top-0 left-0 w-64 h-64 bg-[#D4A017]/5 rounded-full blur-3xl" />
-              <h2 className="text-3xl sm:text-4xl font-light tracking-tight leading-tight">
+          <section className="py-24 px-4 sm:px-8 bg-white border-t border-slate-100">
+            <div className="max-w-4xl mx-auto text-center space-y-6">
+              <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                 {contentMap.inscription.title}
               </h2>
-              <p className="text-slate-300 text-base sm:text-lg font-light max-w-2xl mx-auto">
+              <p className="text-slate-600 text-lg sm:text-xl font-normal max-w-2xl mx-auto leading-relaxed">
                 {contentMap.inscription.subtitle}
               </p>
               <div className="pt-4">
                 <Link
                   href="/inscription"
-                  className="inline-block font-bold text-white bg-[#D4A017] hover:bg-yellow-600 px-8 py-4 rounded-xl shadow-lg transition-all text-base"
+                  className="inline-block font-bold text-white bg-[#D4A017] hover:bg-yellow-600 px-10 py-4.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 text-base"
                   id="final-cta-btn"
                 >
                   {contentMap.inscription.cta_text}
