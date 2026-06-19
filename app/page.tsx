@@ -307,6 +307,19 @@ export default async function Home() {
             </div>
           </section>
         )}
+        {/* HERO VIDEO SECTION */}
+        {activeMap.hero && (
+          <div className="mx-4 max-w-3xl sm:mx-auto mt-6 sm:mt-8 relative z-10 px-4 sm:px-0">
+            <div className="relative rounded-[16px] sm:rounded-[24px] overflow-hidden shadow-xl border border-slate-200 bg-slate-950 aspect-video">
+              <video 
+                src="https://ydaqlbwnxqmkfbuapbhv.supabase.co/storage/v1/object/public/documents/presentation.mp4" 
+                controls 
+                className="w-full h-full object-cover"
+                poster="/logo.jpeg"
+              />
+            </div>
+          </div>
+        )}
 
         {/* HISTORIQUE SECTION WITH DETAILED CENTERS */}
         {activeMap.historique && (
