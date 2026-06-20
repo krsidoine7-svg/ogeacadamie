@@ -42,7 +42,7 @@ const playPopupChime = () => {
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
       gain.gain.setValueAtTime(0, audioCtx.currentTime + delays[index]);
-      gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + delays[index] + 0.03);
+      gain.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + delays[index] + 0.03);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delays[index] + durations[index]);
 
       osc.connect(gain);

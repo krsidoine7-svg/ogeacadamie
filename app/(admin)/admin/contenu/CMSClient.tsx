@@ -25,7 +25,7 @@ interface CMSClientProps {
 const DEFAULT_CONTENTS: any = {
   hero: {
     badge: "Session 2026",
-    title: "INTEGREZ LES MEILLEURS ECOLES IVOIRIENNE",
+    title: "INTEGREZ LES MEILLEURES ECOLES IVOIRIENNES",
     subtitle: "OGE ACADÉMIE vous prépare aux concours de l'INP-HB, de l'ESATIC et du CME grâce à une pédagogie d'excellence, un accompagnement personnalisé et des programmes adaptés aux exigences de chaque école.",
     cta_primary: "S'inscrire",
     cta_secondary: "Se connecter",
@@ -221,10 +221,18 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
 
     setIsSaving(true);
     try {
-      const res = await updateSectionContent(activeSection.id, activeSection.titre, formFields);
+      // Clean and trim string fields (resolving copy-paste spaces/non-breaking spaces issues)
+      const cleanedFields = { ...formFields };
+      Object.keys(cleanedFields).forEach((key) => {
+        if (typeof cleanedFields[key] === "string") {
+          cleanedFields[key] = cleanedFields[key].trim().replace(/^[\s\u00a0\u200b\xa0]+/, "");
+        }
+      });
+
+      const res = await updateSectionContent(activeSection.id, activeSection.titre, cleanedFields);
       if (res.success) {
         setSections(
-          sections.map((s) => (s.id === activeSection.id ? { ...s, contenu: formFields } : s))
+          sections.map((s) => (s.id === activeSection.id ? { ...s, contenu: cleanedFields } : s))
         );
         toast.success("Contenu de la section enregistré.");
       } else {

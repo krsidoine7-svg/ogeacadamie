@@ -25,7 +25,7 @@ import {
 const DEFAULT_CONTENTS: any = {
   hero: {
     badge: "Session 2026",
-    title: "INTEGREZ LES MEILLEURS ECOLES IVOIRIENNE",
+    title: "INTEGREZ LES MEILLEURES ECOLES IVOIRIENNES",
     subtitle: "OGE ACADÉMIE vous prépare aux concours de l'INP-HB, de l'ESATIC et du CME grâce à une pédagogie d'excellence, un accompagnement personnalisé et des programmes adaptés aux exigences de chaque école.",
     cta_primary: "S'inscrire",
     cta_secondary: "Se connecter",
@@ -236,6 +236,100 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-[#D4A017] selection:text-white">
+      {/* Schema.org JSON-LD Structured Data for Google and LLM (GEO) Indexing */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "EducationalOrganization",
+            "name": "OGE Académie",
+            "url": "https://oge-academie.ci",
+            "logo": "https://oge-academie.ci/logo.jpeg",
+            "description": "Plateforme n°1 de préparation en ligne et en présentiel aux concours des grandes écoles d'élite en Côte d'Ivoire (INP-HB Yamoussoukro, ESATIC Abidjan, CME CIE Bingerville). Sujets d'examen corrigés officiels et suivi WhatsApp localisé.",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Quartier Commerce, Lycée Technique",
+              "addressLocality": "Bouaké",
+              "addressRegion": "Gbêkê",
+              "addressCountry": "CI"
+            },
+            "telephone": "+225 01 71 61 95 31",
+            "sameAs": [
+              "https://facebook.com/ogeacademie",
+              "https://tiktok.com/@ogeacademie"
+            ],
+            "offers": {
+              "@type": "Offer",
+              "name": "Pack de Préparation Complet OGE Académie",
+              "description": "Accès illimité aux cours, exercices corrigés officiels et groupes de suivi WhatsApp par zone géographique pour les concours INP-HB, ESATIC et CME CIE.",
+              "price": "15000",
+              "priceCurrency": "XOF",
+              "eligibleRegion": {
+                "@type": "Country",
+                "name": "CI"
+              }
+            },
+            "location": [
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Bouaké (Lycée Technique)",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Bouaké",
+                  "addressCountry": "CI"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Yamoussoukro",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Yamoussoukro",
+                  "addressCountry": "CI"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Yopougon Maroc",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Abidjan",
+                  "addressCountry": "CI"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Abobo Baoulé",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Abidjan",
+                  "addressCountry": "CI"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Cocody Riviera",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Abidjan",
+                  "addressCountry": "CI"
+                }
+              },
+              {
+                "@type": "Place",
+                "name": "Centre OGE Académie Port-Bouët Centre",
+                "address": {
+                  "@type": "PostalAddress",
+                  "addressLocality": "Abidjan",
+                  "addressCountry": "CI"
+                }
+              }
+            ]
+          })
+        }}
+      />
+
       {/* Universal Navigation Navbar */}
       <HeaderNavbar activeMap={activeMap} dbArticlesLength={dbArticles.length} />
 
@@ -800,7 +894,7 @@ export default async function Home() {
       {/* Floating WhatsApp Button */}
       {contentMap.hero.whatsapp_group_link && (
         <a
-          href={contentMap.hero.whatsapp_group_link}
+          href={contentMap.hero.whatsapp_group_link.trim().replace(/^[\s\u00a0\u200b\xa0]+/, "")}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-14 h-14 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-full shadow-2xl shadow-[#25D366]/30 transition-all duration-300 hover:scale-110 group cursor-pointer border border-[#25D366]/20"

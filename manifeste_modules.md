@@ -29,6 +29,10 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.11 (Compatibilité Mobile & Réactivité du Visualiseur PDF) :** Intégration d'une gestion fluide des dimensions et ratios d'aspect en CSS (`aspect-ratio`, `w-full`, `max-width`) pour les pages de canvas PDF afin d'éviter tout débordement horizontal sur smartphone. Optimisation de la barre d'outils supérieure en masquant le badge candidat (`hidden sm:flex`), en condensant les contrôles et en masquant dynamiquement le pourcentage de zoom sur les écrans étroits.
 >
 > **Version 1.12 (Dialogue de Notification Popup & Sonnerie Libre de Droit) :** Création d'un écouteur client en temps réel pour les notifications non lues des candidats avec un carillon d'arpeggio synthétisé via Web Audio API et l'ouverture d'une boîte de dialogue modale premium pour afficher la notification avec option de marquage comme lu direct.
+>
+> **Version 1.13 (Optimisation SEO & Moteurs de Recherche LLM / GEO + Focus Contexte Ivoirien) :** Configuration de métadonnées enrichies et balises Open Graph pour WhatsApp/Facebook. Création d'un plan de site dynamique (`sitemap.ts`) et de directives d'exploration adaptatives (`robots.ts`). Intégration de données structurées JSON-LD (Schema.org) sous le type `EducationalOrganization` pour favoriser le référencement auprès de Google et des moteurs de recherche basés sur les IA (Gemini, ChatGPT Search). Correction grammaticale des titres par défaut dans `app/page.tsx` et `CMSClient.tsx`. Enrichissement des mots-clés de ciblage locaux dans `app/layout.tsx` (Lycée Technique d'Abidjan, Lycée Scientifique de Yamoussoukro, Wave CI, MoMo, etc.) et intégration des tarifs en Francs CFA (XOF) et des 6 centres physiques locaux dans les données structurées. Mise en place d'un nettoyage automatique des espaces et espaces insécables (`%C2%A0`) sur le lien WhatsApp de la page d'accueil et lors des sauvegardes CMS pour éviter les erreurs de liens relatifs `localhost:3000/`.
+>
+> **Version 1.14 (Optimisation Performance & Chargement Paresseux PDF) :** Résolution des lenteurs de chargement et d'affichage dans le visualiseur sécurisé. Implémentation du rendu paresseux (Lazy Rendering) des pages PDF sous [SecureViewerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/documents/viewer/SecureViewerClient.tsx). Les dimensions de toutes les pages sont chargées sur le montage initial (pour conserver la hauteur de la barre de défilement), mais le rendu intensif sur les `<canvas>` HTML5 et l'exécution de PDF.js ne se déclenchent que lorsque la page entre dans le viewport (avec une marge de confort de 800px verticalement), soulageant drastiquement la charge mémoire du navigateur.
 
 ---
 
@@ -52,6 +56,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[CLAUDE.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/CLAUDE.md)** : Fichier d'inclusion des règles pour l'assistant Claude.
 * **[middleware.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/middleware.ts)** : Middleware global Next.js. Gère les redirections basées sur l'état d'authentification et les rôles.
 * **[manifeste_modules.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/manifeste_modules.md)** : Ce fichier. Registre centralisé des modules.
+* **[vercel.json](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/vercel.json)** : Configuration de déploiement Vercel. Fixe la région d'exécution des fonctions serverless en Europe (Frankfort `fra1`) pour éliminer la latence réseau avec Supabase.
 * **[.env.local](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/.env.local)** : Variables d'environnement locales (URL/Clés Supabase et DATABASE_URL).
 
 ---

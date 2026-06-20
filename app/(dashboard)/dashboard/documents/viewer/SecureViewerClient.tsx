@@ -49,10 +49,11 @@ const SecurePage: React.FC<SecurePageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [shouldRender, setShouldRender] = useState(false);
   const renderTaskRef = useRef<any>(null);
 
+  // 1. Observer for viewport active page tracking (nav toolbar)
   useEffect(() => {
-    // Detect when page enters viewport to update current page number in navigation toolbar
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -76,8 +77,57 @@ const SecurePage: React.FC<SecurePageProps> = ({
     };
   }, [onVisible]);
 
+  // 2. Observer for Lazy Rendering trigger (with large 800px vertical buffer)
+  useEffect(() => {
+    const renderObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setShouldRender(true);
+            renderObserver.disconnect(); // Once loaded, keep it rendered
+          }
+        });
+      },
+      {
+        rootMargin: "800px 0px 800px 0px",
+      }
+    );
+
+    if (containerRef.current) {
+      renderObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      renderObserver.disconnect();
+    };
+  }, []);
+
+  // 3. Load PDF Page metadata / dimensions on mount
   useEffect(() => {
     if (!pdf) return;
+    let active = true;
+
+    const loadPageDimensions = async () => {
+      try {
+        const page = await pdf.getPage(pageNum);
+        if (!active) return;
+        const viewport = page.getViewport({ scale });
+        setDimensions({ width: viewport.width, height: viewport.height });
+      } catch (err) {
+        console.error(`Erreur de dimensions page ${pageNum}:`, err);
+      }
+    };
+
+    loadPageDimensions();
+
+    return () => {
+      active = false;
+    };
+  }, [pdf, scale, pageNum]);
+
+  // 4. Render content onto Canvas only when within scrolling range (shouldRender === true)
+  useEffect(() => {
+    if (!pdf || !shouldRender) return;
 
     let active = true;
     setLoading(true);
@@ -103,8 +153,6 @@ const SecurePage: React.FC<SecurePageProps> = ({
         canvas.height = viewport.height * pixelRatio;
         canvas.style.width = "100%";
         canvas.style.height = "100%";
-
-        setDimensions({ width: viewport.width, height: viewport.height });
 
         const context = canvas.getContext("2d");
         if (!context) return;
@@ -139,7 +187,7 @@ const SecurePage: React.FC<SecurePageProps> = ({
         renderTaskRef.current.cancel();
       }
     };
-  }, [pdf, pageNum, scale]);
+  }, [pdf, pageNum, scale, shouldRender]);
 
   // Repeated watermark items directly layered above the canvas page
   const watermarkItems = Array.from({ length: 16 });
@@ -163,7 +211,7 @@ const SecurePage: React.FC<SecurePageProps> = ({
       )}
 
       {/* Render Canvas */}
-      <canvas ref={canvasRef} className="block mx-auto w-full h-full object-contain" />
+      {shouldRender && <canvas ref={canvasRef} className="block mx-auto w-full h-full object-contain" />}
 
       {/* Secure repeating watermark covering the entire canvas element */}
       {enableSecurity && (
