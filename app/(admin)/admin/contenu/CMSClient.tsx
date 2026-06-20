@@ -1412,7 +1412,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
 
                 {activeTab === "footer" && (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Lien Facebook</label>
                         <input
@@ -1446,7 +1446,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                       Contacts & Coordonnées
                     </h3>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Email de contact</label>
                         <input

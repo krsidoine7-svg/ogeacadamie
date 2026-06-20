@@ -5,6 +5,7 @@ import { pageSections, temoignages, blogArticles } from "@/drizzle/schema";
 import { asc, desc, eq, and, isNull } from "drizzle-orm";
 import InteractiveSchoolGuides from "@/components/shared/InteractiveSchoolGuides";
 import BlogGrid from "@/components/shared/BlogGrid";
+import HeaderNavbar from "@/components/shared/HeaderNavbar";
 import { 
   BookOpen, 
   GraduationCap, 
@@ -229,39 +230,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-[#D4A017] selection:text-white">
       {/* Universal Navigation Navbar */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 py-4 sm:px-8 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <GraduationCap className="w-8 h-8 text-[#0F172A] fill-[#D4A017]/25" />
-            <span className="text-xl font-bold tracking-tight text-slate-900">
-              OGE <span className="text-[#D4A017]">Académie</span>
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-700">
-            {activeMap.hero && <a href="#accueil" className="hover:text-[#D4A017] transition-all">Accueil</a>}
-            {activeMap.historique && <a href="#historique" className="hover:text-[#D4A017] transition-all">Historique</a>}
-            {activeMap.formation && <a href="#formations" className="hover:text-[#D4A017] transition-all">Formations</a>}
-            {activeMap.resultats && <a href="#statistiques" className="hover:text-[#D4A017] transition-all">Résultats</a>}
-            {dbArticles.length > 0 && <a href="#blog" className="hover:text-[#D4A017] transition-all">Blog</a>}
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/connexion"
-              className="text-sm font-bold text-slate-700 hover:text-[#0F172A] transition-all py-2 px-4"
-              id="nav-connexion-btn"
-            >
-              Connexion
-            </Link>
-            <Link
-              href="/inscription"
-              className="text-sm font-bold text-white bg-[#0F172A] hover:bg-[#1E293B] border border-transparent rounded-xl py-2 px-5 transition-all shadow-md"
-              id="nav-inscription-btn"
-            >
-              S'inscrire
-            </Link>
-          </div>
-        </div>
-      </header>
+      <HeaderNavbar activeMap={activeMap} dbArticlesLength={dbArticles.length} />
 
       <main className="flex-1">
         {/* HERO SECTION */}

@@ -93,6 +93,9 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[BlogGrid.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/BlogGrid.tsx)**
   * **Description :** Grille des actualités de blog et boîte de dialogue de lecture in-app pour suivre les évolutions administratives des concours.
   * **Relations :** Consommé par `app/page.tsx`.
+* **[HeaderNavbar.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/HeaderNavbar.tsx)**
+  * **Description :** Barre de navigation en-tête de la page d'accueil. Gère un affichage adaptatif : sur desktop, le logo est à gauche et les liens au centre ; sur mobile et tablette, le logo est déplacé à droite et le bouton déclenchant (menu hamburger) est placé à gauche avec un tiroir de navigation en verre givré.
+  * **Relations :** Consommé par `app/page.tsx`.
 * **[CookieBanner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/CookieBanner.tsx)**
   * **Description :** Bandeau flottant de consentement cookies persistant localement via LocalStorage.
   * **Relations :** Importé et rendu de manière globale par `app/layout.tsx`.
@@ -166,7 +169,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Relations :** Importe [globals.css](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/globals.css) et le composant [sonner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/sonner.tsx).
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/page.tsx)**
   * **Description :** Page d'accueil publique de la plateforme OGE Académie. Affiche de façon dynamique les blocs configurés en base de données (Hero, Historique, Formations, Résultats, Témoignages, Inscription, Footer) avec fallbacks en cas de base vide.
-  * **Relations :** Chargée sous [layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/layout.tsx). Consomme Drizzle ORM et interroge les tables `page_sections` et `temoignages`.
+  * **Relations :** Chargée sous [layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/layout.tsx). Consomme Drizzle ORM, interroge les tables `page_sections` et `temoignages`, et rend le composant `HeaderNavbar`.
 * **[globals.css](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/globals.css)**
   * **Description :** Styles globaux de l'application incluant la configuration de Tailwind CSS.
 

@@ -64,4 +64,13 @@ Afin de simplifier le parcours d'inscription des candidats et d'éliminer les ch
   - Dans le panneau Super-Administrateur (`SettingsForm.tsx`), l'activation forcée de Wave et la désactivation permanente de MoMo/Orange sont automatisées en arrière-plan lors de l'enregistrement de la configuration système.
   - Le graphique en anneau de répartition des modes de paiement sur le dashboard d'administration globale a été supprimé pour restaurer une vue synthétique claire sur 2 colonnes sans segmentations obsolètes.
 
+---
+
+## 6. Alignement en Colonnes Réactives de la Page de Contenu (CMS)
+
+Afin d'améliorer la lisibilité et d'éviter que les champs de saisie de texte soient tronqués sur les écrans étroits (mobiles/tablettes) dans le gestionnaire de contenu (`/admin/contenu`), nous avons converti les grilles horizontales rigides en dispositions adaptatives :
+* **Liens réseaux sociaux (Facebook, WhatsApp, TikTok) :** Passage de `grid-cols-3` à `grid-cols-1 md:grid-cols-3` afin d'empiler verticalement les champs de saisie de liens sur mobile tout en préservant l'alignement sur 3 colonnes sur grand écran.
+* **Informations de contact (E-mail, Téléphone) :** Passage de `grid-cols-2` à `grid-cols-1 md:grid-cols-2` pour empiler verticalement l'adresse e-mail et le numéro de téléphone sur petit écran.
+
+
 
