@@ -124,6 +124,16 @@ Afin d'assurer une expérience utilisateur fluide et agréable sur smartphone et
   - Réduction des dimensions et des marges internes des boutons de navigation et des indicateurs de page (`min-w-[55px] sm:min-w-[70px]`, `gap-0.5 sm:gap-1`) pour éviter tout débordement.
 * **Ajustement des Marges du Viewport** : Réduction du padding horizontal du conteneur de défilement principal à `px-2 sm:px-4` sur petit écran pour élargir la zone de lecture.
 
+---
+
+## 12. Dialogue de Notification Popup & Sonnerie Libre de Droit (Version 1.12)
+
+Mise en place d'un système de notification push simulé/temps réel côté client pour les candidats :
+* **Détection en Arrière-Plan** : Intégration d'un composant client `NotificationPopupListener.tsx` qui interroge l'endpoint API GET `/api/notifications/unread` toutes les 20 secondes.
+* **Carillon Synthesizer Web Audio** : Génération instantanée d'un carillon sonore ascendant (arpeggio de C5 à C6) de manière 100% logicielle via la Web Audio API pour avertir l'utilisateur d'un nouveau message sans utiliser de fichier son statique.
+* **Fenêtre Pop Up Modal** : Affichage d'un Dialog vitré sombre (`slate-950/95`) avec une icône de cloche en rebond, le titre, le message et un bouton d'action directe "Marquer comme lu" déclenchant la server action correspondante et rafraîchissant le dashboard.
+
+
 
 
 

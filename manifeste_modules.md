@@ -27,6 +27,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.10 (Contrôle d'Activation de la Sécurité PDF) :** Ajout d'un bouton switch animé premium sur la console d'administration et de super-administration pour activer et désactiver globalement les restrictions de sécurité PDF. Intégration de l'état du switch dans la base de données (`system_config`). Mise à jour du visualiseur candidat pour masquer les filigranes nominatifs, annuler les blocages anti-copie (clic droit, impression, floutage au changement d'onglet) et ajouter un bouton de téléchargement direct du cours lorsque la sécurité est désactivée.
 >
 > **Version 1.11 (Compatibilité Mobile & Réactivité du Visualiseur PDF) :** Intégration d'une gestion fluide des dimensions et ratios d'aspect en CSS (`aspect-ratio`, `w-full`, `max-width`) pour les pages de canvas PDF afin d'éviter tout débordement horizontal sur smartphone. Optimisation de la barre d'outils supérieure en masquant le badge candidat (`hidden sm:flex`), en condensant les contrôles et en masquant dynamiquement le pourcentage de zoom sur les écrans étroits.
+>
+> **Version 1.12 (Dialogue de Notification Popup & Sonnerie Libre de Droit) :** Création d'un écouteur client en temps réel pour les notifications non lues des candidats avec un carillon d'arpeggio synthétisé via Web Audio API et l'ouverture d'une boîte de dialogue modale premium pour afficher la notification avec option de marquage comme lu direct.
 
 ---
 
@@ -258,6 +260,9 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/actions.ts)**
   * **Description :** Actions serveur de l'espace candidat pour la mise à jour du profil (`updateCandidateProfile`) et la lecture des notifications (`markNotificationAsRead`, `markAllNotificationsAsRead`).
   * **Relations :** Consommé par `ProfileClient.tsx` et `NotificationsClient.tsx`.
+* **[NotificationPopupListener.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/NotificationPopupListener.tsx)**
+  * **Description :** Écouteur client de notifications non lues. Interroge l'API toutes les 20 secondes, joue un carillon d'alerte Web Audio API, et affiche les alertes dans une boîte de dialogue modale premium.
+  * **Relations :** Importé et monté dans `app/(dashboard)/dashboard/layout.tsx`.
 
 ### API Routes & Sécurité
 
@@ -273,6 +278,11 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/documents/upload/route.ts)**
   * **Description :** Route API POST d'upload sécurisé pour les administrateurs. Chiffre le document PDF entrant avec AES-256-CBC et le téléverse sur Supabase Storage.
   * **Relations :** Appelée par le formulaire `DocumentsManagerClient.tsx` et consomme `lib/crypto.ts`.
+
+#### 📂 app/api/notifications
+* **[unread/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/notifications/unread/route.ts)**
+  * **Description :** Route API GET renvoyant la liste des notifications non lues du candidat connecté.
+  * **Relations :** Appelée par le composant `NotificationPopupListener.tsx`.
 
 #### 📂 app/api/webhooks
 * **[make/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/webhooks/make/route.ts)**

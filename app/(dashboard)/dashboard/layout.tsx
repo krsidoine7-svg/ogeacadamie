@@ -8,6 +8,7 @@ import { eq, and } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
 import PaiementModalWrapper from "@/components/dashboard/candidat/PaiementModalWrapper";
 import CandidatMobileNav from "@/components/dashboard/CandidatMobileNav";
+import NotificationPopupListener from "@/components/dashboard/NotificationPopupListener";
 import { ShieldAlert, LayoutDashboard, BookOpen, UserCircle, Bell, CreditCard } from "lucide-react";
 import Link from "next/link";
 
@@ -92,6 +93,9 @@ export default async function DashboardLayout({
 
       {paymentStatus === "valide" ? (
         <div className="flex flex-col md:flex-row flex-1 max-w-7xl w-full mx-auto overflow-hidden">
+          {/* Popup listener for new unread notifications */}
+          <NotificationPopupListener />
+
           {/* Mobile Navigation Bar */}
           <CandidatMobileNav
             profile={{

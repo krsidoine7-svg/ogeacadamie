@@ -44,6 +44,15 @@ Ce document regroupe le journal brut des modifications, décisions et correction
   - `SecureViewerClient.tsx` : Insertion de l'état local `dimensions` pour capter le viewport, utilisation de `aspect-ratio` et `w-full max-width` sur la carte conteneur de la page, styles de canvas fluide `w-full h-full object-contain`, masquage du badge email sur mobile (`hidden sm:flex`), masquage du pourcentage de zoom en dessous de 400px, et compactage des contrôles de pages.
   - `manifeste_modules.md` : Enregistrement de la version 1.11.
 
-## 8. Build de Production & Validation
+## 8. Dialogue de Notification Popup & Sonnerie Libre de Droit (Version 1.12)
+* **Objectif :** Alerter en temps réel les candidats connectés sur leur dashboard lors de la réception d'une nouvelle notification, avec pop up modal et sonnerie synthétisée libre de droits.
+* **Fichiers modifiés :**
+  - `unread/route.ts (API)` : Récupère la liste des notifications non lues.
+  - `NotificationPopupListener.tsx` : Interroge l'API, gère l'exclusion des déjà vues via sessionStorage, synthétise le carillon arpeggio C5-C6 Web Audio API et affiche le dialogue Dialog.
+  - `layout.tsx (dashboard)` : Intègre et monte le listener pour les candidats connectés et validés.
+  - `manifeste_modules.md` : Enregistrement de la version 1.12.
+
+## 9. Build de Production & Validation
 * **Vérification :** Commande `npm run build` exécutée et validée à 100% avec succès (type-checking TypeScript, compilation Turbopack et génération de toutes les routes statiques/dynamiques opérationnels).
+
 
