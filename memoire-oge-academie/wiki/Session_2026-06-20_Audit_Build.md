@@ -71,6 +71,10 @@ Afin de simplifier le parcours d'inscription des candidats et d'éliminer les ch
 Afin d'améliorer la lisibilité et d'éviter que les champs de saisie de texte soient tronqués sur les écrans étroits (mobiles/tablettes) dans le gestionnaire de contenu (`/admin/contenu`), nous avons converti les grilles horizontales rigides en dispositions adaptatives :
 * **Liens réseaux sociaux (Facebook, WhatsApp, TikTok) :** Passage de `grid-cols-3` à `grid-cols-1 md:grid-cols-3` afin d'empiler verticalement les champs de saisie de liens sur mobile tout en préservant l'alignement sur 3 colonnes sur grand écran.
 * **Informations de contact (E-mail, Téléphone) :** Passage de `grid-cols-2` à `grid-cols-1 md:grid-cols-2` pour empiler verticalement l'adresse e-mail et le numéro de téléphone sur petit écran.
+* **Titre et Sous-titre de la section Formations :** Passage de `grid-cols-2` à `grid-cols-1 md:grid-cols-2` pour éviter la troncature du sous-titre introductif sur écran réduit.
+* **Chiffres et Libellés des Statistiques :** Passage de `grid-cols-2` à `grid-cols-1 md:grid-cols-2`.
+* **Formulaire d'ajout/modification de témoignage (Modal) :** Passage de `grid-cols-2` à `grid-cols-1 sm:grid-cols-2` pour les champs Prénom/Nom et Zone/Concours.
+
 
 
 

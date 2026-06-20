@@ -866,7 +866,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
 
                 {activeTab === "formation" && (
                   <div className="space-y-8">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre de la Section</label>
                         <input
@@ -1131,7 +1131,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                         {(formFields.stats || []).map((stat: any, idx: number) => (
                           <div key={idx} className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50 space-y-2">
                             <span className="text-xs font-bold text-[#D4A017]">Métrique #{idx + 1}</span>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-xs font-bold text-slate-600 mb-1">Chiffre / Valeur</label>
                                 <input
@@ -1513,7 +1513,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
             </div>
 
             <form onSubmit={handleSaveTestimonial} className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom</label>
                   <input
@@ -1536,7 +1536,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Zone</label>
                   <select
