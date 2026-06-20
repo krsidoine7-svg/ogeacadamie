@@ -223,8 +223,7 @@ export async function updateZoneConfig(
   zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake",
   data: {
     lienWave: string;
-    lienMomo: string;
-    lienOrange: string;
+    numeroWave: string;
     adresse: string;
     telephone: string;
   }
@@ -236,8 +235,9 @@ export async function updateZoneConfig(
       .update(zoneConfig)
       .set({
         lienWave: data.lienWave,
-        lienMomo: data.lienMomo,
-        lienOrange: data.lienOrange,
+        numeroWave: data.numeroWave,
+        lienMomo: null, // Deactivated
+        lienOrange: null, // Deactivated
         adresse: data.adresse,
         telephone: data.telephone,
         updatedAt: new Date(),
@@ -998,7 +998,6 @@ export async function createDocument(data: any) {
         calendarEventId = calendarRes.eventId;
       }
     }
-    
     // Insert document record in DB
     const [newDoc] = await db.insert(documents).values({
       titre: data.titre,
@@ -1006,6 +1005,8 @@ export async function createDocument(data: any) {
       fichierUrl: data.fichierUrl || null,
       concours: data.concours || "tous",
       type: data.type || "cours",
+      modeFormation: data.modeFormation || "tous",
+      zone: data.zone || "tous",
       ordre: Number(data.ordre) || 0,
       isActive: true,
       scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
@@ -1016,6 +1017,21 @@ export async function createDocument(data: any) {
     
     // Create notifications for candidates
     let targetUsers: { id: string }[] = [];
+    
+    const conditions = [
+      eq(profiles.role, "user"),
+      eq(profiles.isActive, true),
+      isNull(profiles.deletedAt),
+    ];
+    
+    if (data.zone && data.zone !== "tous") {
+      conditions.push(eq(profiles.zone, data.zone as any));
+    }
+    
+    if (data.modeFormation && data.modeFormation !== "tous") {
+      conditions.push(eq(profiles.modeFormation, data.modeFormation as any));
+    }
+
     if (data.concours && data.concours !== "tous") {
       targetUsers = await db.select({ id: profiles.id })
         .from(profiles)
@@ -1023,19 +1039,14 @@ export async function createDocument(data: any) {
         .where(
           and(
             eq(concoursInscrits.concours, data.concours),
-            eq(profiles.isActive, true),
-            isNull(profiles.deletedAt)
+            ...conditions
           )
         );
     } else {
       targetUsers = await db.select({ id: profiles.id })
         .from(profiles)
         .where(
-          and(
-            eq(profiles.role, "user"),
-            eq(profiles.isActive, true),
-            isNull(profiles.deletedAt)
-          )
+          and(...conditions)
         );
     }
     
@@ -1065,6 +1076,8 @@ export async function createDocument(data: any) {
       fichierUrl: newDoc.fichierUrl,
       concours: newDoc.concours,
       type: newDoc.type,
+      modeFormation: newDoc.modeFormation,
+      zone: newDoc.zone,
       scheduledAt: newDoc.scheduledAt ? newDoc.scheduledAt.toISOString() : null,
       meetingUrl: newDoc.meetingUrl,
       createdAt: newDoc.createdAt ? newDoc.createdAt.toISOString() : new Date().toISOString(),
@@ -1433,5 +1446,58 @@ export async function updateSystemConfig(config: {
     return { success: false, error: error.message || "Une erreur est survenue." };
   }
 }
+
+/**
+ * Toggles the global PDF security configuration (Admin & Super Admin)
+ */
+export async function togglePdfSecurity() {
+  try {
+    await verifyAdminSession();
+
+    const existingRow = await db.query.pageSections.findFirst({
+      where: eq(pageSections.cle, "system_config"),
+    });
+
+    let currentConfig: any = {
+      allow_manager_edit: false,
+      enable_wave: true,
+      enable_momo: false,
+      enable_orange: false,
+      enable_pdf_security: true,
+    };
+
+    if (existingRow && existingRow.contenu) {
+      currentConfig = { ...currentConfig, ...(existingRow.contenu as any) };
+    }
+
+    currentConfig.enable_pdf_security = !currentConfig.enable_pdf_security;
+
+    if (existingRow) {
+      await db.update(pageSections)
+        .set({
+          contenu: currentConfig,
+          updatedAt: new Date(),
+        })
+        .where(eq(pageSections.cle, "system_config"));
+    } else {
+      await db.insert(pageSections).values({
+        cle: "system_config",
+        titre: "Configuration Système",
+        contenu: currentConfig,
+        ordre: 99,
+        isActive: true,
+      });
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/parametres");
+    revalidatePath("/dashboard/documents");
+    return { success: true, enabled: currentConfig.enable_pdf_security };
+  } catch (error: any) {
+    console.error("Error in togglePdfSecurity:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
 
 

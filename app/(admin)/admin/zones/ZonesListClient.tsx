@@ -10,6 +10,7 @@ interface ZoneConfigItem {
   id: string;
   zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake";
   lienWave: string | null;
+  numeroWave: string | null;
   adresse: string | null;
   telephone: string | null;
 }
@@ -24,6 +25,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
   // Edit states
   const [editingZone, setEditingZone] = useState<ZoneConfigItem | null>(null);
   const [wave, setWave] = useState("");
+  const [numWave, setNumWave] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +33,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
   const startEdit = (zoneItem: ZoneConfigItem) => {
     setEditingZone(zoneItem);
     setWave(zoneItem.lienWave || "");
+    setNumWave(zoneItem.numeroWave || "");
     setPhone(zoneItem.telephone || "");
     setAddress(zoneItem.adresse || "");
   };
@@ -43,8 +46,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
     try {
       const res = await updateZoneConfig(editingZone.zone, {
         lienWave: wave.trim(),
-        lienMomo: "", // Cleared
-        lienOrange: "", // Cleared
+        numeroWave: numWave.trim(),
         telephone: phone.trim(),
         adresse: address.trim(),
       });
@@ -85,7 +87,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
                 </div>
                 <button
                   onClick={() => startEdit(zoneItem)}
-                  className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-lg transition-all"
+                  className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-slate-900 border border-transparent hover:border-slate-200 rounded-lg transition-all cursor-pointer"
                   title="Modifier la configuration"
                 >
                   <Edit className="w-4 h-4" />
@@ -97,16 +99,26 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
                 <div className="flex items-start gap-2">
                   <Phone className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Téléphone versement</p>
-                    <p className="text-slate-800 mt-0.5">{zoneItem.telephone || "Non configuré"}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Téléphone Responsable</p>
+                    <p className="text-slate-850 mt-0.5">{zoneItem.telephone || "Non configuré"}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-2">
                   <Landmark className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Compte Wave CI</p>
-                    <p className="text-slate-850 mt-0.5">{zoneItem.lienWave || "Non configuré"}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Lien Wave Marchand</p>
+                    <p className="text-slate-800 mt-0.5 text-xs truncate max-w-[180px]" title={zoneItem.lienWave || ""}>
+                      {zoneItem.lienWave || "Non configuré"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Landmark className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Numéro de Téléphone Wave</p>
+                    <p className="text-slate-800 mt-0.5">{zoneItem.numeroWave || "Non configuré"}</p>
                   </div>
                 </div>
 
@@ -136,7 +148,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
               </div>
               <button
                 onClick={() => setEditingZone(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition-all"
+                className="p-1.5 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -145,7 +157,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
             <form onSubmit={handleUpdate} className="space-y-4 text-xs font-semibold text-slate-700">
               <div className="space-y-1.5">
                 <label htmlFor="ePhone" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                  Numéro de versement
+                  Téléphone Responsable de Zone
                 </label>
                 <input
                   id="ePhone"
@@ -160,16 +172,29 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
 
               <div className="space-y-1.5">
                 <label htmlFor="eWave" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                  Numéro ou Lien Wave Marchand
+                  Lien Wave Marchand
                 </label>
                 <input
                   id="eWave"
                   type="text"
                   value={wave}
                   onChange={(e) => setWave(e.target.value)}
-                  placeholder="Ex : https://wave.me/to/... ou 07 07 07 07"
+                  placeholder="Ex : https://wave.me/to/..."
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 bg-slate-50/50"
-                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="eWaveNum" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                  Numéro de Téléphone Wave
+                </label>
+                <input
+                  id="eWaveNum"
+                  type="text"
+                  value={numWave}
+                  onChange={(e) => setNumWave(e.target.value)}
+                  placeholder="Ex : 07 08 08 08 08"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 bg-slate-50/50"
                 />
               </div>
 
@@ -191,7 +216,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 bg-slate-900 hover:bg-[#D4A017] disabled:bg-slate-400 text-white rounded-xl font-bold transition-all shadow-md shadow-slate-900/5 flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 bg-slate-900 hover:bg-[#D4A017] disabled:bg-slate-400 text-white rounded-xl font-bold transition-all shadow-md shadow-slate-900/5 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

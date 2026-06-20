@@ -19,11 +19,16 @@ interface DocumentItem {
 interface DocumentsListProps {
   documents: DocumentItem[];
   registeredConcours: string[];
+  initialType?: string;
 }
 
-export default function DocumentsList({ documents, registeredConcours }: DocumentsListProps) {
+export default function DocumentsList({ 
+  documents, 
+  registeredConcours,
+  initialType = "all"
+}: DocumentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeType, setActiveType] = useState<string>("all");
+  const [activeType, setActiveType] = useState<string>(initialType);
   const [activeConcours, setActiveConcours] = useState<string>("all");
 
   // Filtering logic

@@ -33,6 +33,8 @@ const DEFAULT_CONTENTS: any = {
   },
   historique: {
     title: "Notre Histoire & Mission",
+    centers_title: "Nos Lieux Physiques & Contacts de Zone",
+    centers_subtitle: "Cliquez sur les numéros pour nous appeler directement ou localiser nos centres.",
     text: "Après deux années d’expérience et de succès à Bouaké, OGE ACADÉMIE franchit une nouvelle étape dans son développement. Cette année, nous avons choisi de nous rapprocher davantage des élèves et étudiants en nous implantant à Yamoussoukro, Yopougon, Abobo, Cocody et Port-Bouët. À travers cette expansion, nous réaffirmons notre engagement à offrir une pédagogie d’excellence et à accompagner chaque apprenant sur le chemin de la réussite.",
     activities: [
       { title: "Supports de cours de qualité", desc: "Rédigés par des enseignants expérimentés et des diplômés des grandes écoles." },
@@ -97,6 +99,11 @@ const DEFAULT_CONTENTS: any = {
       { value: "6 zones", label: "Yamoussoukro, Yopougon, Abobo, Cocody, Port-Bouët et Bouaké" },
       { value: "2 ans", label: "d'expérience et de succès à Bouaké" },
       { value: "15 000 F", label: "Prix de la prépa, frais Wave/Mobile Money inclus" }
+    ],
+    percentages: [
+      { year: "2023", inphb: "91,30%", cme: "96,80%", esatic: "100%" },
+      { year: "2024", inphb: "95,90%", cme: "100%", esatic: "95,40%" },
+      { year: "2025", inphb: "98,60%", cme: "100%", esatic: "97,10%" }
     ]
   },
   temoignages: {
@@ -473,7 +480,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
             <optgroup label="Sections Accueil">
               {sections.map((section) => (
                 <option key={section.id} value={section.cle}>
-                  {section.titre} {section.isActive ? "✓" : " (Désactivée)"}
+                  {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : section.titre} {section.isActive ? "✓" : " (Désactivée)"}
                 </option>
               ))}
             </optgroup>
@@ -502,7 +509,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 onClick={() => handleTabChange(section.cle)}
                 className="flex-1 text-left py-1 px-2"
               >
-                {section.titre}
+                {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : section.titre}
               </button>
               <button
                 type="button"
@@ -598,13 +605,24 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                             <button
                               type="button"
                               onClick={() => handleToggleBlogPublish(article.id, !article.isPublished)}
-                              className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                              className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all hover:scale-105 active:scale-95 ${
                                 article.isPublished
-                                  ? "bg-green-50 border-green-200 text-green-700"
-                                  : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                                  ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                  : "bg-slate-550 border-slate-200 text-slate-500 hover:bg-slate-100"
                               }`}
+                              title={article.isPublished ? "Désactiver (Passer en Brouillon)" : "Activer (Publier en ligne)"}
                             >
-                              {article.isPublished ? "Publié" : "Brouillon"}
+                              {article.isPublished ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Actif (Publié)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>Inactif (Brouillon)</span>
+                                </>
+                              )}
                             </button>
                           </td>
                           <td className="p-3 text-right">
@@ -650,13 +668,24 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                           <button
                             type="button"
                             onClick={() => handleToggleBlogPublish(article.id, !article.isPublished)}
-                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all ${
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-all ${
                               article.isPublished
                                 ? "bg-green-50 border-green-200 text-green-700"
-                                : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                                : "bg-slate-550 border-slate-250 text-slate-500"
                             }`}
+                            title={article.isPublished ? "Désactiver (Passer en Brouillon)" : "Activer (Publier en ligne)"}
                           >
-                            {article.isPublished ? "Publié" : "Brouillon"}
+                            {article.isPublished ? (
+                              <>
+                                <Eye className="w-3 h-3" />
+                                <span>Actif</span>
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-3 h-3" />
+                                <span>Inactif</span>
+                              </>
+                            )}
                           </button>
                         </div>
 
@@ -693,7 +722,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {activeSection.titre}
+                      {activeSection.cle === "historique" ? "Notre Histoire / Centres (Historique)" : activeSection.titre}
                     </h2>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -801,6 +830,28 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                         onChange={(e) => handleFieldChange("text", e.target.value)}
                         className="w-full text-sm p-3 rounded-xl border border-slate-250"
                       />
+                    </div>
+
+                    {/* Physical Centers Title & Subtitle */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre de la section des Centres</label>
+                        <input
+                          type="text"
+                          value={formFields.centers_title || ""}
+                          onChange={(e) => handleFieldChange("centers_title", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Sous-titre de la section des Centres</label>
+                        <input
+                          type="text"
+                          value={formFields.centers_subtitle || ""}
+                          onChange={(e) => handleFieldChange("centers_subtitle", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                        />
+                      </div>
                     </div>
 
                     {/* Physical Centers List */}
@@ -1148,6 +1199,76 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                                   value={stat.label || ""}
                                   onChange={(e) => handleNestedFieldChange("stats", idx, "label", e.target.value)}
                                   className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Success Percentages List */}
+                    <div className="space-y-4 pt-6 border-t border-slate-150">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-800">
+                          Taux de Réussite par École
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => handleAddNestedItem("percentages", { year: "", inphb: "", cme: "", esatic: "" })}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-250 text-slate-700 transition-all border"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Ajouter une Année
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {(formFields.percentages || []).map((row: any, idx: number) => (
+                          <div key={idx} className="p-4 border border-slate-250 rounded-2xl bg-slate-50/50 space-y-3 relative">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNestedItem("percentages", idx)}
+                              className="absolute top-2 right-2 text-xs font-bold text-red-500 hover:bg-red-50 p-1 rounded-lg"
+                            >
+                              Retirer
+                            </button>
+                            <span className="text-xs font-bold text-[#D4A017]">Ligne #{idx + 1}</span>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 mb-0.5">Année (ex: 2025)</label>
+                                <input
+                                  type="text"
+                                  value={row.year || ""}
+                                  onChange={(e) => handleNestedFieldChange("percentages", idx, "year", e.target.value)}
+                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 mb-0.5">INP-HB (ex: 98,60%)</label>
+                                <input
+                                  type="text"
+                                  value={row.inphb || ""}
+                                  onChange={(e) => handleNestedFieldChange("percentages", idx, "inphb", e.target.value)}
+                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 mb-0.5">CME (ex: 100%)</label>
+                                <input
+                                  type="text"
+                                  value={row.cme || ""}
+                                  onChange={(e) => handleNestedFieldChange("percentages", idx, "cme", e.target.value)}
+                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-600 mb-0.5">ESATIC (ex: 97,10%)</label>
+                                <input
+                                  type="text"
+                                  value={row.esatic || ""}
+                                  onChange={(e) => handleNestedFieldChange("percentages", idx, "esatic", e.target.value)}
+                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
                                 />
                               </div>
                             </div>

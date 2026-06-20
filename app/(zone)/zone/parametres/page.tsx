@@ -53,8 +53,7 @@ export default async function ZoneParametresPage() {
   const initialConfig = {
     zone: managerProfile.zone,
     lienWave: existingConfig?.lienWave ?? null,
-    lienMomo: existingConfig?.lienMomo ?? null,
-    lienOrange: existingConfig?.lienOrange ?? null,
+    numeroWave: existingConfig?.numeroWave ?? null,
     adresse: existingConfig?.adresse ?? null,
     telephone: existingConfig?.telephone ?? null,
   };
@@ -69,7 +68,7 @@ export default async function ZoneParametresPage() {
       <div>
         <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Paramètres de la Zone</h1>
         <p className="text-slate-500 text-xs mt-1">
-          Configurez les numéros de téléphone, comptes de paiement (MTN, Wave) et l'adresse de votre zone :{" "}
+          Configurez le numéro de téléphone, l'adresse et les comptes de paiement Wave CI de votre zone :{" "}
           <span className="font-bold text-[#0F172A] uppercase">
             {formatZoneName(managerProfile.zone)}
           </span>

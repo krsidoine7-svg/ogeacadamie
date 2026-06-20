@@ -9,6 +9,7 @@ interface ZoneConfigData {
   id?: string;
   zone: string;
   lienWave: string | null;
+  numeroWave: string | null;
   adresse: string | null;
   telephone: string | null;
 }
@@ -21,6 +22,7 @@ export default function ZoneSettingsForm({ initialConfig }: ZoneSettingsFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     lienWave: initialConfig.lienWave || "",
+    numeroWave: initialConfig.numeroWave || "",
     adresse: initialConfig.adresse || "",
     telephone: initialConfig.telephone || "",
   });
@@ -40,8 +42,7 @@ export default function ZoneSettingsForm({ initialConfig }: ZoneSettingsFormProp
     try {
       const res = await updateZoneConfigByManager({
         lienWave: formData.lienWave.trim() || null,
-        lienMomo: null, // Deactivated/cleared
-        lienOrange: null, // Deactivated/cleared
+        numeroWave: formData.numeroWave.trim() || null,
         adresse: formData.adresse.trim() || null,
         telephone: formData.telephone.trim() || null,
       });
@@ -75,11 +76,11 @@ export default function ZoneSettingsForm({ initialConfig }: ZoneSettingsFormProp
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Wave Payment Detail */}
+          {/* Wave Merchant Link */}
           <div className="space-y-1.5 md:col-span-2">
             <label htmlFor="lienWave" className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <CreditCard className="w-3.5 h-3.5 text-blue-500" />
-              <span>Numéro ou Lien Wave Marchand :</span>
+              <span>Lien Wave Marchand :</span>
             </label>
             <input
               type="text"
@@ -87,9 +88,25 @@ export default function ZoneSettingsForm({ initialConfig }: ZoneSettingsFormProp
               name="lienWave"
               value={formData.lienWave}
               onChange={handleChange}
-              placeholder="Ex: https://wave.me/to/... ou 07 00 00 00 00"
+              placeholder="Ex: https://wave.me/to/..."
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#D4A017] focus:border-transparent bg-slate-50/50"
-              required
+            />
+          </div>
+
+          {/* Wave Transfer Phone Number */}
+          <div className="space-y-1.5 md:col-span-2">
+            <label htmlFor="numeroWave" className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5 text-blue-500" />
+              <span>Numéro de Téléphone Wave :</span>
+            </label>
+            <input
+              type="text"
+              id="numeroWave"
+              name="numeroWave"
+              value={formData.numeroWave}
+              onChange={handleChange}
+              placeholder="Ex: 07 08 08 08 08"
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#D4A017] focus:border-transparent bg-slate-50/50"
             />
           </div>
 
@@ -97,7 +114,7 @@ export default function ZoneSettingsForm({ initialConfig }: ZoneSettingsFormProp
           <div className="space-y-1.5 md:col-span-2">
             <label htmlFor="telephone" className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Téléphone de Contact Zone :</span>
+              <span>Téléphone de Contact Zone (Responsable de Zone) :</span>
             </label>
             <input
               type="text"

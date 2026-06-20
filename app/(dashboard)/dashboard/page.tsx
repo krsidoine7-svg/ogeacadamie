@@ -145,7 +145,7 @@ export default async function DashboardPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Link
-                href="/dashboard/cours"
+                href="/dashboard/documents?type=cours"
                 className="flex items-center gap-4 bg-white border border-slate-200 p-4 rounded-xl hover:border-slate-300 transition-all duration-200"
               >
                 <div className="w-10 h-10 rounded-lg bg-[#0F172A]/5 text-[#0F172A] flex items-center justify-center flex-shrink-0">
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
               </Link>
 
               <Link
-                href="/dashboard/exercices"
+                href="/dashboard/documents?type=exercice"
                 className="flex items-center gap-4 bg-white border border-slate-200 p-4 rounded-xl hover:border-slate-300 transition-all duration-200"
               >
                 <div className="w-10 h-10 rounded-lg bg-[#0F172A]/5 text-[#0F172A] flex items-center justify-center flex-shrink-0">

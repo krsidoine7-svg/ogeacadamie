@@ -11,7 +11,22 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.2 (Centrage du Texte & Modernisation - Style CinetPay & Boutons Premium) :** L'intégralité du texte et des éléments de la page d'accueil (Hero, Historique, Lieux Physiques & Contacts de Zone, ainsi que les guides interactifs d'orientation) a été centrée. La section Héro adopte un design sombre (fond `#0A0E17` avec halos orange-rouge) avec des boutons d'actions premium (`rounded-xl`, effets de translation, dégradé de couleur orange-rouge pour "S'inscrire" et design vitré pour "Se connecter"). Le bouton WhatsApp a été converti en bouton flottant (`fixed bottom-6 right-6`) persistant à l'écran avec une infobulle glissante et une animation fluide.
 >
 > **Version 1.3 (Correction ESLint, Typages Stricts & Compilation Production) :** Résolution des erreurs de compilation TypeScript et de typages inconsistants dans la grille de blog (`BlogGrid.tsx` et `app/page.tsx`), ajustement du typage de la case d'acceptation dans `OnboardingStep1.tsx`, correction du rendu récursif de state d'effet dans `AdminMobileNav.tsx`, et exclusion des avertissements cosmétiques bloquants dans `eslint.config.mjs` pour garantir un build de production propre et validé.
-
+>
+> **Version 1.4 (Structure En Ligne vs Présentiel & Gestionnaire CMS) :** Modification du libellé de l'onglet historique dans `CMSClient.tsx` pour afficher explicitement "Notre Histoire / Centres (Historique)". Ajout de champs CMS éditables pour le titre/sous-titre de la section des centres (`centers_title` et `centers_subtitle`). Séparation visuelle sur la page d'accueil (`app/page.tsx`) entre la préparation en ligne (carte premium dédiée avec boutons d'action vers le support unique au +225 01 71 61 95 31, sans affichage textuel brut du numéro) et la préparation en présentiel (grille réactive des centres physiques).
+>
+> **Version 1.5 (Taux de Réussite Dynamiques) :** Intégration de l'historique des taux de réussite globaux (Années 2023 à 2025 pour les écoles INP-HB, CME et ESATIC) dans le CMS. Ajout d'une table interactive gérable sous l'onglet "Nos Résultats" dans `CMSClient.tsx` et affichage dynamique de cette table sur la page d'accueil sous la grille des chiffres clés.
+>
+> **Version 1.6 (Boutons d'Activation de Blog Interactifs) :** Remplacement des badges de publication passifs ("Publié" / "Brouillon") de la liste des articles de blog dans `CMSClient.tsx` par des boutons d'activation interactifs clairs "Actif (Publié)" et "Inactif (Brouillon)" dotés d'icônes Eye/EyeOff pour rendre le basculement de statut évident et cliquable.
+>
+> **Version 1.7 (Résolution des Redirections de Documents Candidat) :** Correction des erreurs 404 sur les routes `/dashboard/cours` et `/dashboard/exercices`. Mise en place de redirections dans `next.config.ts` vers `/dashboard/documents` avec filtrage par type (`?type=cours` et `?type=exercice`), mise à jour des raccourcis dans le tableau de bord candidat (`app/(dashboard)/dashboard/page.tsx`) et modification de `DocumentsList.tsx` pour pré-sélectionner l'onglet correspondant à la catégorie demandée.
+>
+> **Version 1.8 (Filtrage & Upload de Documents Zone/Mode) :** Ajout de colonnes `mode_formation` et `zone` à la table `documents`. Extension de l'API d'upload et des server actions de documents pour supporter le rôle `manager_zone` et forcer leur zone géographique cible. Création de la page `/zone/documents` et de son interface `ZoneDocumentsClient` pour permettre aux managers locaux d'ajouter des fichiers PDF. Mise à jour de la récupération et de la visualisation des documents candidats pour filtrer sur leur zone locale et leur mode de préparation (présentiel/en ligne) avec double validation côté backend.
+>
+> **Version 1.9 (Visualiseur PDF Premium avec PDF.js & Rendu Haute Définition) :** Refondation du lecteur de documents PDF pour les candidats. Abandon des frames standard au profit du rendu dynamique par canvas basé sur PDF.js avec support Retina. Intégration de contrôles de zoom interactifs, d'un sélecteur de thèmes (sombre/clair/sépia), d'un suivi de la page active au défilement, et d'un quadrillage de filigrane apposé directement sur chaque page.
+>
+> **Version 1.10 (Contrôle d'Activation de la Sécurité PDF) :** Ajout d'un bouton switch animé premium sur la console d'administration et de super-administration pour activer et désactiver globalement les restrictions de sécurité PDF. Intégration de l'état du switch dans la base de données (`system_config`). Mise à jour du visualiseur candidat pour masquer les filigranes nominatifs, annuler les blocages anti-copie (clic droit, impression, floutage au changement d'onglet) et ajouter un bouton de téléchargement direct du cours lorsque la sécurité est désactivée.
+>
+> **Version 1.11 (Compatibilité Mobile & Réactivité du Visualiseur PDF) :** Intégration d'une gestion fluide des dimensions et ratios d'aspect en CSS (`aspect-ratio`, `w-full`, `max-width`) pour les pages de canvas PDF afin d'éviter tout débordement horizontal sur smartphone. Optimisation de la barre d'outils supérieure en masquant le badge candidat (`hidden sm:flex`), en condensant les contrôles et en masquant dynamiquement le pourcentage de zoom sur les écrans étroits.
 
 ---
 
@@ -128,7 +143,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Affichage visuel du statut actuel du paiement (badge couleur, description dynamique et motif de rejet).
   * **Relations :** Consommé par `PaiementModal.tsx`.
 * **[PaiementModal.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/candidat/PaiementModal.tsx)**
-  * **Description :** Modal bloquante affichant les coordonnées de versement Wave CI (lien de paiement marchand ou numéro) de la zone du candidat, ainsi que l'uploader de capture d'écran du reçu.
+  * **Description :** Modal bloquante affichant les coordonnées de versement Wave CI (champs distincts pour le lien de paiement marchand et/ou le numéro de téléphone Wave) de la zone du candidat, ainsi que l'uploader de capture d'écran du reçu.
   * **Relations :** Consomme `PaiementUpload` et `PaiementStatus`. Consommé par `PaiementModalWrapper.tsx`.
 * **[PaiementModalWrapper.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/candidat/PaiementModalWrapper.tsx)**
   * **Description :** Wrapper client déclenchant `router.refresh()` à la suite d'un upload validé de preuve de paiement.
@@ -154,7 +169,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Interface de validation des paiements filtrée par défaut sur les éléments en cours de vérification.
   * **Relations :** Consomme `CaptureViewer.tsx`. Importé par `app/(zone)/zone/paiements/page.tsx`.
 * **[ZoneSettingsForm.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZoneSettingsForm.tsx)**
-  * **Description :** Formulaire de mise à jour des informations de paiement (Wave CI marchand/numéro uniquement), contact téléphonique et adresse physique de la zone locale.
+  * **Description :** Formulaire de mise à jour des informations de paiement (champs distincts pour le lien Wave Marchand et le numéro de téléphone Wave), contact de la zone et adresse physique de la zone locale.
   * **Relations :** Appelle l'action serveur `updateZoneConfigByManager`. Importé par `app/(zone)/zone/parametres/page.tsx`.
 
 ---
@@ -168,7 +183,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Layout global de l'application Next.js. Charge les polices Geist (Sans et Mono), définit le squelette HTML racine, et configure le Toaster pour les notifications.
   * **Relations :** Importe [globals.css](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/globals.css) et le composant [sonner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/sonner.tsx).
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/page.tsx)**
-  * **Description :** Page d'accueil publique de la plateforme OGE Académie. Affiche de façon dynamique les blocs configurés en base de données (Hero, Historique, Formations, Résultats, Témoignages, Inscription, Footer) avec fallbacks en cas de base vide.
+  * **Description :** Page d'accueil publique de la plateforme OGE Académie. Affiche de façon dynamique les blocs configurés en base de données (Hero, Historique, Formations, Résultats, Témoignages, Inscription, Footer) avec fallbacks en cas de base vide. Sépare la section historique/centres en deux parties distinctes : la préparation en ligne (carte à distance) et la préparation en présentiel (lieux physiques).
   * **Relations :** Chargée sous [layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/layout.tsx). Consomme Drizzle ORM, interroge les tables `page_sections` et `temoignages`, et rend le composant `HeaderNavbar`.
 * **[globals.css](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/globals.css)**
   * **Description :** Styles globaux de l'application incluant la configuration de Tailwind CSS.
@@ -226,7 +241,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Page serveur de visualiseur sécurisé. Vérifie les droits d'accès au document, logge l'accès dans `acces_documents` et génère un lien signé vers Supabase Storage.
   * **Relations :** Consomme `SecureViewerClient`.
 * **[documents/viewer/SecureViewerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/documents/viewer/SecureViewerClient.tsx)**
-  * **Description :** Visualiseur PDF client sécurisé. Intègre un filigrane de l'email candidat, bloque le clic droit, les raccourcis d'impression/sauvegarde (Ctrl+P, Ctrl+S) et floute l'affichage lors de la perte de focus.
+  * **Description :** Visualiseur PDF sécurisé haut de gamme utilisant PDF.js pour un rendu rasterisé sur éléments canvas HTML5. Gère le zoom réactif, l'ajustement automatique à la largeur, le défilement fluide, le suivi dynamique des pages dans la barre d'outils, les thèmes de lecture (sombre, clair, sépia), le support Retina/High-DPI, et place un quadrillage de filigrane directement sur les pages au-dessus du canvas pour empêcher les détournements. Bloque le clic droit, le raccourci d'impression (`Ctrl+P`) et de sauvegarde, et floute automatiquement le contenu en cas de perte de focus de la fenêtre.
   * **Relations :** Consommé par `documents/viewer/page.tsx`.
 * **[profil/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/profil/page.tsx)**
   * **Description :** Page de profil candidat. Récupère les données depuis Drizzle.
@@ -278,8 +293,11 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Index du dashboard d'administration globale affichant les indicateurs de performance (KPIs), statistiques de concours, répartition géographique et statistiques par canal de paiement (Wave, MoMo, Orange). Affiche un bandeau d'alerte pour les demandes de double contrôle en attente.
   * **Relations :** Consomme Drizzle ORM (y compris `adminPendingActions` et `paiements`).
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/actions.ts)**
-  * **Description :** Actions serveur réservées aux administrateurs (gestion d'activation, soft delete, promotion de managers, affectation de zone, configuration de reçu Wave/MoMo, envoi d'annonces, activation/désactivation de sections de la page d'accueil et CRUD des témoignages).
+  * **Description :** Actions serveur réservées aux administrateurs (gestion d'activation, soft delete, promotion de managers, affectation de zone, configuration de reçu Wave/MoMo, envoi d'annonces, activation/désactivation de sections de la page d'accueil et CRUD des témoignages, ainsi que le contrôle global de sécurité des supports PDF).
   * **Relations :** Consommé par les composants clients de l'espace admin.
+* **[PdfSecurityToggleButton.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/PdfSecurityToggleButton.tsx)**
+  * **Description :** Bouton switch client animé de basculement global de la sécurité des PDF.
+  * **Relations :** Consommé par `app/(admin)/admin/page.tsx` et appelle `togglePdfSecurity` dans `actions.ts`.
 * **[candidats/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/candidats/page.tsx)**
   * **Description :** Page serveur de gestion de la base de données des candidats.
   * **Relations :** Consomme `CandidatsListClient`.
@@ -314,7 +332,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Page serveur du gestionnaire de contenu (CMS). Récupère la liste des sections de la page d'accueil et les témoignages candidats en base de données.
   * **Relations :** Consomme Drizzle ORM. Rend le composant `CMSClient.tsx`.
 * **[contenu/CMSClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/contenu/CMSClient.tsx)**
-  * **Description :** Interface client interactive d'administration du CMS. Permet de modifier le contenu des sections (y compris la section Inscription/Urgence avec ses cartes arguments), et de gérer les témoignages/actualités (créer, modifier, basculer actif/inactif, soft delete).
+  * **Description :** Interface client interactive d'administration du CMS. Permet de modifier le contenu des sections (y compris la section Inscription/Urgence avec ses cartes arguments, et les titres/coordonnées de la section des Centres d'Accompagnement), et de gérer les témoignages/actualités (créer, modifier, basculer actif/inactif, soft delete).
   * **Relations :** Importe les server actions de `actions.ts`. Consommé par `contenu/page.tsx`.
 * **[documents/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/documents/page.tsx)**
   * **Description :** Page d'administration des supports de cours et de planification des sessions Google Meet.
@@ -347,9 +365,15 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[parametres/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/parametres/page.tsx)**
   * **Description :** Page d'édition de la configuration de paiement (liens/numéros Wave/MoMo, téléphone de contact, adresse du centre local).
   * **Relations :** Consomme `ZoneSettingsForm`.
+* **[documents/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/page.tsx)**
+  * **Description :** Page de listing et d'ajout de documents de cours/TD spécifiques à la zone du manager.
+  * **Relations :** Charge le composant client `ZoneDocumentsClient.tsx`.
+* **[documents/ZoneDocumentsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/ZoneDocumentsClient.tsx)**
+  * **Description :** Composant client interactif d'upload et de gestion des documents PDF pour la zone.
+  * **Relations :** Appelle les server actions `managerCreateDocument`, `managerToggleDocumentActive`, et `managerDeleteDocument`.
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/actions.ts)**
-  * **Description :** Actions serveur pour valider ou rejeter un paiement de candidat, activer son compte, lui envoyer une notification par e-mail et configurer la zone.
-  * **Relations :** Importé par `CaptureViewer.tsx` et `ZoneSettingsForm.tsx`.
+  * **Description :** Actions serveur pour valider ou rejeter un paiement de candidat, configurer la zone, ainsi que la création/modification/suppression des documents spécifiques de zone.
+  * **Relations :** Importé par `CaptureViewer.tsx`, `ZoneSettingsForm.tsx`, et `ZoneDocumentsClient.tsx`.
 
 ---
 

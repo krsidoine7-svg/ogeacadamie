@@ -4,11 +4,17 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, documents, concoursInscrits, paiements } from "@/drizzle/schema";
-import { eq, and, or, inArray, asc, desc } from "drizzle-orm";
+import { eq, and, or, inArray, asc, desc, isNull } from "drizzle-orm";
 import DocumentsList from "./DocumentsList";
 import { BookOpen, AlertCircle } from "lucide-react";
 
-export default async function DocumentsPage() {
+interface DocumentsPageProps {
+  searchParams: Promise<{ type?: string }>;
+}
+
+export default async function DocumentsPage({ searchParams }: DocumentsPageProps) {
+  const params = await searchParams;
+  const initialType = params.type || "all";
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -46,7 +52,7 @@ export default async function DocumentsPage() {
 
   const registeredConcoursList = registrations.map((r) => r.concours as string);
 
-  // 5. Fetch documents related to candidate's registered concours or common documents
+  // 5. Fetch documents related to candidate's registered concours, mode of training, and zone
   const availableDocuments = await db
     .select({
       id: documents.id,
@@ -55,18 +61,33 @@ export default async function DocumentsPage() {
       fichierUrl: documents.fichierUrl,
       concours: documents.concours,
       type: documents.type,
+      modeFormation: documents.modeFormation,
+      zone: documents.zone,
       createdAt: documents.createdAt,
     })
     .from(documents)
     .where(
       and(
         eq(documents.isActive, true),
+        isNull(documents.deletedAt),
         registeredConcoursList.length > 0
           ? or(
               eq(documents.concours, "tous"),
               inArray(documents.concours, registeredConcoursList)
             )
-          : eq(documents.concours, "tous")
+          : eq(documents.concours, "tous"),
+        profile.modeFormation
+          ? or(
+              eq(documents.modeFormation, "tous"),
+              eq(documents.modeFormation, profile.modeFormation)
+            )
+          : eq(documents.modeFormation, "tous"),
+        profile.zone
+          ? or(
+              eq(documents.zone, "tous"),
+              eq(documents.zone, profile.zone)
+            )
+          : eq(documents.zone, "tous")
       )
     )
     .orderBy(asc(documents.ordre), desc(documents.createdAt));
@@ -105,6 +126,7 @@ export default async function DocumentsPage() {
       <DocumentsList
         documents={availableDocuments}
         registeredConcours={registeredConcoursList}
+        initialType={initialType}
       />
     </div>
   );

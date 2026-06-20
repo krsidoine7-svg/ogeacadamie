@@ -2,18 +2,18 @@
 
 import React, { useState } from "react";
 import { toast } from "sonner";
-import { createDocument, toggleDocumentActive, deleteDocument } from "../actions";
-import { createClient } from "@/utils/supabase/client";
-import { Plus, Trash2, Calendar, FileText, Globe, Check, X, ShieldAlert, AlertCircle, Video, Loader2 } from "lucide-react";
+import { managerCreateDocument, managerToggleDocumentActive, managerDeleteDocument } from "../actions";
+import { Plus, Trash2, FileText, Check, X, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
-interface DocumentsManagerClientProps {
+interface ZoneDocumentsClientProps {
   initialDocuments: any[];
+  managerZone: string;
 }
 
-export default function DocumentsManagerClient({ initialDocuments }: DocumentsManagerClientProps) {
+export default function ZoneDocumentsClient({ initialDocuments, managerZone }: ZoneDocumentsClientProps) {
   const [documentsList, setDocumentsList] = useState<any[]>(initialDocuments);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLive, setIsLive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
@@ -24,22 +24,25 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     type: "cours",
     concours: "tous",
     modeFormation: "tous",
-    zone: "tous",
     ordre: "0",
     fichierUrl: "",
-    scheduledAt: "",
-    durationHours: "2",
   });
 
-  const supabase = createClient();
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type: "deactivate" | "delete" | null;
+    docId: string | null;
+    docTitle: string;
+  }>({
+    isOpen: false,
+    type: null,
+    docId: null,
+    docTitle: "",
+  });
 
   const handleToggleActive = async (id: string, active: boolean) => {
-    if (!active) {
-      if (!confirm("Voulez-vous vraiment désactiver ce support ? Il ne sera plus visible par les candidats.")) return;
-    }
-
     try {
-      const res = await toggleDocumentActive(id, active);
+      const res = await managerToggleDocumentActive(id, active);
       if (res.success) {
         setDocumentsList((prev) =>
           prev.map((d) => (d.id === id ? { ...d, isActive: active } : d))
@@ -53,11 +56,9 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer ce support ? Cela annulera également l'événement Google Calendar associé.")) return;
-
+  const executeDelete = async (id: string) => {
     try {
-      const res = await deleteDocument(id);
+      const res = await managerDeleteDocument(id);
       if (res.success) {
         setDocumentsList((prev) => prev.filter((d) => d.id !== id));
         toast.success("Support supprimé.");
@@ -66,6 +67,41 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
       }
     } catch (err) {
       toast.error("Erreur réseau.");
+    }
+  };
+
+  const handleToggleClick = (id: string, titre: string, currentActive: boolean) => {
+    if (currentActive) {
+      setConfirmDialog({
+        isOpen: true,
+        type: "deactivate",
+        docId: id,
+        docTitle: titre,
+      });
+    } else {
+      handleToggleActive(id, true);
+    }
+  };
+
+  const handleDeleteClick = (id: string, titre: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      type: "delete",
+      docId: id,
+      docTitle: titre,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { type, docId } = confirmDialog;
+    if (!docId) return;
+
+    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+
+    if (type === "deactivate") {
+      await handleToggleActive(docId, false);
+    } else if (type === "delete") {
+      await executeDelete(docId);
     }
   };
 
@@ -85,7 +121,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
     setUploadProgress(0);
     
-    // Simulate upload progress since server-side encryption handles uploading
+    // Simulate upload progress
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev === null) return 0;
@@ -95,12 +131,13 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
         }
         return prev + 10;
       });
-    }, 150);
+    }, 155);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
+      // Reuses the admin upload route (updated to support manager role)
       const response = await fetch("/api/admin/documents/upload", {
         method: "POST",
         body: formData,
@@ -131,21 +168,19 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
       return;
     }
 
-    if (!isLive && !form.fichierUrl) {
-      toast.error("Veuillez téléverser un document PDF ou cocher l'option Cours en Direct.");
+    if (!form.fichierUrl) {
+      toast.error("Veuillez téléverser un document PDF.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const payload = {
+      const res = await managerCreateDocument({
         ...form,
-        scheduledAt: isLive ? form.scheduledAt : "",
-      };
-
-      const res = await createDocument(payload);
+        type: form.type as any,
+      });
       if (res.success) {
-        toast.success(isLive ? "Cours en direct programmé avec succès !" : "Document de cours créé avec succès !");
+        toast.success("Document de cours créé avec succès !");
         window.location.reload();
       } else {
         toast.error(res.error || "Une erreur est survenue.");
@@ -157,23 +192,27 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     }
   };
 
+  const formatZoneName = (name: string) => {
+    return name.charAt(0).toUpperCase() + name.slice(1).replace("-", " ");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center pb-4 border-b border-slate-200">
         <h2 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <FileText className="w-5 h-5 text-[#D4A017]" />
-          Listing des supports
+          Supports de la Zone : <span className="text-[#D4A017]">{formatZoneName(managerZone)}</span>
         </h2>
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1.5 px-4 py-2 bg-[#D4A017] hover:bg-yellow-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Ajouter un Support / Direct
+          Ajouter un Document PDF
         </button>
       </div>
 
-      {/* CREATE MODAL / DRAWER */}
+      {/* CREATE MODAL */}
       {isOpen && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-4 max-w-3xl animate-fade-in">
           <div className="flex justify-between items-center">
@@ -191,7 +230,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-250 bg-white"
-                  placeholder="ex: TD Limites et Continuité"
+                  placeholder="ex: TD Géométrie dans l'espace"
                 />
               </div>
 
@@ -225,19 +264,15 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Zone Cible</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Document</label>
                 <select
-                  value={form.zone}
-                  onChange={(e) => setForm({ ...form, zone: e.target.value })}
+                  value={form.type}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
                   className="w-full p-2.5 rounded-xl border border-slate-250 bg-white"
                 >
-                  <option value="tous">Toutes les zones (Global)</option>
-                  <option value="yamoussoukro">Yamoussoukro</option>
-                  <option value="yopougon">Yopougon</option>
-                  <option value="abobo">Abobo</option>
-                  <option value="cocody">Cocody</option>
-                  <option value="port-bouet">Port-Bouët</option>
-                  <option value="bouake">Bouaké</option>
+                  <option value="cours">Cours / Support principal</option>
+                  <option value="exercice">Exercice / Fiche de TD</option>
+                  <option value="corrige">Corrigé officiel</option>
                 </select>
               </div>
             </div>
@@ -255,19 +290,6 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Type de Document</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-250 bg-white"
-                >
-                  <option value="cours">Cours / Support principal</option>
-                  <option value="exercice">Exercice / Fiche de TD</option>
-                  <option value="corrige">Corrigé officiel</option>
-                </select>
-              </div>
-
-              <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Ordre d'affichage</label>
                 <input
                   type="number"
@@ -277,71 +299,28 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                   placeholder="0"
                 />
               </div>
-            </div>
 
-            {/* LIVE OPTION CHECKBOX */}
-            <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl space-y-3">
-              <label className="flex items-center gap-2 font-bold text-slate-800 cursor-pointer">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Fichier PDF *</label>
                 <input
-                  type="checkbox"
-                  checked={isLive}
-                  onChange={(e) => {
-                    setIsLive(e.target.checked);
-                    if (e.target.checked) setForm((prev) => ({ ...prev, type: "cours" }));
-                  }}
-                  className="w-4 h-4 rounded border-slate-300 text-[#D4A017]"
+                  type="file"
+                  accept=".pdf"
+                  required
+                  onChange={handleFileChange}
+                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4A017]/10 file:text-[#D4A017] hover:file:bg-[#D4A017]/20 file:cursor-pointer"
                 />
-                Planifier comme un cours en direct (Google Meet)
-              </label>
-
-              {isLive ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Date et Heure de Début *</label>
-                    <input
-                      type="datetime-local"
-                      required={isLive}
-                      value={form.scheduledAt}
-                      onChange={(e) => setForm({ ...form, scheduledAt: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-250 bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Durée estimée (Heures)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={form.durationHours}
-                      onChange={(e) => setForm({ ...form, durationHours: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-250 bg-white"
-                      placeholder="2"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="pt-2 border-t border-slate-200">
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Document PDF *</label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4A017]/10 file:text-[#D4A017] hover:file:bg-[#D4A017]/20 file:cursor-pointer"
-                  />
-                  {uploadProgress !== null && (
-                    <div className="mt-2 text-xs flex items-center gap-2">
-                      <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[200px]">
-                        <div className="bg-[#D4A017] h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
-                      </div>
-                      <span className="font-bold">{uploadProgress}%</span>
+                {uploadProgress !== null && (
+                  <div className="mt-2 text-xs flex items-center gap-2">
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[200px]">
+                      <div className="bg-[#D4A017] h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
                     </div>
-                  )}
-                  {form.fichierUrl && (
-                    <p className="mt-1 text-xs text-green-700 font-mono font-bold">Fichier prêt : {form.fichierUrl}</p>
-                  )}
-                </div>
-              )}
+                    <span className="font-bold">{uploadProgress}%</span>
+                  </div>
+                )}
+                {form.fichierUrl && (
+                  <p className="mt-1 text-xs text-green-705 font-mono font-bold">Fichier prêt : {form.fichierUrl.split("/").pop()}</p>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
@@ -374,7 +353,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
       {/* DOCUMENTS LISTING TABLE */}
       {documentsList.length === 0 ? (
         <div className="text-center p-12 border border-dashed border-slate-200 rounded-3xl text-slate-400 text-xs">
-          Aucun support d'étude n'a été publié. Cliquez sur "Ajouter un Support" pour commencer.
+          Aucun support de cours n'a été téléversé pour cette zone. Cliquez sur "Ajouter un Document PDF" pour commencer.
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
@@ -386,7 +365,8 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                   <th className="p-4">Ressource</th>
                   <th className="p-4">Type</th>
                   <th className="p-4">Concours</th>
-                  <th className="p-4">Statut / Direct</th>
+                  <th className="p-4">Mode Préparation</th>
+                  <th className="p-4">Fichier</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -405,48 +385,21 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                       </span>
                     </td>
                     <td className="p-4 text-xs font-bold text-slate-700 uppercase">
-                      <div className="space-y-0.5">
-                        <span className="block">{doc.concours === "tous" ? "Tous Concours" : doc.concours}</span>
-                        <span className="block text-[10px] font-medium text-slate-500 lowercase italic">
-                          {doc.modeFormation === "tous" ? "tous modes" : doc.modeFormation === "presentiel" ? "présentiel" : "en ligne"}
-                          {" • "}
-                          {doc.zone === "tous" ? "toutes zones" : doc.zone}
-                        </span>
-                      </div>
+                      {doc.concours === "tous" ? "Tous Concours" : doc.concours}
+                    </td>
+                    <td className="p-4 text-xs font-semibold text-slate-600 capitalize">
+                      {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
                     </td>
                     <td className="p-4">
-                      {doc.scheduledAt ? (
-                        <div className="space-y-1">
-                          <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
-                            <Video className="w-3.5 h-3.5" />
-                            Direct
-                          </span>
-                          <p className="text-[10px] text-slate-550 font-semibold font-mono">
-                            {new Date(doc.scheduledAt).toLocaleString("fr-FR")}
-                          </p>
-                          {doc.meetingUrl && (
-                            <a
-                              href={doc.meetingUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[10px] text-blue-600 hover:underline font-bold block truncate max-w-[150px]"
-                              title={doc.meetingUrl}
-                            >
-                              Lien Meet ✓
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[120px] block" title={doc.fichierUrl}>
-                          {doc.fichierUrl?.split("/").pop()}
-                        </span>
-                      )}
+                      <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[120px] block" title={doc.fichierUrl}>
+                        {doc.fichierUrl?.split("/").pop()}
+                      </span>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {/* Toggle Active Button */}
                         <button
-                          onClick={() => handleToggleActive(doc.id, !doc.isActive)}
+                          onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
                           className={`p-1.5 rounded-lg border transition-all ${
                             doc.isActive
                               ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
@@ -459,7 +412,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
                         {/* Delete Button */}
                         <button
-                          onClick={() => handleDelete(doc.id)}
+                          onClick={() => handleDeleteClick(doc.id, doc.titre)}
                           className="p-1.5 bg-red-55 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
                           title="Supprimer définitivement"
                         >
@@ -473,7 +426,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
             </table>
           </div>
 
-          {/* Mobile View: Stacked Cards (no horizontal scroll) */}
+          {/* Mobile View: Stacked Cards */}
           <div className="sm:hidden divide-y divide-slate-100">
             {documentsList.map((doc) => (
               <div key={doc.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
@@ -490,47 +443,21 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                     {doc.concours === "tous" ? "Tous Concours" : doc.concours}
                   </span>
                   <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold capitalize">
-                    {doc.modeFormation === "tous" ? "Tous Modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
-                  </span>
-                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold capitalize">
-                    {doc.zone === "tous" ? "Toutes Zones" : doc.zone}
+                    {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
                   </span>
                 </div>
 
                 <div className="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] gap-2">
                   <div className="flex-1 min-w-0">
-                    {doc.scheduledAt ? (
-                      <div className="space-y-1">
-                        <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
-                          <Video className="w-3 h-3" />
-                          Direct
-                        </span>
-                        <p className="text-[10px] text-slate-500 font-mono">
-                          {new Date(doc.scheduledAt).toLocaleString("fr-FR")}
-                        </p>
-                        {doc.meetingUrl && (
-                          <a
-                            href={doc.meetingUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[10px] text-blue-600 hover:underline font-bold block truncate max-w-[130px]"
-                            title={doc.meetingUrl}
-                          >
-                            Lien Meet ✓
-                          </a>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[130px] block" title={doc.fichierUrl}>
-                        {doc.fichierUrl?.split("/").pop()}
-                      </span>
-                    )}
+                    <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[130px] block" title={doc.fichierUrl}>
+                      {doc.fichierUrl?.split("/").pop()}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Toggle Active Button */}
                     <button
-                      onClick={() => handleToggleActive(doc.id, !doc.isActive)}
+                      onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
                       className={`p-1.5 rounded-lg border transition-all ${
                         doc.isActive
                           ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
@@ -543,7 +470,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(doc.id)}
+                      onClick={() => handleDeleteClick(doc.id, doc.titre)}
                       className="p-1.5 bg-red-50 border border-red-250 text-red-700 hover:bg-red-100 rounded-lg transition-all"
                       title="Supprimer définitivement"
                     >
@@ -556,6 +483,50 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
           </div>
         </div>
       )}
+
+      {/* CONFIRMATION DIALOG MODAL */}
+      <Dialog 
+        open={confirmDialog.isOpen} 
+        onOpenChange={(open) => !open && setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      >
+        <DialogContent className="sm:max-w-md bg-white p-6 rounded-2xl border border-slate-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              {confirmDialog.type === "deactivate" ? "Désactiver le document" : "Supprimer le document"}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 mt-2 leading-relaxed">
+              {confirmDialog.type === "deactivate" ? (
+                <>
+                  Voulez-vous vraiment désactiver le support <span className="font-bold text-slate-800">"{confirmDialog.docTitle}"</span> ? Il ne sera plus visible ni accessible par les candidats de votre zone.
+                </>
+              ) : (
+                <>
+                  Voulez-vous vraiment supprimer définitivement le support <span className="font-bold text-slate-800">"{confirmDialog.docTitle}"</span> ? Cette action est irréversible.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleConfirmAction}
+              className={`px-5 py-2.5 text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer ${
+                confirmDialog.type === "deactivate" 
+                  ? "bg-amber-600 hover:bg-amber-700" 
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {confirmDialog.type === "deactivate" ? "Désactiver" : "Supprimer"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

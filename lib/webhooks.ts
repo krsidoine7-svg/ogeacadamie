@@ -9,6 +9,8 @@ interface DocumentWebhookData {
   fichierUrl: string | null;
   concours: string | null;
   type: string | null;
+  modeFormation?: string | null;
+  zone?: string | null;
   scheduledAt?: string | null;
   meetingUrl?: string | null;
   createdAt: string;
@@ -34,6 +36,8 @@ export async function triggerNewDocumentWebhook(document: DocumentWebhookData) {
         fichierUrl: document.fichierUrl,
         concours: document.concours,
         type: document.type,
+        modeFormation: document.modeFormation,
+        zone: document.zone,
         scheduledAt: document.scheduledAt,
         meetingUrl: document.meetingUrl,
         createdAt: document.createdAt,

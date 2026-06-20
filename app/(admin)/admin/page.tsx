@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements, concoursInscrits, adminPendingActions } from "@/drizzle/schema";
+import { profiles, paiements, concoursInscrits, adminPendingActions, pageSections } from "@/drizzle/schema";
 import { eq, and, isNull, desc } from "drizzle-orm";
-import { Users, Banknote, ShieldAlert, Award, MapPin, Calendar, Clock, ChevronRight, PieChart } from "lucide-react";
+import { Users, Banknote, ShieldAlert, Award, MapPin, Calendar, Clock, ChevronRight, PieChart, Lock, Unlock } from "lucide-react";
 import Link from "next/link";
+import PdfSecurityToggleButton from "./PdfSecurityToggleButton";
 
 /**
  * Pure SVG Donut Chart component (no external dependency)
@@ -111,6 +112,19 @@ export default async function AdminDashboardPage() {
 
   if (!adminProfile || (adminProfile.role !== "admin" && adminProfile.role !== "super_admin")) {
     redirect("/connexion");
+  }
+
+  // Fetch system configuration to check if PDF security is enabled
+  const systemConfigRow = await db.query.pageSections.findFirst({
+    where: eq(pageSections.cle, "system_config"),
+  });
+
+  let pdfSecurityEnabled = true;
+  if (systemConfigRow && systemConfigRow.contenu) {
+    const content = systemConfigRow.contenu as any;
+    if (content.enable_pdf_security === false) {
+      pdfSecurityEnabled = false;
+    }
   }
 
   // 3. Fetch data for metrics
@@ -227,6 +241,32 @@ export default async function AdminDashboardPage() {
             Bienvenue {adminProfile.prenom}. Suivez en temps réel les inscriptions, vérifiez les transactions comptables et configurez les modalités locales.
           </p>
         </div>
+      </div>
+
+      {/* PDF Security Control Toggle */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            pdfSecurityEnabled 
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-600" 
+              : "bg-amber-50 border border-amber-200 text-[#D4A017]"
+          }`}>
+            {pdfSecurityEnabled ? (
+              <Lock className="w-5 h-5 text-emerald-600" />
+            ) : (
+              <Unlock className="w-5 h-5 text-[#D4A017]" />
+            )}
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-850 text-sm">Sécurisation des Documents PDF</h3>
+            <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+              {pdfSecurityEnabled 
+                ? "La sécurité est activée : filigranes nominatifs, blocage du clic droit, de l'impression (Ctrl+P) et du téléchargement."
+                : "La sécurité est suspendue : les candidats ont accès aux PDF en mode libre avec options d'impression et de téléchargement."}
+            </p>
+          </div>
+        </div>
+        <PdfSecurityToggleButton initialEnabled={pdfSecurityEnabled} />
       </div>
 
       {/* Metric Cards Grid */}

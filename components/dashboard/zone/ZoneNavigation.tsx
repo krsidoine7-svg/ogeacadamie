@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FileCheck, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FileCheck, Settings, FileText } from "lucide-react";
 
 export function ZoneSidebarNav() {
   const pathname = usePathname();
@@ -24,6 +24,11 @@ export function ZoneSidebarNav() {
       href: "/zone/paiements",
       label: "Paiements",
       icon: FileCheck,
+    },
+    {
+      href: "/zone/documents",
+      label: "Documents",
+      icon: FileText,
     },
     {
       href: "/zone/parametres",
@@ -78,6 +83,11 @@ export function ZoneMobileNav() {
       href: "/zone/paiements",
       label: "Paiements",
       icon: FileCheck,
+    },
+    {
+      href: "/zone/documents",
+      label: "Documents",
+      icon: FileText,
     },
     {
       href: "/zone/parametres",

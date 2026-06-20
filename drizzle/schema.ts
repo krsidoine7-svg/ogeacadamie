@@ -54,6 +54,7 @@ export const zoneConfig = pgTable("zone_config", {
   zone: zoneNameEnum("zone").unique().notNull(),
   managerId: uuid("manager_id").references(() => profiles.id),
   lienWave: text("lien_wave"),
+  numeroWave: text("numero_wave"),
   lienMomo: text("lien_momo"),
   lienOrange: text("lien_orange"),
   adresse: text("adresse"),
@@ -68,6 +69,8 @@ export const documents = pgTable("documents", {
   fichierUrl: text("fichier_url"),
   concours: text("concours").default("tous"), // inphb, esatic, cme, tous
   type: documentTypeEnum("type").default("cours"),
+  modeFormation: text("mode_formation").default("tous"), // presentiel, en_ligne, tous
+  zone: text("zone").default("tous"), // yamoussoukro, yopougon, abobo, cocody, port-bouet, bouake, tous
   ordre: integer("ordre").default(0),
   isActive: boolean("is_active").default(true),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }),

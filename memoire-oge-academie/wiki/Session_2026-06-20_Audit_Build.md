@@ -75,6 +75,55 @@ Afin d'améliorer la lisibilité et d'éviter que les champs de saisie de texte 
 * **Chiffres et Libellés des Statistiques :** Passage de `grid-cols-2` à `grid-cols-1 md:grid-cols-2`.
 * **Formulaire d'ajout/modification de témoignage (Modal) :** Passage de `grid-cols-2` à `grid-cols-1 sm:grid-cols-2` pour les champs Prénom/Nom et Zone/Concours.
 
+---
+
+## 7. Clarification & Structuration En Ligne vs Présentiel (CMS)
+
+Afin d'aider l'administrateur à repérer facilement la section de configuration des centres de formation physiques et de leurs numéros de téléphone/WhatsApp, et d'offrir une flexibilité de modification complète :
+* **Nouveau libellé :** "Notre Histoire / Centres (Historique)" au lieu de "Notre Histoire" dans `CMSClient.tsx`.
+* **Champs éditables ajoutés :** Les champs de saisie pour le titre principal ("Nos Lieux Physiques & Contacts de Zone") et le sous-titre de la section des centres ont été intégrés dans le formulaire du CMS (`centers_title` et `centers_subtitle`).
+* **Séparation Visuelle (En Ligne vs Présentiel) :** Le composant `app/page.tsx` sépare désormais le rendu en deux blocs distincts :
+  - **Préparation en Ligne :** Une carte premium d'accompagnement national avec boutons d'appel direct et WhatsApp reliés au support unique **`+225 01 71 61 95 31`** pour l'e-learning et les groupes de formation à distance (sans affichage textuel brut du numéro pour un design plus épuré et professionnel).
+  - **Préparation en Présentiel :** Le titre et sous-titre dynamiques, suivis de la grille réactive de nos 6 centres physiques (Bouaké, Yamoussoukro, Yopougon, Abobo, Cocody, Port-Bouët) pour lesquels les contacts et adresses restent éditables.
+
+---
+
+## 8. Intégration Dynamique des Taux de Réussite Globaux
+
+Afin de valoriser l'excellence académique d'OGE Académie et de permettre la modification en direct des pourcentages de réussite des trois dernières années pour les concours phares :
+* **Formulaire d'édition dans le CMS :** Sous l'onglet **« Nos Résultats »** dans `/admin/contenu`, ajout d'un sous-formulaire d'édition dynamique (Année, INP-HB %, CME %, ESATIC %). L'administrateur peut à tout moment ajouter une nouvelle année, supprimer une ligne ou mettre à jour les pourcentages.
+* **Affichage Premium sur la Page d'Accueil :** Création d'un tableau réactif au style sombre et transparent (glassmorphism avec nuances de couleurs par école : or pour l'INP-HB, vert pour le CME, bleu pour l'ESATIC) qui affiche l'historique complet des taux de réussite (pré-rempli avec les données fournies : 2023, 2024, 2025).
+
+---
+
+## 9. Activation & Désactivation des Articles de Blog (CMS)
+
+Afin de simplifier et de rendre évident l'action d'activation ou de désactivation d'un article de blog depuis le CMS :
+* **Boutons interactifs clairs :** Les anciens badges passifs ("Publié" / "Brouillon") de la liste des articles ont été convertis en boutons d'action interactifs avec des icônes d'activation/masquage (`Eye` et `EyeOff`).
+* **Libellés explicites :** Ils affichent désormais **« Actif (Publié) »** (fond vert) et **« Inactif (Brouillon) »** (fond gris) avec une infobulle explicative et des animations fluides de clic, éliminant toute ambiguïté quant à leur interactivité.
+
+---
+
+## 10. Résolution des Liens Morts et Redirections dans le Dashboard Candidat
+
+Afin de corriger les erreurs 404 lors de l'accès aux routes `/dashboard/cours` et `/dashboard/exercices` (les ressources étant toutes centralisées sous `/dashboard/documents`) :
+* **Redirections Next.js :** Ajout de règles asynchrones dans `next.config.ts` pour rediriger proprement et de façon permanente les requêtes directes de `/dashboard/cours` vers `/dashboard/documents?type=cours`, et `/dashboard/exercices` vers `/dashboard/documents?type=exercice`.
+* **Mise à jour des Raccourcis :** Modification des liens internes sur la page d'accueil du dashboard candidat (`app/(dashboard)/dashboard/page.tsx`) pour qu'ils pointent directement vers ces nouvelles URL qualifiées.
+* **Filtres Client Dynamiques :** Adaptation du composant client `DocumentsList.tsx` et de sa page d'enveloppe serveur pour interroger la propriété `type` passée en query parameter, pré-sélectionnant l'onglet de ressources correspondant (Cours & Fiches ou Sujets & Exercices) pour le candidat à son arrivée.
+
+---
+
+## 11. Compatibilité Mobile & Réactivité du Visualiseur PDF (Version 1.11)
+
+Afin d'assurer une expérience utilisateur fluide et agréable sur smartphone et tablette, le visualiseur PDF sécurisé (`SecureViewerClient.tsx`) a été rendu entièrement responsive :
+* **Redimensionnement dynamique et fluide** : Utilisation de `aspect-ratio` et `w-full max-width` sur le conteneur de chaque page PDF, permettant d'adapter les pages à la largeur d'écran disponible sans créer de barre de défilement horizontal.
+* **Canvas Retina Responsif** : Configuration des propriétés CSS du canvas en `w-full h-full object-contain` pour qu'il s'ajuste au conteneur, tout en conservant son dessin vectoriel de haute résolution basé sur `devicePixelRatio`.
+* **Barre d'Outils Adaptative** :
+  - Masquage automatique du badge d'email du candidat sur mobile (`hidden sm:flex`).
+  - Masquage dynamique du pourcentage textuel de zoom sur les écrans étroits (`hidden min-[400px]:inline-block`) pour libérer de l'espace.
+  - Réduction des dimensions et des marges internes des boutons de navigation et des indicateurs de page (`min-w-[55px] sm:min-w-[70px]`, `gap-0.5 sm:gap-1`) pour éviter tout débordement.
+* **Ajustement des Marges du Viewport** : Réduction du padding horizontal du conteneur de défilement principal à `px-2 sm:px-4` sur petit écran pour élargir la zone de lecture.
+
 
 
 

@@ -24,12 +24,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Fetch candidate profile and verify admin role
+    // 2. Fetch candidate profile and verify role (admin, super_admin, or manager_zone)
     const profile = await db.query.profiles.findFirst({
       where: eq(profiles.id, user.id),
     });
 
-    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
+    const isAuthorized =
+      profile &&
+      (profile.role === "admin" ||
+        profile.role === "super_admin" ||
+        profile.role === "manager_zone");
+
+    if (!profile || !isAuthorized) {
       return NextResponse.json(
         { error: "Accès refusé. Privilèges insuffisants." },
         { status: 403 }

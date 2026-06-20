@@ -18,6 +18,7 @@ import { Phone, ShieldAlert, CreditCard, HelpCircle, LogOut, Loader2, ExternalLi
 interface ZoneConfigData {
   zone: string;
   lienWave: string | null;
+  numeroWave: string | null;
   adresse: string | null;
   telephone: string | null;
 }
@@ -61,8 +62,6 @@ export default function PaiementModal({
     return name.charAt(0).toUpperCase() + name.slice(1).replace("-", " ");
   };
 
-  const isMerchantLink = zoneConfig?.lienWave?.startsWith("http");
-
   return (
     <Dialog open={isOpen}>
       <DialogContent 
@@ -92,18 +91,14 @@ export default function PaiementModal({
                 1. Effectuez votre versement Wave CI
               </h3>
 
-              {zoneConfig?.lienWave ? (
-                <div className="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-3">
-                  <p className="text-xs text-slate-650 font-medium leading-relaxed">
-                    {isMerchantLink 
-                      ? "Réglez vos frais d'inscription directement en ligne via notre lien de paiement Wave Marchand :"
-                      : "Effectuez le transfert de 15 000 FCFA sur le numéro Wave CI suivant :"}
-                  </p>
-
-                  {isMerchantLink ? (
-                    <div className="space-y-2">
+              {zoneConfig?.lienWave || zoneConfig?.numeroWave ? (
+                <div className="border border-slate-200 bg-slate-50/50 rounded-xl p-4 space-y-4">
+                  {/* Wave Merchant Link */}
+                  {zoneConfig.lienWave && (
+                    <div className="space-y-2.5">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Option A : Paiement direct en ligne (Marchand)</p>
                       <a
-                        href={zoneConfig.lienWave!}
+                        href={zoneConfig.lienWave}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full py-3 bg-[#00A3E0] hover:bg-[#008cc0] text-white rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer text-xs uppercase tracking-wide"
@@ -112,13 +107,31 @@ export default function PaiementModal({
                         <span>Payer via Wave Marchand</span>
                       </a>
                       <p className="text-[10px] text-slate-400 text-center font-medium leading-normal">
-                        Ce lien ouvre l'application Wave sur votre téléphone ou la page de paiement sécurisée Wave.
+                        Ce lien ouvre l&apos;application Wave sur votre téléphone ou la page de paiement sécurisée Wave.
                       </p>
                     </div>
-                  ) : (
-                    <p className="text-base font-bold text-[#0F172A] select-all bg-white py-1.5 px-3 rounded border border-slate-250 inline-block font-mono">
-                      {zoneConfig.lienWave}
-                    </p>
+                  )}
+
+                  {/* Separator if both exist */}
+                  {zoneConfig.lienWave && zoneConfig.numeroWave && (
+                    <div className="relative flex py-1 items-center">
+                      <div className="flex-grow border-t border-slate-250"></div>
+                      <span className="flex-shrink mx-4 text-[10px] text-slate-400 uppercase font-bold">Ou</span>
+                      <div className="flex-grow border-t border-slate-250"></div>
+                    </div>
+                  )}
+
+                  {/* Wave Direct Transfer Phone Number */}
+                  {zoneConfig.numeroWave && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Option B : Transfert Wave Standard</p>
+                      <p className="text-xs text-slate-600 font-medium leading-normal">
+                        Effectuez un transfert simple de 15 000 FCFA sur ce numéro Wave :
+                      </p>
+                      <p className="text-base font-bold text-[#0F172A] select-all bg-white py-1.5 px-3 rounded border border-slate-250 inline-block font-mono">
+                        {zoneConfig.numeroWave}
+                      </p>
+                    </div>
                   )}
                 </div>
               ) : (

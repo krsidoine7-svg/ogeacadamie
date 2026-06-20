@@ -46,7 +46,7 @@ export default async function AdminZonesPage() {
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-slate-500 font-medium">
-          Mettez à jour les liens de paiement Wave, les numéros Orange Money/MTN et les adresses physiques des centres pour chaque ville.
+          Mettez à jour les liens de paiement Wave Marchand, les numéros de transfert Wave et les adresses physiques des centres pour chaque ville.
         </p>
       </div>
 
@@ -56,6 +56,7 @@ export default async function AdminZonesPage() {
           id: z.id,
           zone: z.zone as any,
           lienWave: z.lienWave,
+          numeroWave: z.numeroWave,
           adresse: z.adresse,
           telephone: z.telephone,
         }))}

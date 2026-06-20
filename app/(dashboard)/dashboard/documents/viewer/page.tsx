@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements, documents, accesDocuments, concoursInscrits } from "@/drizzle/schema";
+import { profiles, paiements, documents, accesDocuments, concoursInscrits, pageSections } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import SecureViewerClient from "./SecureViewerClient";
 import Link from "next/link";
@@ -88,36 +88,72 @@ export default async function ViewerPage({ searchParams }: ViewerPageProps) {
     );
   }
 
-  // 5. Verify candidate's concours access
-  if (document.concours && document.concours !== "tous") {
-    const userRegistrations = await db.query.concoursInscrits.findMany({
-      where: eq(concoursInscrits.userId, user.id),
-    });
-
-    const registeredConcoursList = userRegistrations.map((r) => r.concours as string);
-    const isRegistered = registeredConcoursList.includes(document.concours);
-
-    if (!isRegistered) {
-      return (
-        <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
-          <div className="text-center space-y-4 max-w-md bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl">
-            <div className="w-12 h-12 bg-amber-500/10 rounded-xl border border-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
-              <ShieldAlert className="w-6 h-6" />
-            </div>
-            <h2 className="text-xl font-bold">Accès Non Autorisé</h2>
-            <p className="text-sm text-slate-400">
-              Vous n'êtes pas inscrit à la préparation pour ce concours ({document.concours.toUpperCase()}).
-            </p>
-            <Link
-              href="/dashboard/documents"
-              className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Retourner aux documents
-            </Link>
-          </div>
+  // Helper to render unauthorized block
+  const renderUnauthorized = (message: string) => (
+    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
+      <div className="text-center space-y-4 max-w-md bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl">
+        <div className="w-12 h-12 bg-amber-500/10 rounded-xl border border-amber-500/20 flex items-center justify-center mx-auto text-amber-400">
+          <ShieldAlert className="w-6 h-6" />
         </div>
-      );
+        <h2 className="text-xl font-bold">Accès Non Autorisé</h2>
+        <p className="text-sm text-slate-400">{message}</p>
+        <Link
+          href="/dashboard/documents"
+          className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition-all"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Retourner aux documents
+        </Link>
+      </div>
+    </div>
+  );
+
+  // 5. Verify candidate's access based on role (admins and managers bypass checks)
+  const isAdminOrManager =
+    profile.role === "admin" ||
+    profile.role === "super_admin" ||
+    profile.role === "manager_zone";
+
+  if (!isAdminOrManager) {
+    // Check concours access
+    if (document.concours && document.concours !== "tous") {
+      const userRegistrations = await db.query.concoursInscrits.findMany({
+        where: eq(concoursInscrits.userId, user.id),
+      });
+
+      const registeredConcoursList = userRegistrations.map((r) => r.concours as string);
+      const isRegistered = registeredConcoursList.includes(document.concours);
+
+      if (!isRegistered) {
+        return renderUnauthorized(`Vous n'êtes pas inscrit à la préparation pour ce concours (${document.concours.toUpperCase()}).`);
+      }
+    }
+
+    // Check modeFormation access
+    if (document.modeFormation && document.modeFormation !== "tous") {
+      if (profile.modeFormation !== document.modeFormation) {
+        return renderUnauthorized("Ce document n'est pas disponible pour votre mode de préparation.");
+      }
+    }
+
+    // Check zone access
+    if (document.zone && document.zone !== "tous") {
+      if (profile.zone !== document.zone) {
+        return renderUnauthorized("Ce document n'est pas disponible pour votre zone géographique.");
+      }
+    }
+  }
+
+  // Fetch system configuration to check if PDF security is enabled
+  const systemConfigRow = await db.query.pageSections.findFirst({
+    where: eq(pageSections.cle, "system_config"),
+  });
+  
+  let enablePdfSecurity = true;
+  if (systemConfigRow && systemConfigRow.contenu) {
+    const content = systemConfigRow.contenu as any;
+    if (content.enable_pdf_security === false) {
+      enablePdfSecurity = false;
     }
   }
 
@@ -131,6 +167,7 @@ export default async function ViewerPage({ searchParams }: ViewerPageProps) {
       pdfUrl={securePdfUrl}
       documentTitle={document.titre}
       candidateEmail={profile.email}
+      enableSecurity={enablePdfSecurity}
     />
   );
 }

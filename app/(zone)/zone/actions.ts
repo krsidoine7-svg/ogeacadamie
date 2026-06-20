@@ -4,8 +4,9 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements, zoneConfig } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { profiles, paiements, zoneConfig, documents, notifications, concoursInscrits } from "@/drizzle/schema";
+import { eq, and, isNull, inArray } from "drizzle-orm";
+import { triggerNewDocumentWebhook } from "@/lib/webhooks";
 
 /**
  * Approves a candidate's payment and activates their account.
@@ -236,8 +237,7 @@ export async function rejectCandidatePayment(paymentId: string, notes: string) {
  */
 export async function updateZoneConfigByManager(formData: {
   lienWave: string | null;
-  lienMomo: string | null;
-  lienOrange: string | null;
+  numeroWave: string | null;
   adresse: string | null;
   telephone: string | null;
 }) {
@@ -270,8 +270,9 @@ export async function updateZoneConfigByManager(formData: {
         .set({
           managerId: managerProfile.id,
           lienWave: formData.lienWave,
-          lienMomo: formData.lienMomo,
-          lienOrange: formData.lienOrange,
+          numeroWave: formData.numeroWave,
+          lienMomo: null, // Deactivated
+          lienOrange: null, // Deactivated
           adresse: formData.adresse,
           telephone: formData.telephone,
           updatedAt: new Date(),
@@ -284,8 +285,9 @@ export async function updateZoneConfigByManager(formData: {
           zone: managerProfile.zone,
           managerId: managerProfile.id,
           lienWave: formData.lienWave,
-          lienMomo: formData.lienMomo,
-          lienOrange: formData.lienOrange,
+          numeroWave: formData.numeroWave,
+          lienMomo: null,
+          lienOrange: null,
           adresse: formData.adresse,
           telephone: formData.telephone,
           updatedAt: new Date(),
@@ -298,5 +300,207 @@ export async function updateZoneConfigByManager(formData: {
   } catch (error: any) {
     console.error("Error in updateZoneConfigByManager:", error);
     return { success: false, error: error.message || "Une erreur interne est survenue." };
+  }
+}
+
+/**
+ * Helper to verify that the logged-in user is a Zone Manager
+ */
+async function verifyManagerSession() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    throw new Error("Non autorisé. Session expirée.");
+  }
+
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id),
+  });
+
+  if (!profile || profile.role !== "manager_zone" || !profile.zone) {
+    throw new Error("Accès refusé. Privilèges de manager de zone requis.");
+  }
+
+  return { user, profile };
+}
+
+/**
+ * Creates a document targeting the manager's assigned zone
+ */
+export async function managerCreateDocument(data: {
+  titre: string;
+  description?: string;
+  fichierUrl: string;
+  concours: string;
+  modeFormation: string;
+  type: "cours" | "exercice" | "corrige";
+  ordre?: string;
+}) {
+  try {
+    const { profile: manager } = await verifyManagerSession();
+
+    if (!data.titre) {
+      return { success: false, error: "Le titre est obligatoire." };
+    }
+    if (!data.fichierUrl) {
+      return { success: false, error: "Le fichier PDF est obligatoire." };
+    }
+
+    // Insert document record in DB, forcing zone to be manager's zone
+    const [newDoc] = await db.insert(documents).values({
+      titre: data.titre,
+      description: data.description || null,
+      fichierUrl: data.fichierUrl,
+      concours: data.concours || "tous",
+      type: data.type || "cours",
+      modeFormation: data.modeFormation || "tous",
+      zone: manager.zone!, // Force manager's zone
+      ordre: Number(data.ordre) || 0,
+      isActive: true,
+      createdBy: manager.id,
+    }).returning();
+
+    // Create notifications for candidates in the manager's zone
+    let targetUsers: { id: string }[] = [];
+
+    const conditions = [
+      eq(profiles.role, "user"),
+      eq(profiles.isActive, true),
+      isNull(profiles.deletedAt),
+      eq(profiles.zone, manager.zone!), // Enforce manager's zone targeting
+    ];
+
+    if (data.modeFormation && data.modeFormation !== "tous") {
+      conditions.push(eq(profiles.modeFormation, data.modeFormation as any));
+    }
+
+    if (data.concours && data.concours !== "tous") {
+      targetUsers = await db.select({ id: profiles.id })
+        .from(profiles)
+        .innerJoin(concoursInscrits, eq(concoursInscrits.userId, profiles.id))
+        .where(
+          and(
+            eq(concoursInscrits.concours, data.concours as any),
+            ...conditions
+          )
+        );
+    } else {
+      targetUsers = await db.select({ id: profiles.id })
+        .from(profiles)
+        .where(
+          and(...conditions)
+        );
+    }
+
+    if (targetUsers.length > 0) {
+      const notifMessage = `Un nouveau document "${data.titre}" (${data.type}) est disponible pour le concours ${data.concours.toUpperCase()}.`;
+
+      const notificationValues = targetUsers.map(u => ({
+        destinataireId: u.id,
+        titre: "📚 Nouveau document disponible",
+        message: notifMessage,
+        type: "info" as const,
+        lu: false,
+        lien: "/dashboard/documents",
+      }));
+
+      await db.insert(notifications).values(notificationValues);
+    }
+
+    // Trigger webhook call
+    await triggerNewDocumentWebhook({
+      id: newDoc.id,
+      titre: newDoc.titre,
+      description: newDoc.description,
+      fichierUrl: newDoc.fichierUrl,
+      concours: newDoc.concours,
+      type: newDoc.type,
+      modeFormation: newDoc.modeFormation,
+      zone: newDoc.zone,
+      scheduledAt: null,
+      meetingUrl: null,
+      createdAt: newDoc.createdAt ? newDoc.createdAt.toISOString() : new Date().toISOString(),
+    });
+
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/zone/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in managerCreateDocument:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles a document's active status (only if created by the manager or targets their zone)
+ */
+export async function managerToggleDocumentActive(id: string, isActive: boolean) {
+  try {
+    const { profile: manager } = await verifyManagerSession();
+
+    const doc = await db.query.documents.findFirst({
+      where: and(
+        eq(documents.id, id),
+        isNull(documents.deletedAt)
+      ),
+    });
+
+    if (!doc) {
+      return { success: false, error: "Document introuvable." };
+    }
+
+    // Enforce that the manager can only update documents for their own zone
+    if (doc.zone !== manager.zone) {
+      return { success: false, error: "Non autorisé. Ce document appartient à une autre zone." };
+    }
+
+    await db.update(documents)
+      .set({ isActive, updatedAt: new Date() })
+      .where(eq(documents.id, id));
+
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/zone/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in managerToggleDocumentActive:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Soft deletes a document targeting the manager's zone
+ */
+export async function managerDeleteDocument(id: string) {
+  try {
+    const { profile: manager } = await verifyManagerSession();
+
+    const doc = await db.query.documents.findFirst({
+      where: and(
+        eq(documents.id, id),
+        isNull(documents.deletedAt)
+      ),
+    });
+
+    if (!doc) {
+      return { success: false, error: "Document introuvable." };
+    }
+
+    // Enforce that the manager can only delete documents for their own zone
+    if (doc.zone !== manager.zone) {
+      return { success: false, error: "Non autorisé. Ce document appartient à une autre zone." };
+    }
+
+    await db.update(documents)
+      .set({ deletedAt: new Date(), isActive: false })
+      .where(eq(documents.id, id));
+
+    revalidatePath("/dashboard/documents");
+    revalidatePath("/zone/documents");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in managerDeleteDocument:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
   }
 }

@@ -92,19 +92,41 @@ export async function GET(
     }
 
     // 5. Verify candidate's concours access (skip for admin/manager)
-    if (!isAdminOrManager && document.concours && document.concours !== "tous") {
-      const userRegistrations = await db.query.concoursInscrits.findMany({
-        where: eq(concoursInscrits.userId, user.id),
-      });
+    if (!isAdminOrManager) {
+      if (document.concours && document.concours !== "tous") {
+        const userRegistrations = await db.query.concoursInscrits.findMany({
+          where: eq(concoursInscrits.userId, user.id),
+        });
 
-      const registeredConcoursList = userRegistrations.map((r) => r.concours as string);
-      const isRegistered = registeredConcoursList.includes(document.concours);
+        const registeredConcoursList = userRegistrations.map((r) => r.concours as string);
+        const isRegistered = registeredConcoursList.includes(document.concours);
 
-      if (!isRegistered) {
-        return NextResponse.json(
-          { error: "Vous n'êtes pas inscrit à la préparation de ce concours." },
-          { status: 403 }
-        );
+        if (!isRegistered) {
+          return NextResponse.json(
+            { error: "Vous n'êtes pas inscrit à la préparation de ce concours." },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Verify modeFormation access
+      if (document.modeFormation && document.modeFormation !== "tous") {
+        if (profile.modeFormation !== document.modeFormation) {
+          return NextResponse.json(
+            { error: "Ce document n'est pas disponible pour votre mode de préparation." },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Verify zone access
+      if (document.zone && document.zone !== "tous") {
+        if (profile.zone !== document.zone) {
+          return NextResponse.json(
+            { error: "Ce document n'est pas disponible pour votre zone géographique." },
+            { status: 403 }
+          );
+        }
       }
     }
 
@@ -115,9 +137,15 @@ export async function GET(
 
     if (downloadError || !storageBlob) {
       console.error("Storage secure document download error:", downloadError);
+      const isNotFound = 
+        downloadError && 
+        ((downloadError as any).status === 404 || 
+         (downloadError as any).statusCode === "404" || 
+         (downloadError as any).message?.includes("Object not found"));
+
       return NextResponse.json(
-        { error: "Erreur lors du téléchargement du fichier sécurisé." },
-        { status: 500 }
+        { error: isNotFound ? "Ce fichier de cours n'existe pas ou a été retiré du serveur de stockage." : "Erreur lors du téléchargement du fichier sécurisé." },
+        { status: isNotFound ? 404 : 500 }
       );
     }
 
@@ -136,10 +164,23 @@ export async function GET(
 
     // 8. Log document access (only for standard candidate user role)
     if (profile.role === "user") {
-      await db.insert(accesDocuments).values({
-        userId: user.id,
-        documentId: document.id,
-      });
+      try {
+        await db.insert(accesDocuments).values({
+          userId: user.id,
+          documentId: document.id,
+        });
+      } catch (insertErr: any) {
+        // Ignore unique constraint violations (meaning the user has already accessed this document)
+        const isUniqueViolation =
+          insertErr.code === "23505" ||
+          insertErr.cause?.code === "23505" ||
+          insertErr.message?.includes("unique constraint") ||
+          insertErr.cause?.message?.includes("unique constraint");
+
+        if (!isUniqueViolation) {
+          console.error("Erreur lors de l'enregistrement de l'accès document :", insertErr);
+        }
+      }
     }
 
     // 9. Stream/Return decrypted PDF with anti-caching security headers
@@ -156,6 +197,14 @@ export async function GET(
     });
   } catch (err: any) {
     console.error("Unhandled error in secure download view endpoint:", err);
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      fs.appendFileSync(
+        path.join(process.cwd(), "error_log.txt"),
+        `[${new Date().toISOString()}] Unhandled error: ${err.message}\nStack: ${err.stack}\n\n`
+      );
+    } catch (_) {}
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

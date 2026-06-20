@@ -185,6 +185,7 @@ export default async function DashboardLayout({
             zoneConfig={zoneConfigData ? {
               zone: zoneConfigData.zone,
               lienWave: zoneConfigData.lienWave,
+              numeroWave: zoneConfigData.numeroWave,
               adresse: zoneConfigData.adresse,
               telephone: zoneConfigData.telephone,
             } : null}
