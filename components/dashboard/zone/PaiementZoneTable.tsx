@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Search, Phone, Eye, CheckCircle2, XCircle, AlertCircle, Calendar, User, UserX, ExternalLink } from "lucide-react";
+import { Search, Phone, Eye, CheckCircle2, AlertCircle, Calendar, User, UserX, ExternalLink } from "lucide-react";
 import CaptureViewer from "./CaptureViewer";
 
 interface CandidatePaymentData {
@@ -30,6 +30,23 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
   const [activeFilter, setActiveFilter] = useState<FilterType>("tous");
   const [selectedCandidate, setSelectedCandidate] = useState<CandidatePaymentData | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === "#paiements") {
+        setActiveFilter("a_valider");
+      } else if (hash === "#candidats") {
+        setActiveFilter("tous");
+      }
+    };
+
+    // Run on initial mount
+    handleHashChange();
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   const formatDate = (date: Date | null) => {
     if (!date) return "-";
@@ -89,30 +106,30 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
   return (
     <div className="space-y-6">
       {/* Stats Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 min-w-0">
         {/* Total Card */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Inscrits</span>
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between min-w-0">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Total Inscrits</span>
           <span className="text-2xl font-bold text-slate-800 mt-2">{stats.total}</span>
         </div>
         {/* A Valider Card */}
-        <div className="bg-amber-50/50 border border-amber-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">À Valider</span>
+        <div className="bg-amber-50/50 border border-amber-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between min-w-0">
+          <span className="text-xs font-bold text-amber-800 uppercase tracking-wider truncate">À Valider</span>
           <span className="text-2xl font-bold text-amber-700 mt-2">{stats.aValider}</span>
         </div>
         {/* Valide Card */}
-        <div className="bg-emerald-50/50 border border-emerald-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Validés</span>
+        <div className="bg-emerald-50/50 border border-emerald-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between min-w-0">
+          <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider truncate">Validés</span>
           <span className="text-2xl font-bold text-emerald-700 mt-2">{stats.valide}</span>
         </div>
         {/* Rejete Card */}
-        <div className="bg-rose-50/50 border border-rose-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-bold text-rose-800 uppercase tracking-wider">Rejetés</span>
+        <div className="bg-rose-50/50 border border-rose-200/40 rounded-2xl p-4 shadow-sm flex flex-col justify-between min-w-0">
+          <span className="text-xs font-bold text-rose-800 uppercase tracking-wider truncate">Rejetés</span>
           <span className="text-2xl font-bold text-rose-700 mt-2">{stats.rejete}</span>
         </div>
         {/* Non Soumis Card */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1 lg:col-span-1">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Non Soumis</span>
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1 lg:col-span-1 min-w-0">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">Non Soumis</span>
           <span className="text-2xl font-bold text-slate-600 mt-2">{stats.nonSoumis}</span>
         </div>
       </div>
@@ -193,7 +210,7 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
             <UserX className="w-12 h-12 text-slate-300 mx-auto stroke-1" />
             <h3 className="font-bold text-slate-700 text-sm">Aucun candidat trouvé</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Il n'y a aucun inscrit correspondant à vos critères de recherche ou de filtre.
+              Il n&apos;y a aucun inscrit correspondant à vos critères de recherche ou de filtre.
             </p>
           </div>
         ) : (
@@ -305,7 +322,7 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
                           <span>Voir reçu</span>
                         </button>
                       ) : (
-                        <span className="text-slate-400 italic text-xs">En attente d'upload</span>
+                        <span className="text-slate-400 italic text-xs">En attente d&apos;upload</span>
                       )}
                     </td>
                   </tr>
@@ -323,22 +340,22 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
             <UserX className="w-12 h-12 text-slate-300 mx-auto stroke-1" />
             <h3 className="font-bold text-slate-700 text-sm">Aucun candidat trouvé</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Il n'y a aucun inscrit correspondant à vos critères de recherche ou de filtre.
+              Il n&apos;y a aucun inscrit correspondant à vos critères de recherche ou de filtre.
             </p>
           </div>
         ) : (
           filteredCandidates.map((candidate) => (
             <div key={candidate.id} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start justify-between min-w-0 gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200 flex-shrink-0">
                     <User className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">
                       {candidate.prenom} {candidate.nom}
                     </h4>
-                    <p className="text-xs text-slate-400 font-medium">{candidate.email}</p>
+                    <p className="text-xs text-slate-400 font-medium truncate">{candidate.email}</p>
                   </div>
                 </div>
                 
@@ -369,17 +386,17 @@ export default function PaiementZoneTable({ candidates }: PaiementZoneTableProps
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
                 {/* WhatsApp info */}
-                <div>
+                <div className="min-w-0">
                   <p className="text-slate-400 font-semibold mb-0.5">WhatsApp</p>
                   {candidate.whatsapp ? (
                     <a
                       href={`https://wa.me/${candidate.whatsapp.replace(/\s+/g, "").replace("+", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-600 transition-colors font-bold"
+                      className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-600 transition-colors font-bold truncate max-w-full"
                     >
-                      <Phone className="w-3 h-3 text-slate-400" />
-                      <span>{candidate.whatsapp}</span>
+                      <Phone className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                      <span className="truncate">{candidate.whatsapp}</span>
                     </a>
                   ) : (
                     <span className="text-slate-400 italic">Non renseigné</span>

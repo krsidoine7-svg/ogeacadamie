@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, zoneConfig } from "@/drizzle/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { profiles, zoneConfig, adminPendingActions, pageSections } from "@/drizzle/schema";
+import { eq, and, isNull, desc, inArray } from "drizzle-orm";
 import ManagersListClient from "./ManagersListClient";
 import { UserCheck } from "lucide-react";
 
@@ -41,6 +41,44 @@ export default async function AdminManagersPage() {
   // 4. Fetch all zone configurations
   const zoneConfigs = await db.query.zoneConfig.findMany();
 
+  // 5. Fetch all pending actions for dual confirmation
+  const pendingRequests = await db.query.adminPendingActions.findMany({
+    where: eq(adminPendingActions.statut, "en_attente"),
+    orderBy: [desc(adminPendingActions.createdAt)],
+  });
+
+  // Fetch all admin profiles to resolve initiator names
+  const allAdmins = await db.query.profiles.findMany({
+    where: inArray(profiles.role, ["admin", "super_admin"]),
+  });
+
+  const pendingActionsWithInitiators = pendingRequests.map((req) => {
+    const initiator = allAdmins.find((a) => a.id === req.initiatedBy);
+    const target = managerProfiles.find((m) => m.id === req.targetId) || allAdmins.find((a) => a.id === req.targetId);
+    return {
+      id: req.id,
+      type: req.type,
+      targetId: req.targetId,
+      initiatedBy: req.initiatedBy,
+      details: req.details as any,
+      statut: req.statut,
+      createdAt: req.createdAt,
+      initiatorName: initiator ? `${initiator.prenom} ${initiator.nom}` : "Admin inconnu",
+      targetName: target ? `${target.prenom} ${target.nom}` : "Manager inconnu",
+    };
+  });
+
+  // 6. Fetch global system configuration
+  const systemConfigRow = await db.query.pageSections.findFirst({
+    where: eq(pageSections.cle, "system_config"),
+  });
+  const systemConfig = systemConfigRow?.contenu as any || {
+    allow_manager_edit: true,
+    enable_wave: true,
+    enable_momo: true,
+    enable_orange: true,
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Page Header */}
@@ -54,7 +92,7 @@ export default async function AdminManagersPage() {
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-slate-500 font-medium">
-          Attribuez des responsables aux différentes zones géographiques et gérez leurs privilèges.
+          Attribuez des responsables aux différentes zones géographiques, modifiez leurs informations et gérez leurs privilèges.
         </p>
       </div>
 
@@ -66,6 +104,8 @@ export default async function AdminManagersPage() {
           prenom: m.prenom,
           email: m.email,
           zone: m.zone,
+          isActive: m.isActive ?? false,
+          whatsapp: m.whatsapp || "",
         }))}
         zones={zoneConfigs.map((z) => ({
           id: z.id,
@@ -74,6 +114,9 @@ export default async function AdminManagersPage() {
           telephone: z.telephone,
         }))}
         currentRole={adminProfile.role}
+        currentUserId={user.id}
+        pendingActions={pendingActionsWithInitiators}
+        systemConfig={systemConfig}
       />
     </div>
   );

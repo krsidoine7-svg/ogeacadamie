@@ -1,14 +1,30 @@
 "use client";
 
 import React, { useState } from "react";
-import { Newspaper, Calendar, ArrowRight, X, GraduationCap, Award } from "lucide-react";
+import { Calendar, ArrowRight, X, GraduationCap } from "lucide-react";
+
+export interface BlogArticle {
+  id: string;
+  titre: string;
+  slug: string;
+  contenu: string | null;
+  extrait: string | null;
+  imageUrl: string | null;
+  concours: string | null;
+  auteurId: string | null;
+  isPublished: boolean | null;
+  publishedAt: Date | string | null;
+  createdAt: Date | string | null;
+  updatedAt: Date | string | null;
+  deletedAt: Date | string | null;
+}
 
 interface BlogGridProps {
-  articles: any[];
+  articles: BlogArticle[];
 }
 
 export default function BlogGrid({ articles }: BlogGridProps) {
-  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<BlogArticle | null>(null);
 
   if (!articles || articles.length === 0) {
     return (
@@ -30,11 +46,11 @@ export default function BlogGrid({ articles }: BlogGridProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#D4A017] uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                  {article.concours === "general" ? "Tous Concours" : article.concours.toUpperCase()}
+                  {!article.concours || article.concours === "general" ? "Tous Concours" : article.concours.toUpperCase()}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {new Date(article.publishedAt || article.createdAt).toLocaleDateString("fr-FR", {
+                  {new Date(article.publishedAt || article.createdAt || new Date()).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
                     year: "numeric"
@@ -75,11 +91,11 @@ export default function BlogGrid({ articles }: BlogGridProps) {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold text-[#D4A017] uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
-                    {selectedArticle.concours === "general" ? "Général" : selectedArticle.concours.toUpperCase()}
+                    {!selectedArticle.concours || selectedArticle.concours === "general" ? "Général" : selectedArticle.concours.toUpperCase()}
                   </span>
                   <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {new Date(selectedArticle.publishedAt || selectedArticle.createdAt).toLocaleDateString("fr-FR", {
+                    {new Date(selectedArticle.publishedAt || selectedArticle.createdAt || new Date()).toLocaleDateString("fr-FR", {
                       day: "numeric",
                       month: "long",
                       year: "numeric"

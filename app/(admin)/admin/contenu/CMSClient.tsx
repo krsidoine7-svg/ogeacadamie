@@ -106,7 +106,16 @@ const DEFAULT_CONTENTS: any = {
   inscription: {
     title: "Rejoignez OGE Académie dès maintenant",
     subtitle: "Inscrivez-vous dès aujourd'hui pour seulement 15 000 FCFA (frais Wave / Mobile Money inclus) et accédez immédiatement à nos cours.",
-    cta_text: "S'inscrire en ligne"
+    cta_text: "S'inscrire en ligne",
+    urgence_badge: "🚨 L'OPPORTUNITÉ D'UNE VIE",
+    urgence_title: "Ne gâchez pas votre unique chance d'intégrer l'élite",
+    urgence_description: "Les places à l'INP-HB, l'ESATIC et au CME sont extrêmement chères et limitées. Chaque année, des milliers d'élèves brillants ratent ces concours simplement parce qu'ils n'ont pas eu la bonne préparation stratégique. Rater ce concours maintenant, c'est compromettre vos ambitions et risquer de passer à côté d'une carrière exceptionnelle.",
+    urgence_cards: [
+      { title: "Le Succès ou le Regret", text: "Intégrer ces écoles d'élite garantit une bourse d'études, un diplôme prestigieux et une insertion professionnelle assurée. Ne pas vous donner tous les moyens de réussir aujourd'hui est le plus grand risque pour votre avenir." },
+      { title: "Une Compétition Impitoyable", text: "Les autres candidats se préparent déjà jour et nuit. Sans nos corrigés d'examens officiels, nos méthodes de résolution rapide et notre accompagnement par zone WhatsApp, vous partez avec un immense désavantage." },
+      { title: "L'Investissement Décisif", text: "Pour seulement 15 000 FCFA (frais tout inclus), vous accédez à l'arme absolue pour forcer les portes du succès. C'est l'investissement le plus rentable et le plus décisif que vous ferez pour votre carrière." }
+    ],
+    urgence_warning: "⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir."
   },
   footer: {
     facebook: "https://facebook.com/ogeacademie",
@@ -451,7 +460,31 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
       {/* Sidebar - Tabs */}
       <div className="lg:col-span-1 space-y-3">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+        {/* Mobile Dropdown Selector */}
+        <div className="block lg:hidden bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+            Section à configurer
+          </label>
+          <select
+            value={activeTab}
+            onChange={(e) => handleTabChange(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 cursor-pointer"
+          >
+            <optgroup label="Sections Accueil">
+              {sections.map((section) => (
+                <option key={section.id} value={section.cle}>
+                  {section.titre} {section.isActive ? "✓" : " (Désactivée)"}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Actualités & Blog">
+              <option value="blog">Gestion du Blog</option>
+            </optgroup>
+          </select>
+        </div>
+
+        {/* Desktop Sidebar Buttons */}
+        <div className="hidden lg:block bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider px-2 block mb-2">
             Sections Accueil
           </span>
@@ -535,35 +568,89 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
               </div>
             ) : (
               <div className="border border-slate-150 rounded-2xl overflow-hidden shadow-sm bg-white">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase">
-                      <th className="p-3">Titre</th>
-                      <th className="p-3">Concours</th>
-                      <th className="p-3">Extrait</th>
-                      <th className="p-3">Statut</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {articles.map((article) => (
-                      <tr key={article.id} className="hover:bg-slate-50/50">
-                        <td className="p-3 font-semibold text-slate-900">
-                          {article.titre}
-                        </td>
-                        <td className="p-3 text-xs">
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full uppercase font-bold text-[10px]">
+                {/* Desktop view table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase">
+                        <th className="p-3">Titre</th>
+                        <th className="p-3">Concours</th>
+                        <th className="p-3">Extrait</th>
+                        <th className="p-3">Statut</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {articles.map((article) => (
+                        <tr key={article.id} className="hover:bg-slate-50/50">
+                          <td className="p-3 font-semibold text-slate-900">
+                            {article.titre}
+                          </td>
+                          <td className="p-3 text-xs">
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full uppercase font-bold text-[10px]">
+                              {article.concours}
+                            </span>
+                          </td>
+                          <td className="p-3 text-xs text-slate-500 max-w-[200px] truncate">
+                            {article.extrait}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBlogPublish(article.id, !article.isPublished)}
+                              className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                                article.isPublished
+                                  ? "bg-green-50 border-green-200 text-green-700"
+                                  : "bg-yellow-50 border-yellow-200 text-yellow-700"
+                              }`}
+                            >
+                              {article.isPublished ? "Publié" : "Brouillon"}
+                            </button>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenBlogModal(article)}
+                                className="p-1 text-slate-500 hover:text-[#0F172A] hover:bg-slate-100 rounded-lg transition-all"
+                                title="Modifier"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBlog(article.id)}
+                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile View: Stacked Cards (no horizontal scroll) */}
+                <div className="sm:hidden divide-y divide-slate-100">
+                  {articles.map((article) => (
+                    <div key={article.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
+                      <div className="space-y-1">
+                        <p className="font-bold text-slate-900 text-sm leading-snug">{article.titre}</p>
+                        {article.extrait && <p className="text-slate-500 font-medium text-xs leading-normal">{article.extrait}</p>}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-50">
+                        <div className="flex gap-2 items-center">
+                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full uppercase font-bold text-[9px]">
                             {article.concours}
                           </span>
-                        </td>
-                        <td className="p-3 text-xs text-slate-500 max-w-[200px] truncate">
-                          {article.extrait}
-                        </td>
-                        <td className="p-3">
                           <button
                             type="button"
                             onClick={() => handleToggleBlogPublish(article.id, !article.isPublished)}
-                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                            className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all ${
                               article.isPublished
                                 ? "bg-green-50 border-green-200 text-green-700"
                                 : "bg-yellow-50 border-yellow-200 text-yellow-700"
@@ -571,31 +658,30 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                           >
                             {article.isPublished ? "Publié" : "Brouillon"}
                           </button>
-                        </td>
-                        <td className="p-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenBlogModal(article)}
-                              className="p-1 text-slate-500 hover:text-[#0F172A] hover:bg-slate-100 rounded-lg transition-all"
-                              title="Modifier"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteBlog(article.id)}
-                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenBlogModal(article)}
+                            className="p-1.5 text-slate-500 hover:text-[#0F172A] hover:bg-slate-100 border border-slate-200 rounded-lg transition-all"
+                            title="Modifier"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBlog(article.id)}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-lg transition-all"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -1117,7 +1203,8 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                         </div>
                       ) : (
                         <div className="border border-slate-150 rounded-2xl overflow-hidden shadow-sm bg-white">
-                          <table className="w-full text-left border-collapse text-xs">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
                             <thead>
                               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase">
                                 <th className="p-3">Auteur</th>
@@ -1181,7 +1268,8 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                                 </tr>
                               ))}
                             </tbody>
-                          </table>
+                            </table>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1189,33 +1277,135 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 )}
 
                 {activeTab === "inscription" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre Principal</label>
-                      <input
-                        type="text"
-                        value={formFields.title || ""}
-                        onChange={(e) => handleFieldChange("title", e.target.value)}
-                        className="w-full text-sm p-3 rounded-xl border border-slate-250"
-                      />
+                  <div className="space-y-6">
+                    <div className="bg-slate-50/50 p-6 border border-slate-200 rounded-3xl space-y-4">
+                      <h3 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-2">
+                        Section Inscription Standard
+                      </h3>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre Principal</label>
+                        <input
+                          type="text"
+                          value={formFields.title || ""}
+                          onChange={(e) => handleFieldChange("title", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Texte descriptif</label>
+                        <textarea
+                          rows={3}
+                          value={formFields.subtitle || ""}
+                          onChange={(e) => handleFieldChange("subtitle", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Texte Bouton Appel à l'action</label>
+                        <input
+                          type="text"
+                          value={formFields.cta_text || ""}
+                          onChange={(e) => handleFieldChange("cta_text", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Texte descriptif</label>
-                      <textarea
-                        rows={3}
-                        value={formFields.subtitle || ""}
-                        onChange={(e) => handleFieldChange("subtitle", e.target.value)}
-                        className="w-full text-sm p-3 rounded-xl border border-slate-250"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Texte Bouton Appel à l'action</label>
-                      <input
-                        type="text"
-                        value={formFields.cta_text || ""}
-                        onChange={(e) => handleFieldChange("cta_text", e.target.value)}
-                        className="w-full text-sm p-3 rounded-xl border border-slate-250"
-                      />
+
+                    <div className="bg-slate-50/50 p-6 border border-slate-200 rounded-3xl space-y-4 pt-4">
+                      <h3 className="text-sm font-bold text-slate-850 border-b border-slate-200 pb-2 text-[#D4A017] flex items-center gap-2">
+                        <span>🚨 Section d'Urgence / Opportunité</span>
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Badge d'urgence (ex: 🚨 L'OPPORTUNITÉ D'UNE VIE)</label>
+                          <input
+                            type="text"
+                            value={formFields.urgence_badge || ""}
+                            onChange={(e) => handleFieldChange("urgence_badge", e.target.value)}
+                            className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre d'urgence</label>
+                          <input
+                            type="text"
+                            value={formFields.urgence_title || ""}
+                            onChange={(e) => handleFieldChange("urgence_title", e.target.value)}
+                            className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Description longue d'urgence</label>
+                        <textarea
+                          rows={4}
+                          value={formFields.urgence_description || ""}
+                          onChange={(e) => handleFieldChange("urgence_description", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Message d'avertissement final</label>
+                        <input
+                          type="text"
+                          value={formFields.urgence_warning || ""}
+                          onChange={(e) => handleFieldChange("urgence_warning", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250 bg-white"
+                        />
+                      </div>
+
+                      {/* Urgence Cards List */}
+                      <div className="space-y-4 pt-4 border-t border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Cartes d'Arguments Promotionnels (Urgence)
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() => handleAddNestedItem("urgence_cards", { title: "", text: "" })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-250 text-slate-750 transition-all border border-slate-300"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Ajouter un Argument
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {(formFields.urgence_cards || []).map((card: any, idx: number) => (
+                            <div key={idx} className="p-4 border border-slate-200 rounded-2xl bg-white space-y-3 relative shadow-sm">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveNestedItem("urgence_cards", idx)}
+                                className="absolute top-2 right-2 text-xs font-bold text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-all"
+                              >
+                                Retirer
+                              </button>
+                              <span className="text-xs font-bold text-[#D4A017]">Métrique / Argument #{String(idx + 1).padStart(2, "0")}</span>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-655 mb-0.5">Titre de l'Argument</label>
+                                <input
+                                  type="text"
+                                  value={card.title || ""}
+                                  onChange={(e) => handleNestedFieldChange("urgence_cards", idx, "title", e.target.value)}
+                                  className="w-full text-xs p-2.5 rounded-lg border border-slate-250 bg-slate-50/30"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-bold text-slate-655 mb-0.5">Texte Descriptif</label>
+                                <textarea
+                                  rows={3}
+                                  value={card.text || ""}
+                                  onChange={(e) => handleNestedFieldChange("urgence_cards", idx, "text", e.target.value)}
+                                  className="w-full text-xs p-2.5 rounded-lg border border-slate-250 bg-slate-50/30"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

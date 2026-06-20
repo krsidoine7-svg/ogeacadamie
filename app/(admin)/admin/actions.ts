@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, zoneConfig, notifications, concoursInscrits, paiements, pageSections, temoignages, blogArticles, documents } from "@/drizzle/schema";
+import { profiles, zoneConfig, notifications, concoursInscrits, paiements, pageSections, temoignages, blogArticles, documents, adminPendingActions } from "@/drizzle/schema";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/googleCalendar";
 import { triggerNewDocumentWebhook } from "@/lib/webhooks";
@@ -224,6 +224,7 @@ export async function updateZoneConfig(
   data: {
     lienWave: string;
     lienMomo: string;
+    lienOrange: string;
     adresse: string;
     telephone: string;
   }
@@ -236,6 +237,7 @@ export async function updateZoneConfig(
       .set({
         lienWave: data.lienWave,
         lienMomo: data.lienMomo,
+        lienOrange: data.lienOrange,
         adresse: data.adresse,
         telephone: data.telephone,
         updatedAt: new Date(),
@@ -1128,4 +1130,308 @@ export async function deleteDocument(id: string) {
     return { success: false, error: error.message || "Une erreur est survenue." };
   }
 }
+
+/**
+ * Submits a zone manager action (edit, block, activate, deactivate) for dual-confirmation
+ */
+export async function submitManagerActionRequest(
+  type: "edit_manager" | "block_manager" | "activate_manager" | "deactivate_manager",
+  targetId: string,
+  details: any
+) {
+  try {
+    const { profile: initiator } = await verifyAdminSession();
+
+    // Verify target profile exists and is a manager
+    const target = await db.query.profiles.findFirst({
+      where: eq(profiles.id, targetId),
+    });
+
+    if (!target || target.role !== "manager_zone") {
+      return { success: false, error: "Le manager cible n'existe pas ou n'est pas un manager de zone." };
+    }
+
+    // If the initiator is a Super Admin, execute the action immediately (bypass dual confirmation)
+    if (initiator.role === "super_admin") {
+      return await executeManagerActionDirectly(type, targetId, details, initiator.id);
+    }
+
+    // Verify that the global system configuration allows manager modification
+    const sysConfigRow = await db.query.pageSections.findFirst({
+      where: eq(pageSections.cle, "system_config"),
+    });
+    const sysConfig = sysConfigRow?.contenu as any || { allow_manager_edit: true };
+    if (!sysConfig.allow_manager_edit) {
+      return { success: false, error: "La modification des managers de zone est actuellement désactivée par le Super Administrateur." };
+    }
+
+    // Create the pending action request in the database
+    const [insertedRequest] = await db.insert(adminPendingActions).values({
+      type,
+      targetId,
+      initiatedBy: initiator.id,
+      details: details || {},
+      statut: "en_attente",
+    }).returning();
+
+    // Find all other admins to notify
+    const otherAdmins = await db.query.profiles.findMany({
+      where: and(
+        inArray(profiles.role, ["admin", "super_admin"]),
+        eq(profiles.isActive, true),
+        isNull(profiles.deletedAt)
+      ),
+    });
+
+    const notifValues = otherAdmins
+      .filter((admin) => admin.id !== initiator.id)
+      .map((admin) => {
+        let label = "de modification";
+        if (type === "block_manager") label = "de blocage";
+        if (type === "activate_manager") label = "de réactivation";
+        if (type === "deactivate_manager") label = "de désactivation";
+
+        return {
+          destinataireId: admin.id,
+          titre: `Demande de double confirmation`,
+          message: `${initiator.prenom} ${initiator.nom} a initié une demande ${label} pour le manager ${target.prenom} ${target.nom}.`,
+          type: "alerte" as const,
+          lu: false,
+          lien: `/admin/managers?request=${insertedRequest.id}`,
+        };
+      });
+
+    if (notifValues.length > 0) {
+      await db.insert(notifications).values(notifValues);
+    }
+
+    revalidatePath("/admin/managers");
+    revalidatePath("/admin");
+    return { success: true, pending: true, requestId: insertedRequest.id };
+  } catch (error: any) {
+    console.error("Error in submitManagerActionRequest:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Internal helper to directly execute the database updates when a request is approved or bypassed
+ */
+async function executeManagerActionDirectly(
+  type: "edit_manager" | "block_manager" | "activate_manager" | "deactivate_manager",
+  targetId: string,
+  details: any,
+  approverId: string
+) {
+  const target = await db.query.profiles.findFirst({
+    where: eq(profiles.id, targetId),
+  });
+  if (!target) throw new Error("Profil cible introuvable.");
+
+  if (type === "edit_manager") {
+    const { nom, prenom, email, whatsapp, zone } = details;
+    if (!nom?.trim() || !prenom?.trim()) {
+      throw new Error("Le nom et le prénom sont obligatoires.");
+    }
+
+    // 1. Update profiles table
+    await db.update(profiles)
+      .set({
+        nom: nom.trim(),
+        prenom: prenom.trim(),
+        email: email.trim().toLowerCase(),
+        whatsapp: whatsapp?.trim() || null,
+        zone: zone || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, targetId));
+
+    // 2. If zone has changed, re-assign configurations
+    if (zone !== target.zone) {
+      // Clear from previous zone config
+      if (target.zone) {
+        await db.update(zoneConfig)
+          .set({ managerId: null, updatedAt: new Date() })
+          .where(eq(zoneConfig.zone, target.zone as any));
+      }
+      // Assign to new zone config
+      if (zone) {
+        await db.update(zoneConfig)
+          .set({ managerId: targetId, updatedAt: new Date() })
+          .where(eq(zoneConfig.zone, zone as any));
+      }
+    }
+  } else if (type === "block_manager") {
+    await db.update(profiles)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(profiles.id, targetId));
+  } else if (type === "activate_manager") {
+    await db.update(profiles)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(eq(profiles.id, targetId));
+  } else if (type === "deactivate_manager") {
+    // Demote and unassign
+    await db.update(profiles)
+      .set({
+        role: "user",
+        zone: null,
+        isActive: false, // Deactivate candidacy access until payment is done
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, targetId));
+
+    if (target.zone) {
+      await db.update(zoneConfig)
+        .set({ managerId: null, updatedAt: new Date() })
+        .where(eq(zoneConfig.zone, target.zone as any));
+    }
+  }
+
+  revalidatePath("/admin/managers");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+/**
+ * Approves a manager action request (Second Admin only)
+ */
+export async function approveManagerAction(requestId: string) {
+  try {
+    const { profile: approver } = await verifyAdminSession();
+
+    // 1. Fetch pending action request
+    const request = await db.query.adminPendingActions.findFirst({
+      where: eq(adminPendingActions.id, requestId),
+    });
+
+    if (!request || request.statut !== "en_attente") {
+      return { success: false, error: "La demande d'approbation est introuvable ou a déjà été traitée." };
+    }
+
+    // 2. Dual-control enforcement: verify that the approver is a DIFFERENT admin
+    if (request.initiatedBy === approver.id) {
+      return { success: false, error: "Double contrôle requis : Vous ne pouvez pas approuver votre propre demande." };
+    }
+
+    // 3. Apply changes directly
+    await executeManagerActionDirectly(request.type as any, request.targetId, request.details, approver.id);
+
+    // 4. Mark request as approved
+    await db.update(adminPendingActions)
+      .set({
+        statut: "approuve",
+        traitePar: approver.id,
+        traiteAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(adminPendingActions.id, requestId));
+
+    // 5. Notify the initiator about the approval
+    await db.insert(notifications).values({
+      destinataireId: request.initiatedBy,
+      titre: "Demande approuvée",
+      message: `Votre demande d'action sur le manager a été approuvée par ${approver.prenom} ${approver.nom}.`,
+      type: "info" as const,
+      lu: false,
+      lien: "/admin/managers",
+    });
+
+    revalidatePath("/admin/managers");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in approveManagerAction:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Rejects a manager action request
+ */
+export async function rejectManagerAction(requestId: string) {
+  try {
+    const { profile: rejecter } = await verifyAdminSession();
+
+    // 1. Fetch pending action request
+    const request = await db.query.adminPendingActions.findFirst({
+      where: eq(adminPendingActions.id, requestId),
+    });
+
+    if (!request || request.statut !== "en_attente") {
+      return { success: false, error: "La demande est introuvable ou a déjà été traitée." };
+    }
+
+    // 2. Mark request as rejected
+    await db.update(adminPendingActions)
+      .set({
+        statut: "rejete",
+        traitePar: rejecter.id,
+        traiteAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(adminPendingActions.id, requestId));
+
+    // 3. Notify the initiator about the rejection
+    await db.insert(notifications).values({
+      destinataireId: request.initiatedBy,
+      titre: "Demande rejetée",
+      message: `Votre demande d'action sur le manager a été annulée/rejetée par ${rejecter.prenom} ${rejecter.nom}.`,
+      type: "alerte" as const,
+      lu: false,
+      lien: "/admin/managers",
+    });
+
+    revalidatePath("/admin/managers");
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in rejectManagerAction:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates global system toggles (Super Admin only)
+ */
+export async function updateSystemConfig(config: {
+  allow_manager_edit: boolean;
+  enable_wave: boolean;
+  enable_momo: boolean;
+  enable_orange: boolean;
+}) {
+  try {
+    await verifySuperAdminSession();
+
+    const existingRow = await db.query.pageSections.findFirst({
+      where: eq(pageSections.cle, "system_config"),
+    });
+
+    if (existingRow) {
+      await db.update(pageSections)
+        .set({
+          contenu: config,
+          updatedAt: new Date(),
+        })
+        .where(eq(pageSections.cle, "system_config"));
+    } else {
+      await db.insert(pageSections).values({
+        cle: "system_config",
+        titre: "Configuration Système",
+        contenu: config,
+        ordre: 99,
+        isActive: true,
+      });
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin/parametres");
+    revalidatePath("/admin/managers");
+    revalidatePath("/dashboard/paiement");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateSystemConfig:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
 

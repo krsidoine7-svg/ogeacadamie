@@ -7,7 +7,6 @@ import PaiementModal from "@/components/dashboard/candidat/PaiementModal";
 interface ZoneConfigData {
   zone: string;
   lienWave: string | null;
-  lienMomo: string | null;
   adresse: string | null;
   telephone: string | null;
 }

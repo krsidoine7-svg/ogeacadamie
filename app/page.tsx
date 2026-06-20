@@ -104,7 +104,16 @@ const DEFAULT_CONTENTS: any = {
   inscription: {
     title: "Rejoignez OGE Académie dès maintenant",
     subtitle: "Inscrivez-vous dès aujourd'hui pour seulement 15 000 FCFA (frais Wave / Mobile Money inclus) et accédez immédiatement à nos cours.",
-    cta_text: "S'inscrire en ligne"
+    cta_text: "S'inscrire en ligne",
+    urgence_badge: "🚨 L'OPPORTUNITÉ D'UNE VIE",
+    urgence_title: "Ne gâchez pas votre unique chance d'intégrer l'élite",
+    urgence_description: "Les places à l'INP-HB, l'ESATIC et au CME sont extrêmement chères et limitées. Chaque chaque année, des milliers d’élèves brillants ratent ces concours simplement parce qu'ils n’ont pas eu la bonne préparation stratégique. Rater ce concours maintenant, c'est compromettre vos ambitions et risquer de passer à côté d'une carrière exceptionnelle.",
+    urgence_cards: [
+      { title: "Le Succès ou le Regret", text: "Intégrer ces écoles d'élite garantit une bourse d’études, un diplôme prestigieux et une insertion professionnelle assurée. Ne pas vous donner tous les moyens de réussir aujourd’hui est le plus grand risque pour votre avenir." },
+      { title: "Une Compétition Impitoyable", text: "Les autres candidats se préparent déjà jour et nuit. Sans nos corrigés d'examens officiels, nos méthodes de résolution rapide et notre accompagnement par zone WhatsApp, vous partez avec un immense désavantage." },
+      { title: "L'Investissement Décisif", text: "Pour seulement 15 000 FCFA (frais tout inclus), vous accédez à l'arme absolue pour forcer les portes du succès. C'est l'investissement le plus rentable et le plus décisif que vous ferez pour votre carrière." }
+    ],
+    urgence_warning: "⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir."
   },
   footer: {
     facebook: "https://facebook.com/ogeacademie",
@@ -173,7 +182,8 @@ export default async function Home() {
       zone: "yamoussoukro",
       concours: "inphb",
       message: "Grâce à OGE Académie, j'ai pu intégrer les CPGE de l'INP-HB. Les cours intensifs de physique m'ont sauvé !",
-      note: 5
+      note: 5,
+      photoUrl: null
     },
     {
       nom: "Diallo",
@@ -181,7 +191,8 @@ export default async function Home() {
       zone: "bouake",
       concours: "esatic",
       message: "L'encadrement par zone de formation et le suivi WhatsApp m'ont permis de rester motivé tout au long de ma préparation.",
-      note: 5
+      note: 5,
+      photoUrl: null
     },
     {
       nom: "Kouadio",
@@ -189,7 +200,8 @@ export default async function Home() {
       zone: "yopougon",
       concours: "cme",
       message: "Des corrigés clairs et des explications en vidéo que l'on ne trouve nulle part ailleurs. Recommandé à 100% !",
-      note: 5
+      note: 5,
+      photoUrl: null
     }
   ];
 
@@ -500,7 +512,7 @@ export default async function Home() {
             <div className="max-w-7xl mx-auto space-y-12">
               <div className="text-center max-w-3xl mx-auto space-y-3">
                 <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider">
-                  Retours d'Expérience
+                  Retours d&apos;Expérience
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-slate-900">
                   {contentMap.temoignages.title}
@@ -511,7 +523,7 @@ export default async function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {testimonialsList.map((t: any, index: number) => (
+                {testimonialsList.map((t, index) => (
                   <div
                     key={index}
                     className="p-6 md:p-8 bg-white rounded-3xl border border-slate-100 hover:border-slate-200 transition-all flex flex-col justify-between space-y-6 shadow-sm"
@@ -523,7 +535,7 @@ export default async function Home() {
                         ))}
                       </div>
                       <p className="text-slate-500 text-sm font-light italic leading-relaxed">
-                        "{t.message}"
+                        &ldquo;{t.message}&rdquo;
                       </p>
                     </div>
 
@@ -557,51 +569,35 @@ export default async function Home() {
             <div className="max-w-5xl mx-auto space-y-16">
               <div className="text-center max-w-3xl mx-auto space-y-6">
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold bg-red-50 text-red-650 border border-red-200 uppercase tracking-widest animate-pulse">
-                  🚨 L'OPPORTUNITÉ D'UNE VIE
+                  {contentMap.inscription.urgence_badge}
                 </span>
                 <h2 className="text-3xl sm:text-5xl font-black tracking-tight uppercase leading-tight text-slate-900">
-                  Ne gâchez pas votre unique chance d'intégrer l'élite
+                  {contentMap.inscription.urgence_title}
                 </h2>
                 <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-normal">
-                  Les places à l'<strong>INP-HB</strong>, l'<strong>ESATIC</strong> et au <strong>CME</strong> sont extrêmement chères et limitées. Chaque année, des milliers d’élèves brillants ratent ces concours simplement parce qu'ils n’ont pas eu la bonne préparation stratégique. Rater ce concours maintenant, c'est compromettre vos ambitions et risquer de passer à côté d'une carrière exceptionnelle.
+                  {contentMap.inscription.urgence_description}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-red-500/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-extrabold text-lg">
-                    01
+                {(contentMap.inscription.urgence_cards || []).map((card: { title: string; text: string }, idx: number) => (
+                  <div key={idx} className={`p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 transition-all duration-300 ${idx === 2 ? "hover:border-gold/30" : "hover:border-red-500/30"}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-extrabold text-lg ${idx === 2 ? "bg-amber-50 border border-amber-200 text-amber-700" : "bg-red-50 border border-red-200 text-red-600"}`}>
+                      {String(idx + 1).padStart(2, "0")}
+                    </div>
+                    <h3 className={`text-lg font-bold uppercase tracking-tight ${idx === 2 ? "text-amber-700" : "text-slate-900"}`}>
+                      {card.title}
+                    </h3>
+                    <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
+                      {card.text}
+                    </p>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Le Succès ou le Regret</h3>
-                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
-                    Intégrer ces écoles d'élite garantit une bourse d’études, un diplôme prestigieux et une insertion professionnelle assurée. Ne pas vous donner tous les moyens de réussir aujourd’hui est le plus grand risque pour votre avenir.
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-red-500/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 font-extrabold text-lg">
-                    02
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Une Compétition Impitoyable</h3>
-                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
-                    Les autres candidats se préparent déjà jour et nuit. Sans nos corrigés d'examens officiels, nos méthodes de résolution rapide et notre accompagnement par zone WhatsApp, vous partez avec un immense désavantage.
-                  </p>
-                </div>
-
-                <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-4 hover:border-gold/30 transition-all duration-300">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 font-extrabold text-lg">
-                    03
-                  </div>
-                  <h3 className="text-lg font-bold text-amber-700 uppercase tracking-tight">L'Investissement Décisif</h3>
-                  <p className="text-slate-500 text-xs sm:text-sm font-normal leading-relaxed">
-                    Pour seulement 15 000 FCFA (frais tout inclus), vous accédez à l'arme absolue pour forcer les portes du succès. C'est l'investissement le plus rentable et le plus décisif que vous ferez pour votre carrière.
-                  </p>
-                </div>
+                ))}
               </div>
 
               <div className="text-center pt-4">
                 <p className="text-xs sm:text-sm font-bold text-red-650 italic uppercase tracking-wider">
-                  ⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir.
+                  {contentMap.inscription.urgence_warning}
                 </p>
               </div>
             </div>
@@ -644,7 +640,7 @@ export default async function Home() {
                 </span>
               </Link>
               <p className="text-xs text-slate-450 leading-relaxed">
-                Leader de la préparation aux concours de grandes écoles en Côte d'Ivoire. Intégrez l'excellence.
+                Leader de la préparation aux concours de grandes écoles en Côte d&apos;Ivoire. Intégrez l&apos;excellence.
               </p>
             </div>
 
@@ -654,7 +650,7 @@ export default async function Home() {
                 <li><a href="#historique" className="hover:text-white transition-all">Notre Mission</a></li>
                 <li><a href="#formations" className="hover:text-white transition-all">Concours visés</a></li>
                 <li><a href="#statistiques" className="hover:text-white transition-all">Résultats</a></li>
-                <li><a href="/inscription" className="hover:text-white transition-all font-semibold text-[#D4A017]">S'inscrire</a></li>
+                <li><a href="/inscription" className="hover:text-white transition-all font-semibold text-[#D4A017]">S&apos;inscrire</a></li>
               </ul>
             </div>
 

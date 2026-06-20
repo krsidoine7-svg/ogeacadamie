@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements } from "@/drizzle/schema";
+import { profiles, paiements, zoneConfig } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
 /**
@@ -227,6 +227,76 @@ export async function rejectCandidatePayment(paymentId: string, notes: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Error in rejectCandidatePayment:", error);
+    return { success: false, error: error.message || "Une erreur interne est survenue." };
+  }
+}
+
+/**
+ * Updates the manager's assigned zone configuration details.
+ */
+export async function updateZoneConfigByManager(formData: {
+  lienWave: string | null;
+  lienMomo: string | null;
+  lienOrange: string | null;
+  adresse: string | null;
+  telephone: string | null;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // 1. Get current logged-in manager user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { success: false, error: "Non autorisé. Session expirée." };
+    }
+
+    const managerProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, user.id),
+    });
+
+    if (!managerProfile || managerProfile.role !== "manager_zone" || !managerProfile.zone) {
+      return { success: false, error: "Non autorisé. Seuls les managers de zone avec zone configurée peuvent modifier les paramètres." };
+    }
+
+    // 2. Upsert zone configuration in database
+    const existingConfig = await db.query.zoneConfig.findFirst({
+      where: eq(zoneConfig.zone, managerProfile.zone),
+    });
+
+    if (existingConfig) {
+      await db
+        .update(zoneConfig)
+        .set({
+          managerId: managerProfile.id,
+          lienWave: formData.lienWave,
+          lienMomo: formData.lienMomo,
+          lienOrange: formData.lienOrange,
+          adresse: formData.adresse,
+          telephone: formData.telephone,
+          updatedAt: new Date(),
+        })
+        .where(eq(zoneConfig.zone, managerProfile.zone));
+    } else {
+      await db
+        .insert(zoneConfig)
+        .values({
+          zone: managerProfile.zone,
+          managerId: managerProfile.id,
+          lienWave: formData.lienWave,
+          lienMomo: formData.lienMomo,
+          lienOrange: formData.lienOrange,
+          adresse: formData.adresse,
+          telephone: formData.telephone,
+          updatedAt: new Date(),
+        });
+    }
+
+    revalidatePath("/zone/parametres");
+    revalidatePath("/zone");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in updateZoneConfigByManager:", error);
     return { success: false, error: error.message || "Une erreur interne est survenue." };
   }
 }

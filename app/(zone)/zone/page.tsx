@@ -4,8 +4,8 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, paiements } from "@/drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
-import PaiementZoneTable from "@/components/dashboard/zone/PaiementZoneTable";
+import { eq, and } from "drizzle-orm";
+import ZoneDashboardClient from "@/components/dashboard/zone/ZoneDashboardClient";
 import { MapPin } from "lucide-react";
 
 export default async function ManagerDashboardPage() {
@@ -45,8 +45,8 @@ export default async function ManagerDashboardPage() {
     );
   }
 
-  // 3. Fetch candidates (role='user') in this zone with their payment details
-  const candidatesData = await db
+  // 3. Fetch all candidates (role='user') in this zone with payment status to compute stats
+  const allCandidates = await db
     .select({
       id: profiles.id,
       nom: profiles.nom,
@@ -67,59 +67,60 @@ export default async function ManagerDashboardPage() {
         eq(profiles.role, "user"),
         eq(profiles.zone, managerProfile.zone)
       )
-    )
-    .orderBy(desc(paiements.createdAt));
+    );
 
-  // 4. Batch generate signed URLs for payment captures
-  const paths = candidatesData
-    .map((c) => c.paymentCaptureUrl)
-    .filter((url): url is string => !!url);
+  const total = allCandidates.length;
+  const actifs = allCandidates.filter((c) => c.isActive === true).length;
+  const aValider = allCandidates.filter((c) => c.paymentStatus === "en_cours").length;
+  const rejete = allCandidates.filter((c) => c.paymentStatus === "rejete").length;
+  const nonSoumis = allCandidates.filter(
+    (c) => !c.paymentStatus || c.paymentStatus === "en_attente"
+  ).length;
 
-  const signedUrlsMap: Record<string, string> = {};
+  const stats = { total, actifs, aValider, rejete, nonSoumis };
 
-  if (paths.length > 0) {
-    try {
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from("captures-paiements")
-        .createSignedUrls(paths, 3600); // 1 hour expiry
+  // 4. Get the 5 most recent candidates who have a payment capture uploaded, prioritized by status 'en_cours' first
+  const candidatesForRecent = allCandidates
+    .filter((c) => c.paymentCaptureUrl)
+    .sort((a, b) => {
+      // Prioritize 'en_cours' status
+      if (a.paymentStatus === "en_cours" && b.paymentStatus !== "en_cours") return -1;
+      if (a.paymentStatus !== "en_cours" && b.paymentStatus === "en_cours") return 1;
+      // Then order by date desc
+      const dateA = a.paymentCreatedAt ? new Date(a.paymentCreatedAt).getTime() : 0;
+      const dateB = b.paymentCreatedAt ? new Date(b.paymentCreatedAt).getTime() : 0;
+      return dateB - dateA;
+    })
+    .slice(0, 5);
 
-      if (!signedError && signedData) {
-        signedData.forEach((item) => {
-          if (item.signedUrl && item.path) {
-            signedUrlsMap[item.path] = item.signedUrl;
+  // Resolve signed Storage URLs for the 5 recent submissions
+  const recentSubmissions = await Promise.all(
+    candidatesForRecent.map(async (c) => {
+      let signedUrl = undefined;
+      if (c.paymentCaptureUrl) {
+        try {
+          const { data, error } = await supabase.storage
+            .from("captures-paiements")
+            .createSignedUrl(c.paymentCaptureUrl, 3600);
+          if (!error && data) {
+            signedUrl = data.signedUrl;
           }
-        });
+        } catch (err) {
+          console.error("Error generating signed URL for candidate receipt:", err);
+        }
       }
-    } catch (err) {
-      console.error("Error generating batch signed URLs for manager dashboard:", err);
-    }
-  }
-
-  // Map signed URLs to corresponding candidate object
-  const candidatesWithSignedUrls = candidatesData.map((c) => ({
-    ...c,
-    signedUrl: c.paymentCaptureUrl ? signedUrlsMap[c.paymentCaptureUrl] : undefined,
-  }));
-
-  const formatZoneName = (name: string) => {
-    return name.charAt(0).toUpperCase() + name.slice(1).replace("-", " ");
-  };
+      return {
+        ...c,
+        signedUrl,
+      };
+    })
+  );
 
   return (
-    <div className="space-y-6">
-      {/* Title Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Tableau de Bord</h1>
-        <p className="text-slate-500 text-xs mt-1">
-          Suivi des inscriptions et validation des paiements pour la zone :{" "}
-          <span className="font-bold text-[#0F172A] uppercase">
-            {formatZoneName(managerProfile.zone)}
-          </span>
-        </p>
-      </div>
-
-      {/* Main interactive table & statistics */}
-      <PaiementZoneTable candidates={candidatesWithSignedUrls} />
-    </div>
+    <ZoneDashboardClient
+      stats={stats}
+      recentSubmissions={recentSubmissions}
+      zoneName={managerProfile.zone}
+    />
   );
 }

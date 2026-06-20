@@ -1,7 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Check, Loader2, User, Phone, BookOpen, GraduationCap, Monitor, Users } from "lucide-react";
+import { Check, Loader2, User, Phone, BookOpen, Monitor, Users } from "lucide-react";
 
 import { step3Schema, Step3Data } from "@/lib/validations/inscription.schema";
 import { Label } from "@/components/ui/label";
@@ -30,7 +30,7 @@ const zones = [
   { id: "abobo", name: "Abobo", desc: "Abidjan Nord" },
   { id: "port-bouet", name: "Port-Bouët", desc: "Abidjan Sud" },
   { id: "bouake", name: "Bouaké", desc: "Centre-Nord" },
-];
+] as const;
 
 export default function OnboardingStep3({
   initialData,
@@ -43,9 +43,10 @@ export default function OnboardingStep3({
     setValue,
     watch,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
+    mode: "onChange",
     defaultValues: {
       zone: initialData.zone || undefined,
     },
@@ -82,7 +83,7 @@ export default function OnboardingStep3({
               <button
                 key={z.id}
                 type="button"
-                onClick={() => handleSelectZone(z.id as any)}
+                onClick={() => handleSelectZone(z.id)}
                 className={`p-3 rounded-xl border text-left flex items-start justify-between transition-all duration-300 ${
                   isSelected
                     ? "bg-gold/10 border-gold shadow-md shadow-gold/5"
@@ -186,8 +187,8 @@ export default function OnboardingStep3({
         </Button>
         <Button
           type="submit"
-          disabled={isLoading}
-          className="w-2/3 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-medium shadow-md shadow-gold/10 h-10 rounded-lg flex items-center justify-center"
+          disabled={isLoading || !isValid}
+          className="w-2/3 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-medium shadow-md shadow-gold/10 h-10 rounded-lg flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
         >
           {isLoading ? (
             <>

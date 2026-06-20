@@ -5,10 +5,11 @@ import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { GraduationCap, LayoutDashboard, FileCheck, Users, LogOut, MapPin, UserCircle } from "lucide-react";
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import Header from "@/components/dashboard/Header";
+import { ZoneSidebarNav, ZoneMobileNav } from "@/components/dashboard/zone/ZoneNavigation";
 
 interface ManagerLayoutProps {
   children: React.ReactNode;
@@ -68,7 +69,7 @@ export default async function ManagerLayout({ children }: ManagerLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="h-screen bg-[#F8FAFC] flex flex-col font-sans overflow-hidden">
       {/* Universal header customized for manager session */}
       <Header
         profile={{
@@ -80,64 +81,18 @@ export default async function ManagerLayout({ children }: ManagerLayoutProps) {
       />
 
       {/* Mobile Navigation Bar */}
-      <div className="md:hidden border-b border-slate-200 bg-white px-2 py-3 flex items-center justify-around text-xs font-bold text-slate-500 shadow-sm">
-        <Link
-          href="/zone"
-          className="flex flex-col items-center gap-1 py-1 px-3 text-[#D4A017] transition-all"
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          <span>Dashboard</span>
-        </Link>
-        <a
-          href="#candidats"
-          className="flex flex-col items-center gap-1 py-1 px-3 hover:text-slate-900 transition-all"
-        >
-          <Users className="w-4 h-4" />
-          <span>Candidats</span>
-        </a>
-        <a
-          href="#paiements"
-          className="flex flex-col items-center gap-1 py-1 px-3 hover:text-slate-900 transition-all"
-        >
-          <FileCheck className="w-4 h-4" />
-          <span>Paiements</span>
-        </a>
-      </div>
+      <ZoneMobileNav />
 
-      <div className="flex flex-1 max-w-7xl w-full mx-auto">
+      <div className="flex flex-1 max-w-7xl w-full mx-auto overflow-hidden">
         {/* Navigation Sidebar */}
-        <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6">
+        <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6 flex-shrink-0 h-full overflow-y-auto">
           <div className="px-3">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Navigation Manager
             </span>
           </div>
 
-          <nav className="space-y-1">
-            <Link
-              href="/zone"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 bg-slate-100 font-semibold text-sm tracking-tight transition-all duration-200"
-            >
-              <LayoutDashboard className="w-4 h-4 text-gold" />
-              <span>Tableau de Bord</span>
-            </Link>
-
-            <Link
-              href="/zone#candidats"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm tracking-tight transition-all duration-200"
-            >
-              <Users className="w-4 h-4 text-slate-400" />
-              <span>Candidats</span>
-            </Link>
-
-            <Link
-              href="/zone#paiements"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-medium text-sm tracking-tight transition-all duration-200"
-            >
-              <FileCheck className="w-4 h-4 text-slate-400" />
-              <span>Paiements</span>
-            </Link>
-          </nav>
+          <ZoneSidebarNav />
 
           <div className="pt-6 border-t border-slate-100 px-3">
             <div className="bg-amber-50/50 border border-amber-200/40 rounded-2xl p-4 space-y-2">
@@ -153,7 +108,7 @@ export default async function ManagerLayout({ children }: ManagerLayoutProps) {
         </aside>
 
         {/* Content Main Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full pb-20 md:pb-8">
           {children}
         </main>
       </div>

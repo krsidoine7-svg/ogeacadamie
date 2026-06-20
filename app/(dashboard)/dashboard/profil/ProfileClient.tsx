@@ -45,8 +45,6 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
     try {
       const result = await updateCandidateProfile({
         whatsapp,
-        modeFormation,
-        zone,
       });
 
       if (!result.success) {
@@ -241,7 +239,7 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label htmlFor="mode" className="text-xs font-bold text-slate-400 uppercase">
+                <label htmlFor="mode" className="text-xs font-bold text-slate-455 uppercase">
                   Mode de Formation
                 </label>
                 <div className="relative">
@@ -249,8 +247,8 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
                   <select
                     id="mode"
                     value={modeFormation}
-                    onChange={(e) => setModeFormation(e.target.value as "presentiel" | "en_ligne")}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 transition-all bg-white"
+                    disabled
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold bg-slate-50 text-slate-500 cursor-not-allowed focus:outline-none transition-all"
                   >
                     <option value="presentiel">Présentiel (En salle)</option>
                     <option value="en_ligne">En Ligne (E-learning)</option>
@@ -259,7 +257,7 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="zone" className="text-xs font-bold text-slate-400 uppercase">
+                <label htmlFor="zone" className="text-xs font-bold text-slate-455 uppercase">
                   Zone de Formation
                 </label>
                 <div className="relative">
@@ -267,8 +265,8 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
                   <select
                     id="zone"
                     value={zone}
-                    onChange={(e) => setZone(e.target.value as any)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 transition-all bg-white"
+                    disabled
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold bg-slate-50 text-slate-500 cursor-not-allowed focus:outline-none transition-all"
                   >
                     <option value="yamoussoukro">Yamoussoukro</option>
                     <option value="yopougon">Yopougon</option>

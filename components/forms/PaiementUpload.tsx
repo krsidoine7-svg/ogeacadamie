@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 interface PaiementUploadProps {
   onUploadSuccess: () => void;
+  moyenPaiement: "wave" | "momo" | "orange" | null;
 }
 
-export default function PaiementUpload({ onUploadSuccess }: PaiementUploadProps) {
+export default function PaiementUpload({ onUploadSuccess, moyenPaiement }: PaiementUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -90,6 +91,9 @@ export default function PaiementUpload({ onUploadSuccess }: PaiementUploadProps)
 
     const formData = new FormData();
     formData.append("file", selectedFile);
+    if (moyenPaiement) {
+      formData.append("moyen_paiement", moyenPaiement);
+    }
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/paiements/upload");
@@ -192,10 +196,10 @@ export default function PaiementUpload({ onUploadSuccess }: PaiementUploadProps)
       {previewUrl && !isUploading && (
         <Button
           onClick={handleUpload}
-          disabled={!selectedFile}
-          className="w-full bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-medium shadow-md shadow-gold/10 h-10 rounded-lg flex items-center justify-center gap-1.5"
+          disabled={!selectedFile || !moyenPaiement}
+          className="w-full bg-[#0F172A] hover:bg-slate-800 text-white rounded-xl py-2.5 font-bold cursor-pointer"
         >
-          Envoyer mon reçu de paiement
+          {!moyenPaiement ? "Sélectionnez un mode de paiement" : "Envoyer mon justificatif"}
         </Button>
       )}
     </div>

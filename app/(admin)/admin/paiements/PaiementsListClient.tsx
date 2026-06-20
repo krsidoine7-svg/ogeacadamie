@@ -181,12 +181,12 @@ export default function PaiementsListClient({ payments }: PaiementsListClientPro
   const getStatusBadge = (status: string | null) => {
     switch (status) {
       case "valide":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-emerald-100 text-emerald-800 border-emerald-200/80";
       case "en_cours":
       case "en_attente":
-        return "bg-amber-50 text-[#D4A017] border-amber-200";
+        return "bg-amber-100 text-amber-800 border-amber-300/80";
       case "rejete":
-        return "bg-rose-50 text-rose-700 border-rose-250";
+        return "bg-rose-100 text-rose-800 border-rose-200/80";
       default:
         return "bg-slate-100 text-slate-600 border-slate-200";
     }
@@ -283,59 +283,116 @@ export default function PaiementsListClient({ payments }: PaiementsListClientPro
       {/* Payments Table */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         {filteredPayments.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
-                  <th className="px-6 py-4">Candidat</th>
-                  <th className="px-6 py-4">Zone</th>
-                  <th className="px-6 py-4">Montant</th>
-                  <th className="px-6 py-4">Date soumission</th>
-                  <th className="px-6 py-4">Statut</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                {filteredPayments.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 space-y-0.5">
-                      <p className="font-bold text-slate-800">{p.candidateName}</p>
-                      <p className="text-xs text-slate-400 font-medium">{p.candidateEmail}</p>
-                    </td>
-                    <td className="px-6 py-4">{getZoneLabel(p.zone)}</td>
-                    <td className="px-6 py-4">{(p.montant || 15000).toLocaleString("fr-FR")} FCFA</td>
-                    <td className="px-6 py-4">
-                      {p.createdAt
-                        ? new Date(p.createdAt).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-0.5 border rounded-full text-xs font-bold ${getStatusBadge(p.statut)}`}>
-                        {getStatusLabel(p.statut)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => {
-                          setSelectedPayment(p);
-                          setShowRejectForm(false);
-                          setRejectionNotes("");
-                        }}
-                        className="p-1.5 bg-slate-50 hover:bg-slate-900 border border-slate-200 text-slate-500 hover:text-white rounded-lg transition-all inline-flex items-center justify-center gap-1 font-bold text-xs"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Inspecter</span>
-                      </button>
-                    </td>
+          <>
+            {/* Desktop view table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider">
+                    <th className="px-6 py-4">Candidat</th>
+                    <th className="px-6 py-4">Zone</th>
+                    <th className="px-6 py-4">Montant</th>
+                    <th className="px-6 py-4">Date soumission</th>
+                    <th className="px-6 py-4">Statut</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                  {filteredPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 space-y-0.5">
+                        <p className="font-bold text-slate-800">{p.candidateName}</p>
+                        <p className="text-xs text-slate-400 font-medium">{p.candidateEmail}</p>
+                      </td>
+                      <td className="px-6 py-4">{getZoneLabel(p.zone)}</td>
+                      <td className="px-6 py-4">{(p.montant || 15000).toLocaleString("fr-FR")} FCFA</td>
+                      <td className="px-6 py-4">
+                        {p.createdAt
+                          ? new Date(p.createdAt).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 border rounded-full text-xs font-bold tracking-wide whitespace-nowrap ${getStatusBadge(p.statut)}`}>
+                          {getStatusLabel(p.statut)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            setSelectedPayment(p);
+                            setShowRejectForm(false);
+                            setRejectionNotes("");
+                          }}
+                          className="p-1.5 bg-slate-50 hover:bg-slate-900 border border-slate-200 text-slate-500 hover:text-white rounded-lg transition-all inline-flex items-center justify-center gap-1 font-bold text-xs"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Inspecter</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View: Stacked Cards (no horizontal scroll) */}
+            <div className="sm:hidden divide-y divide-slate-100">
+              {filteredPayments.map((p) => (
+                <div key={p.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="space-y-0.5 max-w-[65%]">
+                      <p className="font-bold text-slate-800 text-sm truncate">{p.candidateName}</p>
+                      <p className="text-xs text-slate-400 font-medium truncate">{p.candidateEmail}</p>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${getStatusBadge(p.statut)}`}>
+                      {getStatusLabel(p.statut)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] border-t border-slate-50">
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">Zone</p>
+                      <p className="text-slate-800 font-bold mt-0.5">{getZoneLabel(p.zone)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">Montant</p>
+                      <p className="text-slate-800 font-bold mt-0.5">{(p.montant || 15000).toLocaleString("fr-FR")} F</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-[9px] text-slate-400 font-bold uppercase">Soumis le</p>
+                      <p className="text-slate-800 font-bold mt-0.5">
+                        {p.createdAt
+                          ? new Date(p.createdAt).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedPayment(p);
+                        setShowRejectForm(false);
+                        setRejectionNotes("");
+                      }}
+                      className="w-full py-2 bg-slate-50 hover:bg-slate-900 border border-slate-200 text-slate-500 hover:text-white rounded-xl transition-all flex items-center justify-center gap-1 font-bold text-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Inspecter le reçu</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           /* Empty state */
           <div className="text-center py-16 px-4 space-y-4 max-w-sm mx-auto">

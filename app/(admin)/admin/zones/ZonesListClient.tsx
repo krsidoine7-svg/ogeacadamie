@@ -10,7 +10,6 @@ interface ZoneConfigItem {
   id: string;
   zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake";
   lienWave: string | null;
-  lienMomo: string | null;
   adresse: string | null;
   telephone: string | null;
 }
@@ -25,7 +24,6 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
   // Edit states
   const [editingZone, setEditingZone] = useState<ZoneConfigItem | null>(null);
   const [wave, setWave] = useState("");
-  const [momo, setMomo] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +31,6 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
   const startEdit = (zoneItem: ZoneConfigItem) => {
     setEditingZone(zoneItem);
     setWave(zoneItem.lienWave || "");
-    setMomo(zoneItem.lienMomo || "");
     setPhone(zoneItem.telephone || "");
     setAddress(zoneItem.adresse || "");
   };
@@ -46,7 +43,8 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
     try {
       const res = await updateZoneConfig(editingZone.zone, {
         lienWave: wave.trim(),
-        lienMomo: momo.trim(),
+        lienMomo: "", // Cleared
+        lienOrange: "", // Cleared
         telephone: phone.trim(),
         adresse: address.trim(),
       });
@@ -107,11 +105,8 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
                 <div className="flex items-start gap-2">
                   <Landmark className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Paiements Digitaux</p>
-                    <div className="space-y-0.5 mt-0.5 text-slate-800">
-                      <p><span className="text-slate-400">Wave :</span> {zoneItem.lienWave || "Aucun lien"}</p>
-                      <p><span className="text-slate-400">Momo :</span> {zoneItem.lienMomo || "Aucun lien"}</p>
-                    </div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Compte Wave CI</p>
+                    <p className="text-slate-850 mt-0.5">{zoneItem.lienWave || "Non configuré"}</p>
                   </div>
                 </div>
 
@@ -147,7 +142,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="space-y-4 text-sm font-semibold text-slate-700">
+            <form onSubmit={handleUpdate} className="space-y-4 text-xs font-semibold text-slate-700">
               <div className="space-y-1.5">
                 <label htmlFor="ePhone" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                   Numéro de versement
@@ -157,7 +152,7 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Ex : 07 07 07 07 07 (Wave/Momo)"
+                  placeholder="Ex : 07 07 07 07 07"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 bg-slate-50/50"
                   required
                 />
@@ -165,29 +160,16 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
 
               <div className="space-y-1.5">
                 <label htmlFor="eWave" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                  Lien de paiement Wave (Optionnel)
+                  Numéro ou Lien Wave Marchand
                 </label>
                 <input
                   id="eWave"
                   type="text"
                   value={wave}
                   onChange={(e) => setWave(e.target.value)}
-                  placeholder="Ex : https://wave.me/to/..."
+                  placeholder="Ex : https://wave.me/to/... ou 07 07 07 07"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 bg-slate-50/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="eMomo" className="text-xs font-bold text-slate-400 uppercase tracking-wide">
-                  Lien de paiement MoMo (Optionnel)
-                </label>
-                <input
-                  id="eMomo"
-                  type="text"
-                  value={momo}
-                  onChange={(e) => setMomo(e.target.value)}
-                  placeholder="Ex : Lien de paiement MTN..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/30 bg-slate-50/50"
+                  required
                 />
               </div>
 
@@ -224,9 +206,9 @@ export default function ZonesListClient({ zones }: ZonesListClientProps) {
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm text-center space-y-3">
             <AlertCircle className="w-7 h-7 text-slate-400 mx-auto" />
             <div className="space-y-1">
-              <h4 className="font-bold text-slate-800 text-sm">Éditeur de Configuration</h4>
+              <h4 className="font-bold text-slate-850 text-sm">Éditeur de Configuration</h4>
               <p className="text-xs text-slate-450 leading-relaxed">
-                Sélectionnez une zone en cliquant sur l'icône de modification (**crayon**) pour modifier ses coordonnées et informations de facturation.
+                Sélectionnez une zone en cliquant sur l'icône de modification (**crayon**) pour modifier ses coordonnées et informations de facturation Wave CI.
               </p>
             </div>
           </div>

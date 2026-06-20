@@ -340,7 +340,8 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
         </div>
       ) : (
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider font-sans">
@@ -414,7 +415,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                         {/* Delete Button */}
                         <button
                           onClick={() => handleDelete(doc.id)}
-                          className="p-1.5 bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
+                          className="p-1.5 bg-red-55 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
                           title="Supprimer définitivement"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -425,6 +426,82 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile View: Stacked Cards (no horizontal scroll) */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {documentsList.map((doc) => (
+              <div key={doc.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
+                <div className="space-y-1">
+                  <p className="font-bold text-slate-900 text-sm leading-snug">{doc.titre}</p>
+                  {doc.description && <p className="text-slate-500 font-medium text-xs leading-normal">{doc.description}</p>}
+                </div>
+
+                <div className="flex gap-2 flex-wrap items-center">
+                  <span className="capitalize bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                    {doc.type === "cours" ? "Cours" : doc.type === "exercice" ? "Exercice" : "Corrigé"}
+                  </span>
+                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                    {doc.concours === "tous" ? "Tous Concours" : doc.concours}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] gap-2">
+                  <div className="flex-1 min-w-0">
+                    {doc.scheduledAt ? (
+                      <div className="space-y-1">
+                        <span className="bg-red-50 border border-red-200 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                          <Video className="w-3 h-3" />
+                          Direct
+                        </span>
+                        <p className="text-[10px] text-slate-500 font-mono">
+                          {new Date(doc.scheduledAt).toLocaleString("fr-FR")}
+                        </p>
+                        {doc.meetingUrl && (
+                          <a
+                            href={doc.meetingUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] text-blue-600 hover:underline font-bold block truncate max-w-[130px]"
+                            title={doc.meetingUrl}
+                          >
+                            Lien Meet ✓
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[130px] block" title={doc.fichierUrl}>
+                        {doc.fichierUrl?.split("/").pop()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Toggle Active Button */}
+                    <button
+                      onClick={() => handleToggleActive(doc.id, !doc.isActive)}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        doc.isActive
+                          ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                          : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100"
+                      }`}
+                      title={doc.isActive ? "Masquer aux étudiants" : "Afficher aux étudiants"}
+                    >
+                      {doc.isActive ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                    </button>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(doc.id)}
+                      className="p-1.5 bg-red-50 border border-red-250 text-red-700 hover:bg-red-100 rounded-lg transition-all"
+                      title="Supprimer définitivement"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

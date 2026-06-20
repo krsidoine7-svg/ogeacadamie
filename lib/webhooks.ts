@@ -20,10 +20,10 @@ export async function triggerNewDocumentWebhook(document: DocumentWebhookData) {
       where: eq(pageSections.cle, "parametres"),
     });
 
-    const config = configRow?.contenu as any || {};
-    const makeUrl = config.make_webhook_url;
-    const n8nUrl = config.n8n_webhook_url;
-    const secret = config.webhook_secret || "secret123";
+    const config = (configRow?.contenu as Record<string, unknown>) || {};
+    const makeUrl = config.make_webhook_url as string | undefined;
+    const n8nUrl = config.n8n_webhook_url as string | undefined;
+    const secret = (config.webhook_secret as string | undefined) || "secret123";
 
     const payload = {
       event: "document.created",

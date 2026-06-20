@@ -1,10 +1,32 @@
 "use client";
 
 import React, { useState } from "react";
-import { BookOpen, GraduationCap, Award, MapPin, Building, Calendar, Users, Home, Shield, Percent, Phone, Globe, CheckCircle } from "lucide-react";
+import { Award, MapPin, Building, Calendar, Users, Home, Shield, Percent, Globe, CheckCircle } from "lucide-react";
+
+interface SchoolData {
+  nom_complet?: string;
+  description?: string;
+  statut?: string;
+  localisation?: string;
+  creation?: string;
+  site_internet?: string;
+  tutelle?: string;
+  operateur?: string;
+  telephone?: string;
+  hebergement?: string;
+  insertion?: string;
+  avantages?: string;
+  excellence?: string;
+  certifications?: string;
+  frais_etudes?: string;
+  mixite?: string;
+  cadre_vie?: string;
+  programme?: string;
+  accompagnement?: string;
+}
 
 interface SchoolGuideProps {
-  formationData: any;
+  formationData: Record<string, SchoolData>;
 }
 
 export default function InteractiveSchoolGuides({ formationData }: SchoolGuideProps) {
@@ -84,7 +106,7 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
           <div className="space-y-6 text-center flex flex-col items-center">
             <div className="space-y-2 max-w-3xl mx-auto text-center">
               <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider block">
-                Fiche d'identité
+                Fiche d&apos;identité
               </span>
               <h3 className="text-2xl font-light tracking-tight text-slate-900 leading-tight">
                 {sData.nom_complet || "École Cible"}
@@ -168,7 +190,7 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
                 Avantages & Vie Académique
               </span>
               <h3 className="text-2xl font-light tracking-tight text-slate-900 leading-tight">
-                Cadre de vie et opportunités d'excellence
+                Cadre de vie et opportunités d&apos;excellence
               </h3>
             </div>
 
@@ -216,14 +238,14 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
                     <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center text-center gap-3">
                       <Shield className="w-8 h-8 text-[#D4A017] flex-shrink-0" />
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900">Opérateur Industriel d'Élite</h4>
+                        <h4 className="text-sm font-bold text-slate-900">Opérateur Industriel d&apos;Élite</h4>
                         <p className="text-xs text-slate-550 leading-relaxed mt-1">{sData.certifications || "Certifié par la CIE avec label ASEA."}</p>
                       </div>
                     </div>
                     <div className="p-5 border border-slate-100 rounded-2xl bg-slate-50/50 flex flex-col items-center text-center gap-3">
                       <Percent className="w-8 h-8 text-[#D4A017] flex-shrink-0" />
                       <div>
-                        <h4 className="text-sm font-bold text-slate-900">Frais d'Études & Employabilité</h4>
+                        <h4 className="text-sm font-bold text-slate-900">Frais d&apos;Études & Employabilité</h4>
                         <p className="text-xs text-slate-550 leading-relaxed mt-1">{sData.frais_etudes || "Filières payantes menant à l'insertion immédiate."}</p>
                       </div>
                     </div>
@@ -272,7 +294,7 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
                     </li>
                     <li className="flex flex-col items-center text-center gap-1.5 text-xs sm:text-sm text-slate-655 font-light">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span>Entraînement guidé sur les anciens sujets officiels de l'INP-HB.</span>
+                      <span>Entraînement guidé sur les anciens sujets officiels de l&apos;INP-HB.</span>
                     </li>
                   </ul>
                 )}
@@ -294,14 +316,14 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
               <div className="p-6 bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white rounded-3xl space-y-4 text-center flex flex-col items-center justify-center">
                 <h4 className="text-lg font-bold text-white tracking-tight">Prêt à commencer ?</h4>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  L'inscription à notre classe de préparation accélère vos chances de réussite. Les places par zone géographique sont limitées pour assurer un suivi optimal de chaque apprenant.
+                  L&apos;inscription à notre classe de préparation accélère vos chances de réussite. Les places par zone géographique sont limitées pour assurer un suivi optimal de chaque apprenant.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 pt-2 justify-center w-full">
                   <a
                     href="/inscription"
                     className="text-center text-xs font-bold bg-[#D4A017] hover:bg-yellow-600 text-white px-4 py-2.5 rounded-lg shadow-md transition-all"
                   >
-                    S'inscrire maintenant
+                    S&apos;inscrire maintenant
                   </a>
                   {sData.site_internet && (
                     <a
@@ -310,7 +332,7 @@ export default function InteractiveSchoolGuides({ formationData }: SchoolGuidePr
                       rel="noopener noreferrer"
                       className="text-center text-xs font-semibold border border-slate-700 hover:border-slate-500 text-slate-300 px-4 py-2.5 rounded-lg transition-all"
                     >
-                      Portail de l'école
+                      Portail de l&apos;école
                     </a>
                   )}
                 </div>

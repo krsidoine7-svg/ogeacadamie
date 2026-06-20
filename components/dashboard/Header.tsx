@@ -29,7 +29,7 @@ export default function Header({ profile }: HeaderProps) {
       toast.success("Déconnexion réussie");
       router.push("/connexion");
       router.refresh();
-    } catch (err) {
+    } catch {
       toast.error("Erreur lors de la déconnexion");
       setIsLoggingOut(false);
     }

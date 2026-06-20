@@ -7,6 +7,9 @@ export const step1Schema = z.object({
   whatsapp: z.string().min(8, 'Numéro WhatsApp requis'),
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères'),
+  acceptTerms: z.literal(true, {
+    message: "Vous devez accepter les conditions d'utilisation",
+  }),
 })
 
 export const step2Schema = z.object({

@@ -40,6 +40,7 @@ export const paiements = pgTable("paiements", {
   montant: integer("montant").default(15000),
   statut: paiementStatutEnum("statut").default("en_attente"),
   captureUrl: text("capture_url"),
+  moyenPaiement: text("moyen_paiement"),
   validePar: uuid("valide_par").references(() => profiles.id),
   valideAt: timestamp("valide_at", { withTimezone: true }),
   notes: text("notes"),
@@ -54,6 +55,7 @@ export const zoneConfig = pgTable("zone_config", {
   managerId: uuid("manager_id").references(() => profiles.id),
   lienWave: text("lien_wave"),
   lienMomo: text("lien_momo"),
+  lienOrange: text("lien_orange"),
   adresse: text("adresse"),
   telephone: text("telephone"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
@@ -135,5 +137,19 @@ export const temoignages = pgTable("temoignages", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
+
+export const adminPendingActions = pgTable("admin_pending_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").notNull(), // edit_manager, block_manager, activate_manager
+  targetId: uuid("target_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  initiatedBy: uuid("initiated_by").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  details: jsonb("details").default({}).notNull(), // { nom, prenom, email, whatsapp, zone, is_active }
+  statut: text("statut").default("en_attente").notNull(), // en_attente, approuve, rejete
+  traitePar: uuid("traite_par").references(() => profiles.id),
+  traiteAt: timestamp("traite_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 
 

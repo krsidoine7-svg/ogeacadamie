@@ -37,6 +37,7 @@ export async function POST(req: Request) {
     // 2. Parse and validate file upload
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const moyenPaiement = formData.get("moyen_paiement") as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -125,6 +126,7 @@ export async function POST(req: Request) {
           captureUrl: fileName,
           statut: "en_cours",
           zone: profile.zone,
+          moyenPaiement: moyenPaiement,
           notes: null, // Reset rejection notes on re-upload
           updatedAt: new Date(),
         })
@@ -135,6 +137,7 @@ export async function POST(req: Request) {
         zone: profile.zone,
         statut: "en_cours",
         captureUrl: fileName,
+        moyenPaiement: moyenPaiement,
         montant: 15000,
       });
     }

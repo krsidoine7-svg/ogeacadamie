@@ -12,10 +12,10 @@ const steps = [
 
 export default function Stepper({ currentStep }: StepperProps) {
   return (
-    <div className="w-full">
+    <div className="w-full px-8">
       <div className="flex items-center justify-between relative mb-6">
         {/* Barre de progression en arrière-plan */}
-        <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-800 -translate-y-1/2 pointer-events-none z-0" />
+        <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-200 -translate-y-1/2 pointer-events-none z-0" />
         <div
           className="absolute top-1/2 left-0 h-[2px] bg-gold -translate-y-1/2 transition-all duration-300 pointer-events-none z-0"
           style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
@@ -39,9 +39,9 @@ export default function Stepper({ currentStep }: StepperProps) {
                 {step.number}
               </div>
               <span
-                className={`text-[11px] font-medium mt-2 absolute top-9 whitespace-nowrap transition-colors ${
+                className={`text-xs font-semibold mt-2 absolute top-9 left-1/2 -translate-x-1/2 whitespace-nowrap transition-all duration-300 ${
                   isActive
-                    ? "text-gold font-semibold"
+                    ? "text-gold font-bold scale-105"
                     : isCompleted
                     ? "text-slate-500"
                     : "text-slate-400"

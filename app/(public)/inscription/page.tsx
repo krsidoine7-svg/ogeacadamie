@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 
 import Stepper from "@/components/shared/Stepper";
 import OnboardingStep1 from "@/components/forms/OnboardingStep1";
@@ -11,7 +11,7 @@ import OnboardingStep2 from "@/components/forms/OnboardingStep2";
 import OnboardingStep3 from "@/components/forms/OnboardingStep3";
 import { registerCandidate } from "./actions";
 import { Step1Data, Step2Data, Step3Data } from "@/lib/validations/inscription.schema";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function InscriptionPage() {
   const router = useRouter();
@@ -88,8 +88,12 @@ export default function InscriptionPage() {
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-gold to-transparent" />
 
         <CardHeader className="space-y-1 text-center pt-8 pb-4">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-tr from-gold to-amber-600 flex items-center justify-center shadow-lg shadow-gold/20 mb-2">
-            <GraduationCap className="w-6 h-6 text-white" />
+          <div className="mx-auto w-24 h-24 rounded-3xl overflow-hidden shadow-lg border border-slate-100 flex items-center justify-center mb-3 bg-white">
+            <img
+              src="/logo.jpeg"
+              alt="OGE Académie Logo"
+              className="object-cover w-full h-full"
+            />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">
             OGE ACADÉMIE
@@ -124,6 +128,18 @@ export default function InscriptionPage() {
             />
           )}
         </CardContent>
+
+        <CardFooter className="flex justify-center pb-8 border-t border-slate-100 pt-4">
+          <p className="text-xs text-slate-500">
+            Déjà inscrit ?{" "}
+            <a
+              href="/connexion"
+              className="text-gold hover:text-yellow-600 font-medium transition-colors"
+            >
+              Se connecter
+            </a>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );

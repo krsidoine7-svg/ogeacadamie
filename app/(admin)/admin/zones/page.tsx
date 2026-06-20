@@ -56,7 +56,6 @@ export default async function AdminZonesPage() {
           id: z.id,
           zone: z.zone as any,
           lienWave: z.lienWave,
-          lienMomo: z.lienMomo,
           adresse: z.adresse,
           telephone: z.telephone,
         }))}

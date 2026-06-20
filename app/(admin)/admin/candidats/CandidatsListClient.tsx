@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { toggleUserActive, softDeleteUser, updateCandidateProfile } from "@/app/(admin)/admin/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Search, Phone, ShieldAlert, CheckCircle2, XCircle, Trash2, Download, AlertCircle, RefreshCw, Pencil, X, Loader2 } from "lucide-react";
+import { Search, Phone, ShieldAlert, CheckCircle2, XCircle, Trash2, Download, AlertCircle, RefreshCw, Pencil, X, Loader2, AlertTriangle } from "lucide-react";
 
 interface Candidate {
   id: string;
@@ -40,6 +40,10 @@ export default function CandidatsListClient({ candidates }: CandidatsListClientP
   // Edit Modal State
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
   const [editForm, setEditForm] = useState({ nom: "", prenom: "", whatsapp: "", zone: "", modeFormation: "" });
+
+  // Delete Confirmation Modal State
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isEditSubmitting, setIsEditSubmitting] = useState(false);
 
   // Filter Candidates
@@ -82,24 +86,28 @@ export default function CandidatsListClient({ candidates }: CandidatsListClientP
     }
   };
 
-  // Soft delete candidate
-  const handleDeleteCandidate = async (userId: string, name: string) => {
-    const confirm = window.confirm(
-      `Êtes-vous sûr de vouloir supprimer définitivement le compte de ${name} ?`
-    );
-    if (!confirm) return;
+  // Open delete confirmation modal
+  const handleDeleteCandidate = (userId: string, name: string) => {
+    setDeleteTarget({ id: userId, name });
+  };
 
-    setProcessingId(userId);
+  // Confirm soft delete
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setProcessingId(deleteTarget.id);
     try {
-      const res = await softDeleteUser(userId);
+      const res = await softDeleteUser(deleteTarget.id);
       if (!res.success) throw new Error(res.error);
 
       toast.success("Compte candidat supprimé avec succès.");
+      setDeleteTarget(null);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Erreur lors de la suppression.");
     } finally {
       setProcessingId(null);
+      setIsDeleting(false);
     }
   };
 
@@ -605,6 +613,55 @@ export default function CandidatsListClient({ candidates }: CandidatsListClientP
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 pt-6 pb-4 text-center space-y-3">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+                <AlertTriangle className="w-7 h-7 text-rose-500" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-extrabold text-lg text-slate-900">
+                  Confirmer la suppression
+                </h3>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Vous êtes sur le point de supprimer le compte de{" "}
+                  <span className="font-bold text-slate-700">{deleteTarget.name}</span>.
+                  Cette action est irréversible.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-6 pb-6 pt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 border border-slate-200 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-600 transition-all disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-rose-600/15 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                <span>Supprimer</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

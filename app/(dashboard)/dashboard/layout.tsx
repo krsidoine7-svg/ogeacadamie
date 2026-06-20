@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements, zoneConfig, notifications } from "@/drizzle/schema";
+import { profiles, paiements, zoneConfig, notifications, pageSections } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
 import PaiementModalWrapper from "@/components/dashboard/candidat/PaiementModalWrapper";
+import CandidatMobileNav from "@/components/dashboard/CandidatMobileNav";
 import { ShieldAlert, LayoutDashboard, BookOpen, UserCircle, Bell, CreditCard } from "lucide-react";
 import Link from "next/link";
 
@@ -63,6 +64,8 @@ export default async function DashboardLayout({
     });
   }
 
+
+
   // 6. Fetch unread notification count
   let unreadNotifCount = 0;
   if (paymentStatus === "valide") {
@@ -76,7 +79,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans overflow-hidden">
       {/* Universal header containing candidate session info & logout button */}
       <Header
         profile={{
@@ -88,51 +91,20 @@ export default async function DashboardLayout({
       />
 
       {paymentStatus === "valide" ? (
-        <div className="flex flex-col md:flex-row flex-1 max-w-7xl w-full mx-auto">
+        <div className="flex flex-col md:flex-row flex-1 max-w-7xl w-full mx-auto overflow-hidden">
           {/* Mobile Navigation Bar */}
-          <div className="md:hidden border-b border-slate-200 bg-white px-2 py-3 flex items-center justify-around text-xs font-bold text-slate-500 shadow-sm flex-shrink-0">
-            <Link
-              href="/dashboard"
-              className="flex flex-col items-center gap-1 py-1 px-2 hover:text-slate-900 transition-all text-[#D4A017]"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              <span>Accueil</span>
-            </Link>
-            <Link
-              href="/dashboard/documents"
-              className="flex flex-col items-center gap-1 py-1 px-2 hover:text-slate-900 transition-all"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Documents</span>
-            </Link>
-            <Link
-              href="/dashboard/profil"
-              className="flex flex-col items-center gap-1 py-1 px-2 hover:text-slate-900 transition-all"
-            >
-              <UserCircle className="w-4 h-4" />
-              <span>Profil</span>
-            </Link>
-            <Link
-              href="/dashboard/paiement"
-              className="flex flex-col items-center gap-1 py-1 px-2 hover:text-slate-900 transition-all"
-            >
-              <CreditCard className="w-4 h-4" />
-              <span>Paiements</span>
-            </Link>
-            <Link
-              href="/dashboard/notifications"
-              className="flex flex-col items-center gap-1 py-1 px-2 hover:text-slate-900 transition-all relative"
-            >
-              <Bell className="w-4 h-4" />
-              <span>Alertes</span>
-              {unreadNotifCount > 0 && (
-                <span className="absolute top-0 right-1.5 w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-              )}
-            </Link>
-          </div>
+          <CandidatMobileNav
+            profile={{
+              nom: profile.nom,
+              prenom: profile.prenom,
+              email: profile.email,
+              role: profile.role,
+            }}
+            unreadNotifCount={unreadNotifCount}
+          />
 
           {/* Navigation Sidebar */}
-          <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6 flex-shrink-0">
+          <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6 flex-shrink-0 h-full overflow-y-auto">
             <div className="px-3">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Espace Candidat
@@ -190,13 +162,13 @@ export default async function DashboardLayout({
           </aside>
 
           {/* Content Main Area */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full pb-20 md:pb-8">
             {children}
           </main>
         </div>
       ) : (
         /* Blocked dashboard area when payment is not approved */
-        <main className="flex-1 flex items-center justify-center p-4">
+        <main className="flex-1 flex items-center justify-center p-4 overflow-y-auto">
           <div className="text-center space-y-4 max-w-md bg-white border border-slate-200 p-8 rounded-2xl shadow-xl">
             <div className="w-12 h-12 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-center mx-auto text-[#D4A017]">
               <ShieldAlert className="w-6 h-6 text-[#D4A017]" />
@@ -213,7 +185,6 @@ export default async function DashboardLayout({
             zoneConfig={zoneConfigData ? {
               zone: zoneConfigData.zone,
               lienWave: zoneConfigData.lienWave,
-              lienMomo: zoneConfigData.lienMomo,
               adresse: zoneConfigData.adresse,
               telephone: zoneConfigData.telephone,
             } : null}

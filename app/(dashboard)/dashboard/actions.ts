@@ -12,8 +12,6 @@ import { eq, and } from "drizzle-orm";
  */
 export async function updateCandidateProfile(formData: {
   whatsapp: string;
-  modeFormation: "presentiel" | "en_ligne";
-  zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake";
 }) {
   try {
     const cookieStore = await cookies();
@@ -25,13 +23,11 @@ export async function updateCandidateProfile(formData: {
       return { success: false, error: "Non autorisé. Session expirée." };
     }
 
-    // 2. Update profile in database
+    // 2. Update profile in database (only WhatsApp is editable by candidate)
     await db
       .update(profiles)
       .set({
         whatsapp: formData.whatsapp,
-        modeFormation: formData.modeFormation,
-        zone: formData.zone,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, user.id));

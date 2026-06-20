@@ -76,8 +76,8 @@ export async function createCalendarEvent(eventData: CalendarEventData) {
       where: eq(pageSections.cle, "parametres"),
     });
 
-    const config = configRow?.contenu as any || {};
-    const calendarId = config.google_calendar_id;
+    const config = (configRow?.contenu as Record<string, unknown>) || {};
+    const calendarId = config.google_calendar_id as string | undefined;
 
     if (!calendarId) {
       console.warn("GOOGLE_CALENDAR_ID is not configured in settings. Skipping Google Calendar event creation.");
@@ -129,7 +129,7 @@ export async function createCalendarEvent(eventData: CalendarEventData) {
     
     return {
       eventId: event.id as string,
-      meetingUrl: event.conferenceData?.entryPoints?.find((ep: any) => ep.entryPointType === "video")?.uri || event.hangoutLink || "",
+      meetingUrl: event.conferenceData?.entryPoints?.find((ep: { entryPointType?: string; uri?: string }) => ep.entryPointType === "video")?.uri || event.hangoutLink || "",
       htmlLink: event.htmlLink || "",
     };
   } catch (error) {
@@ -144,8 +144,8 @@ export async function deleteCalendarEvent(eventId: string) {
       where: eq(pageSections.cle, "parametres"),
     });
 
-    const config = configRow?.contenu as any || {};
-    const calendarId = config.google_calendar_id;
+    const config = (configRow?.contenu as Record<string, unknown>) || {};
+    const calendarId = config.google_calendar_id as string | undefined;
 
     if (!calendarId) return false;
 

@@ -51,7 +51,7 @@ export default function CaptureViewer({ candidate, isOpen, onClose }: CaptureVie
       } else {
         toast.error(res.error || "Une erreur est survenue lors de la validation.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Une erreur réseau est survenue.");
     } finally {
       setIsSubmitting(false);
@@ -77,7 +77,7 @@ export default function CaptureViewer({ candidate, isOpen, onClose }: CaptureVie
       } else {
         toast.error(res.error || "Une erreur est survenue lors du rejet.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Une erreur réseau est survenue.");
     } finally {
       setIsSubmitting(false);
@@ -259,12 +259,12 @@ export default function CaptureViewer({ candidate, isOpen, onClose }: CaptureVie
 
           {/* Right side: Capture image display */}
           <div className="flex flex-col justify-between border border-slate-100 rounded-2xl p-4 bg-slate-50/50 min-h-[300px]">
-            <p className="text-xs font-bold text-slate-700 mb-2">Capture d'écran du reçu :</p>
+            <p className="text-xs font-bold text-slate-700 mb-2">Capture d&apos;écran du reçu :</p>
             <div className="relative border border-slate-100 rounded-xl overflow-hidden bg-slate-100 flex-1 flex items-center justify-center max-h-[250px]">
               {candidate.signedUrl ? (
                 <img
                   src={candidate.signedUrl}
-                  alt={`Capture d'écran de ${candidate.prenom} ${candidate.nom}`}
+                  alt={`Capture d&apos;écran de ${candidate.prenom} ${candidate.nom}`}
                   className="max-h-full max-w-full object-contain cursor-zoom-in"
                   onClick={() => window.open(candidate.signedUrl, "_blank")}
                 />

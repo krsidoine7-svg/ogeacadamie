@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Cookie, Shield, X } from "lucide-react";
+import { Cookie, X } from "lucide-react";
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);

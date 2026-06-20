@@ -18,9 +18,10 @@ export default function OnboardingStep2({ initialData, onNext, onBack }: Onboard
     setValue,
     watch,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Step2Data>({
     resolver: zodResolver(step2Schema),
+    mode: "onChange",
     defaultValues: {
       concours: initialData.concours || [],
       mode_formation: initialData.mode_formation || "presentiel",
@@ -51,7 +52,7 @@ export default function OnboardingStep2({ initialData, onNext, onBack }: Onboard
       <div className="space-y-3">
         <Label className="text-slate-700 text-sm font-medium">Concours visés</Label>
         <div className="grid grid-cols-1 gap-3">
-          {[
+          {([
             {
               id: "inphb",
               name: "INP-HB",
@@ -70,13 +71,13 @@ export default function OnboardingStep2({ initialData, onNext, onBack }: Onboard
               school: "Filières Électricité",
               desc: "Centre des Métiers de l'Électricité",
             },
-          ].map((item) => {
-            const isSelected = selectedConcours.includes(item.id as any);
+          ] as const).map((item) => {
+            const isSelected = selectedConcours.includes(item.id);
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => toggleConcours(item.id as any)}
+                onClick={() => toggleConcours(item.id)}
                 className={`w-full p-4 rounded-xl border text-left flex items-start justify-between transition-all duration-300 ${
                   isSelected
                     ? "bg-gold/10 border-gold shadow-md shadow-gold/5"
@@ -115,17 +116,17 @@ export default function OnboardingStep2({ initialData, onNext, onBack }: Onboard
       <div className="space-y-3">
         <Label className="text-slate-700 text-sm font-medium">Mode de préparation</Label>
         <div className="grid grid-cols-2 gap-3">
-          {[
+          {([
             { id: "presentiel", label: "Présentiel", icon: Users, desc: "Cours physiques" },
             { id: "en_ligne", label: "En Ligne", icon: Monitor, desc: "Via Internet" },
-          ].map((item) => {
+          ] as const).map((item) => {
             const isSelected = selectedMode === item.id;
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setMode(item.id as any)}
+                onClick={() => setMode(item.id)}
                 className={`p-4 rounded-xl border text-left flex flex-col gap-2 transition-all duration-300 ${
                   isSelected
                     ? "bg-gold/10 border-gold shadow-md shadow-gold/5"
@@ -164,7 +165,8 @@ export default function OnboardingStep2({ initialData, onNext, onBack }: Onboard
         </Button>
         <Button
           type="submit"
-          className="w-2/3 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-medium shadow-md shadow-gold/10 h-10 rounded-lg"
+          disabled={!isValid}
+          className="w-2/3 bg-gradient-to-r from-gold to-amber-600 hover:from-yellow-500 hover:to-amber-500 text-white font-medium shadow-md shadow-gold/10 h-10 rounded-lg disabled:opacity-50 disabled:pointer-events-none"
         >
           Continuer
         </Button>

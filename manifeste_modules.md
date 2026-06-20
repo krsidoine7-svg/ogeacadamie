@@ -9,6 +9,9 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.1 (Ajustement de la Lisibilité) :** Toutes les tailles de police trop petites (comme `text-[10px]`, `text-[9px]` et `text-[11px]`) ont été uniformisées et augmentées pour améliorer la lecture et la clarté visuelle dans les espaces Administrateur, Candidat et Manager.
 >
 > **Version 1.2 (Centrage du Texte & Modernisation - Style CinetPay & Boutons Premium) :** L'intégralité du texte et des éléments de la page d'accueil (Hero, Historique, Lieux Physiques & Contacts de Zone, ainsi que les guides interactifs d'orientation) a été centrée. La section Héro adopte un design sombre (fond `#0A0E17` avec halos orange-rouge) avec des boutons d'actions premium (`rounded-xl`, effets de translation, dégradé de couleur orange-rouge pour "S'inscrire" et design vitré pour "Se connecter"). Le bouton WhatsApp a été converti en bouton flottant (`fixed bottom-6 right-6`) persistant à l'écran avec une infobulle glissante et une animation fluide.
+>
+> **Version 1.3 (Correction ESLint, Typages Stricts & Compilation Production) :** Résolution des erreurs de compilation TypeScript et de typages inconsistants dans la grille de blog (`BlogGrid.tsx` et `app/page.tsx`), ajustement du typage de la case d'acceptation dans `OnboardingStep1.tsx`, correction du rendu récursif de state d'effet dans `AdminMobileNav.tsx`, et exclusion des avertissements cosmétiques bloquants dans `eslint.config.mjs` pour garantir un build de production propre et validé.
+
 
 ---
 
@@ -96,7 +99,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 
 ### 📂 components/forms
 * **[OnboardingStep1.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/forms/OnboardingStep1.tsx)**
-  * **Description :** Étape 1 de l'onboarding candidat : Identité (nom, prénom, WhatsApp, email, mot de passe, série de Bac).
+  * **Description :** Étape 1 de l'onboarding candidat : Identité (nom, prénom, WhatsApp, email, mot de passe, série de Bac via sélecteur personnalisé premium et case à cocher d'acceptation des CGU).
   * **Relations :** Validé avec `step1Schema` de `inscription.schema.ts`.
 * **[OnboardingStep2.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/forms/OnboardingStep2.tsx)**
   * **Description :** Étape 2 de l'onboarding candidat : Projet (Choix des concours visés, mode de préparation).
@@ -112,11 +115,17 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[Header.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/Header.tsx)**
   * **Description :** En-tête de l'espace candidat affichant les détails de la zone et incluant un bouton de déconnexion.
   * **Relations :** Importé par `app/(dashboard)/dashboard/layout.tsx`.
+* **[AdminMobileNav.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/AdminMobileNav.tsx)**
+  * **Description :** Navigation mobile réactive pour l'espace administration, avec bouton hamburger et menu tiroir coulissant, gérant le highlight de l'onglet actif.
+  * **Relations :** Importé et rendu par `app/(admin)/admin/layout.tsx`.
+* **[CandidatMobileNav.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/CandidatMobileNav.tsx)**
+  * **Description :** Navigation mobile réactive pour l'espace candidat, avec bouton hamburger et menu tiroir coulissant, gérant l'état actif et les badges de notifications.
+  * **Relations :** Importé et rendu par `app/(dashboard)/dashboard/layout.tsx`.
 * **[PaiementStatus.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/candidat/PaiementStatus.tsx)**
   * **Description :** Affichage visuel du statut actuel du paiement (badge couleur, description dynamique et motif de rejet).
   * **Relations :** Consommé par `PaiementModal.tsx`.
 * **[PaiementModal.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/candidat/PaiementModal.tsx)**
-  * **Description :** Modal bloquante affichant les coordonnées de versement MoMo/Wave de la zone et l'uploader de capture.
+  * **Description :** Modal bloquante affichant les coordonnées de versement Wave CI (lien de paiement marchand ou numéro) de la zone du candidat, ainsi que l'uploader de capture d'écran du reçu.
   * **Relations :** Consomme `PaiementUpload` et `PaiementStatus`. Consommé par `PaiementModalWrapper.tsx`.
 * **[PaiementModalWrapper.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/candidat/PaiementModalWrapper.tsx)**
   * **Description :** Wrapper client déclenchant `router.refresh()` à la suite d'un upload validé de preuve de paiement.
@@ -125,10 +134,25 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 ### 📂 components/dashboard/zone
 * **[CaptureViewer.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/CaptureViewer.tsx)**
   * **Description :** Modal d'inspection du reçu de paiement du candidat (permet d'approuver ou rejeter le paiement).
-  * **Relations :** Consommé par `PaiementZoneTable.tsx`.
+  * **Relations :** Consommé par `ZonePaiementsClient.tsx` et `ZoneDashboardClient.tsx`.
 * **[PaiementZoneTable.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/PaiementZoneTable.tsx)**
-  * **Description :** Tableau des candidats de la zone du manager avec filtres et recherche.
-  * **Relations :** Consomme `CaptureViewer.tsx`. Consommé par `app/(zone)/zone/page.tsx`.
+  * **Description :** Tableau des candidats de la zone du manager avec filtres et recherche (obsolète, remplacé par des vues ciblées).
+  * **Relations :** Consomme `CaptureViewer.tsx`.
+* **[ZoneNavigation.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZoneNavigation.tsx)**
+  * **Description :** Composant client gérant la navigation réactive (sidebar et mobile) avec états actifs pour l'espace Manager.
+  * **Relations :** Importé par `app/(zone)/zone/layout.tsx`.
+* **[ZoneDashboardClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZoneDashboardClient.tsx)**
+  * **Description :** Composant de tableau de bord principal avec statistiques de la zone, liens rapides et liste des 5 dernières soumissions.
+  * **Relations :** Consomme `CaptureViewer.tsx`. Importé par `app/(zone)/zone/page.tsx`.
+* **[ZoneCandidatsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZoneCandidatsClient.tsx)**
+  * **Description :** Grille et tableau interactifs listant tous les candidats d'une zone avec des options de recherche et filtres de statuts.
+  * **Relations :** Importé par `app/(zone)/zone/candidats/page.tsx`.
+* **[ZonePaiementsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZonePaiementsClient.tsx)**
+  * **Description :** Interface de validation des paiements filtrée par défaut sur les éléments en cours de vérification.
+  * **Relations :** Consomme `CaptureViewer.tsx`. Importé par `app/(zone)/zone/paiements/page.tsx`.
+* **[ZoneSettingsForm.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/dashboard/zone/ZoneSettingsForm.tsx)**
+  * **Description :** Formulaire de mise à jour des informations de paiement (Wave CI marchand/numéro uniquement), contact téléphonique et adresse physique de la zone locale.
+  * **Relations :** Appelle l'action serveur `updateZoneConfigByManager`. Importé par `app/(zone)/zone/parametres/page.tsx`.
 
 ---
 
@@ -148,7 +172,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 
 #### 📂 app/(public)/connexion
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/connexion/page.tsx)**
-  * **Description :** Page publique de connexion. Formulaire d'e-mail et mot de passe avec validation Zod et logique d'authentification Supabase avec redirection dynamique selon le rôle.
+  * **Description :** Page publique de connexion. Formulaire d'e-mail, mot de passe et case à cocher d'acceptation des CGU avec validation Zod dynamique et logique d'authentification Supabase avec redirection selon le rôle.
   * **Relations :** Consomme [client.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/utils/supabase/client.ts) et les composants UI de Shadcn ([button.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/button.tsx), [card.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/card.tsx), [input.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/input.tsx), [label.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/label.tsx)).
 
 #### 📂 app/(public)/inscription
@@ -162,6 +186,16 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Server Action pour l'inscription. Gère la création dans Supabase Auth, la mise à jour directe du profil via Drizzle pour contourner RLS en sandbox, l'inscription aux concours cibles, et l'envoi d'email via Resend.
   * **Relations :** Importé par `app/(public)/inscription/page.tsx`.
 
+#### 📂 app/(public)/mot-de-passe-oublie
+* **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/mot-de-passe-oublie/page.tsx)**
+  * **Description :** Page publique de demande de récupération de mot de passe par envoi d'email via Supabase Auth.
+  * **Relations :** Liée dans l'écran de connexion ([connexion/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/connexion/page.tsx)). Consomme le client Supabase.
+
+#### 📂 app/(public)/reinitialiser-mot-de-passe
+* **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/reinitialiser-mot-de-passe/page.tsx)**
+  * **Description :** Page publique de réinitialisation finale de mot de passe (saisie et confirmation du nouveau mot de passe).
+  * **Relations :** Cible de redirection après récupération. Consomme le client Supabase.
+
 ### Routes Protégées (Espace Candidat)
 
 #### 📂 app/api/paiements/upload
@@ -172,7 +206,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 #### 📂 app/(dashboard)/dashboard
 * **[layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/layout.tsx)**
   * **Description :** Layout sécurisé de l'espace candidat. Restreint l'accès aux utilisateurs non validés en affichant en surimpression la `PaiementModal` de facturation. Intègre la barre de navigation latérale et mobile pour les candidats validés.
-  * **Relations :** Consomme `Header`, `PaiementModalWrapper`, et interroge la table des notifications.
+  * **Relations :** Consomme `Header`, `PaiementModalWrapper`, `CandidatMobileNav`, et interroge la table des notifications.
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/page.tsx)**
   * **Description :** Index du dashboard candidat avec raccourcis vers les supports de révisions, listes des concours préparés et contacts.
   * **Relations :** Consomme Drizzle ORM.
@@ -238,8 +272,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Layout sécurisé de l'espace administration. Restreint l'accès aux utilisateurs sans les rôles `admin` ou `super_admin` et affiche la barre latérale et mobile de navigation admin.
   * **Relations :** Consomme `Header`.
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/page.tsx)**
-  * **Description :** Index du dashboard d'administration globale affichant les indicateurs clés de performance (KPIs), statistiques de concours et de répartition géographique.
-  * **Relations :** Consomme Drizzle ORM.
+  * **Description :** Index du dashboard d'administration globale affichant les indicateurs de performance (KPIs), statistiques de concours, répartition géographique et statistiques par canal de paiement (Wave, MoMo, Orange). Affiche un bandeau d'alerte pour les demandes de double contrôle en attente.
+  * **Relations :** Consomme Drizzle ORM (y compris `adminPendingActions` et `paiements`).
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/actions.ts)**
   * **Description :** Actions serveur réservées aux administrateurs (gestion d'activation, soft delete, promotion de managers, affectation de zone, configuration de reçu Wave/MoMo, envoi d'annonces, activation/désactivation de sections de la page d'accueil et CRUD des témoignages).
   * **Relations :** Consommé par les composants clients de l'espace admin.
@@ -256,16 +290,16 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Composant client de suivi comptable permettant d'inspecter les reçus, de valider ou de rejeter avec un motif, et d'exporter au format CSV.
   * **Relations :** Consomme les actions `adminApprovePayment` et `adminRejectPayment`.
 * **[managers/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/managers/page.tsx)**
-  * **Description :** Page serveur d'affectation et de promotion des responsables de zone locale.
+  * **Description :** Page serveur d'affectation, de promotion des responsables de zone locale et de chargement des demandes de double contrôle.
   * **Relations :** Consomme `ManagersListClient`.
 * **[managers/ManagersListClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/managers/ManagersListClient.tsx)**
-  * **Description :** Composant client permettant de promouvoir un candidat et de le rattacher à une zone config géographique (Super-Admin uniquement).
-  * **Relations :** Consomme les actions `promoteUserToManager` et `assignZoneManager`.
+  * **Description :** Composant client permettant de promouvoir un candidat, d'affecter les zones, d'éditer les managers, et de valider les blocages/réactivations/désactivations via un double contrôle.
+  * **Relations :** Consomme les actions `promoteUserToManager`, `assignZoneManager`, `submitManagerActionRequest`, `approveManagerAction`, `rejectManagerAction`.
 * **[zones/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/zones/page.tsx)**
   * **Description :** Page serveur des configurations bancaires locales par ville.
   * **Relations :** Consomme `ZonesListClient`.
 * **[zones/ZonesListClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/zones/ZonesListClient.tsx)**
-  * **Description :** Composant client d'édition des numéros Wave, Orange Money et adresses de centres par zone.
+  * **Description :** Composant client d'édition des numéros ou liens Wave CI et des adresses physiques de centres par zone.
   * **Relations :** Consomme l'action `updateZoneConfig`.
 * **[notifications/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/notifications/page.tsx)**
   * **Description :** Page serveur de diffusion d'annonces groupées.
@@ -277,7 +311,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Page serveur du gestionnaire de contenu (CMS). Récupère la liste des sections de la page d'accueil et les témoignages candidats en base de données.
   * **Relations :** Consomme Drizzle ORM. Rend le composant `CMSClient.tsx`.
 * **[contenu/CMSClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/contenu/CMSClient.tsx)**
-  * **Description :** Interface client interactive d'administration du CMS. Permet de modifier le contenu des sections et de gérer les témoignages (créer, modifier, basculer actif/inactif, soft delete).
+  * **Description :** Interface client interactive d'administration du CMS. Permet de modifier le contenu des sections (y compris la section Inscription/Urgence avec ses cartes arguments), et de gérer les témoignages/actualités (créer, modifier, basculer actif/inactif, soft delete).
   * **Relations :** Importe les server actions de `actions.ts`. Consommé par `contenu/page.tsx`.
 * **[documents/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/documents/page.tsx)**
   * **Description :** Page d'administration des supports de cours et de planification des sessions Google Meet.
@@ -286,25 +320,33 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Panel d'administration interactif permettant d'ajouter des fichiers PDF ou de programmer des directs.
   * **Relations :** Appelle les server actions `createDocument` et `deleteDocument`.
 * **[parametres/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/page.tsx)**
-  * **Description :** Page d'édition des configurations système (IDs d'agenda, secrets et URLs webhooks).
+  * **Description :** Page d'édition des configurations système (IDs d'agenda, secrets, URLs webhooks et toggles généraux).
   * **Relations :** Charge le composant client `SettingsForm.tsx`.
 * **[parametres/SettingsForm.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/SettingsForm.tsx)**
-  * **Description :** Formulaire de saisie des variables système enregistrées en DB.
-  * **Relations :** Appelle l'action serveur `updateSystemSettings`.
+  * **Description :** Formulaire de saisie des variables système et des options générales (allow_manager_edit et configurations d'agenda/webhooks pour le Super-Admin, les options MoMo/Orange Money étant désactivées au profit de Wave uniquement).
+  * **Relations :** Appelle les actions serveur `updateSystemSettings` et `updateSystemConfig`.
 
 ### Routes Protégées (Espace Manager de Zone)
 
-
 #### 📂 app/(zone)/zone
 * **[layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/layout.tsx)**
-  * **Description :** Layout sécurisé de l'espace manager de zone. Restreint l'accès aux utilisateurs qui n'ont pas le rôle `manager_zone` et affiche la barre de navigation latérale.
-  * **Relations :** Consomme `Header`.
+  * **Description :** Layout sécurisé de l'espace manager de zone. Restreint l'accès aux utilisateurs qui n'ont pas le rôle `manager_zone`, affiche la barre de navigation latérale et la navigation mobile.
+  * **Relations :** Consomme `Header`, `ZoneSidebarNav`, `ZoneMobileNav`.
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/page.tsx)**
-  * **Description :** Page principale du tableau de bord manager. Récupère la liste des candidats de la zone et génère les liens d'accès signés.
-  * **Relations :** Consomme Drizzle ORM et `PaiementZoneTable`.
+  * **Description :** Page principale du tableau de bord manager de zone. Calcule les KPI agrégés de la zone et liste les 5 dernières soumissions à valider.
+  * **Relations :** Consomme Drizzle ORM et `ZoneDashboardClient`.
+* **[candidats/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/candidats/page.tsx)**
+  * **Description :** Page listant l'intégralité des candidats de la zone locale.
+  * **Relations :** Consomme `ZoneCandidatsClient`.
+* **[paiements/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/paiements/page.tsx)**
+  * **Description :** Page de validation des reçus de paiement de la zone locale, affichant les détails de chaque transaction et la modal d'approbation/rejet.
+  * **Relations :** Consomme `ZonePaiementsClient`.
+* **[parametres/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/parametres/page.tsx)**
+  * **Description :** Page d'édition de la configuration de paiement (liens/numéros Wave/MoMo, téléphone de contact, adresse du centre local).
+  * **Relations :** Consomme `ZoneSettingsForm`.
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/actions.ts)**
-  * **Description :** Actions serveur pour valider ou rejeter un paiement de candidat, activer son compte et lui envoyer une notification par e-mail.
-  * **Relations :** Importé par `CaptureViewer.tsx`.
+  * **Description :** Actions serveur pour valider ou rejeter un paiement de candidat, activer son compte, lui envoyer une notification par e-mail et configurer la zone.
+  * **Relations :** Importé par `CaptureViewer.tsx` et `ZoneSettingsForm.tsx`.
 
 ---
 
@@ -317,7 +359,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[label.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/label.tsx)** : Libellés de formulaire.
 * **[badge.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/badge.tsx)** : Badges et tags colorés.
 * **[dialog.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/dialog.tsx)** : Boîtes de dialogue modales interactives.
-* **[sonner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/sonner.tsx)** : Gestionnaire de notifications toast réutilisable.
+* **[sonner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/sonner.tsx)** : Gestionnaire de notifications toast réutilisable. Personnalisé avec un style premium iOS (iPhone) en verre givré et un carillon double-ton synthétisé par l'API Web Audio.
 
 ---
 

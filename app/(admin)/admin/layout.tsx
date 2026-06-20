@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
 import { LayoutDashboard, Users, CreditCard, UserCheck, MapPin, Send, ShieldCheck, Globe, FileText, Settings } from "lucide-react";
 import Link from "next/link";
+import AdminMobileNav from "@/components/dashboard/AdminMobileNav";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -48,7 +49,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans overflow-hidden">
       {/* Universal header customized for admin session */}
       <Header
         profile={{
@@ -59,62 +60,19 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         }}
       />
 
-      {/* Mobile Navigation Bar */}
-      <div className="md:hidden border-b border-slate-200 bg-white px-2 py-3 flex items-center justify-around text-xs font-bold text-slate-500 shadow-sm flex-shrink-0">
-        <Link
-          href="/admin"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all text-[#D4A017]"
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          <span>Dashboard</span>
-        </Link>
-        <Link
-          href="/admin/candidats"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <Users className="w-4 h-4" />
-          <span>Candidats</span>
-        </Link>
-        <Link
-          href="/admin/paiements"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <CreditCard className="w-4 h-4" />
-          <span>Paiements</span>
-        </Link>
-        <Link
-          href="/admin/managers"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>Managers</span>
-        </Link>
-        <Link
-          href="/admin/zones"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <MapPin className="w-4 h-4" />
-          <span>Zones</span>
-        </Link>
-        <Link
-          href="/admin/notifications"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <Send className="w-4 h-4" />
-          <span>Annonces</span>
-        </Link>
-        <Link
-          href="/admin/contenu"
-          className="flex flex-col items-center gap-1 py-1 px-2 hover:text-[#0F172A] transition-all"
-        >
-          <Globe className="w-4 h-4" />
-          <span>Accueil</span>
-        </Link>
-      </div>
+      {/* Mobile Navigation Drawer */}
+      <AdminMobileNav
+        profile={{
+          nom: profile.nom,
+          prenom: profile.prenom,
+          email: profile.email,
+          role: profile.role,
+        }}
+      />
 
-      <div className="flex flex-1 max-w-7xl w-full mx-auto">
+      <div className="flex flex-1 max-w-7xl w-full mx-auto overflow-hidden">
         {/* Navigation Sidebar */}
-        <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6 flex-shrink-0">
+        <aside className="w-64 hidden md:block border-r border-slate-200/80 pt-8 px-4 space-y-6 flex-shrink-0 h-full overflow-y-auto">
           <div className="px-3">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Administration
@@ -209,7 +167,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         </aside>
 
         {/* Content Main Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full pb-20 md:pb-8">
           {children}
         </main>
       </div>
