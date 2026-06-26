@@ -4,9 +4,35 @@ import { asc, desc, isNull } from "drizzle-orm";
 import CMSClient from "./CMSClient";
 
 export default async function CMSPage() {
-  const sections = await db.query.pageSections.findMany({
+  let sections = await db.query.pageSections.findMany({
     orderBy: [asc(pageSections.ordre)],
   });
+
+  // Ensure "affiches" section is seeded
+  const hasAffiches = sections.some((s) => s.cle === "affiches");
+  if (!hasAffiches) {
+    try {
+      await db.insert(pageSections).values({
+        cle: "affiches",
+        titre: "Affiches & Annonces",
+        contenu: {
+          title: "Actualités & Affiches",
+          subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
+          images: []
+        },
+        ordre: 2,
+        isActive: true
+      });
+      // Re-fetch
+      sections = await db.query.pageSections.findMany({
+        orderBy: [asc(pageSections.ordre)],
+      });
+    } catch (err: any) {
+      if (err.code !== "23505") {
+        console.error("Error auto-seeding affiches section in CMSPage:", err);
+      }
+    }
+  }
 
   const testimonials = await db.query.temoignages.findMany({
     where: isNull(temoignages.deletedAt),

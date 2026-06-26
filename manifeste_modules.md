@@ -33,6 +33,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.13 (Optimisation SEO & Moteurs de Recherche LLM / GEO + Focus Contexte Ivoirien) :** Configuration de métadonnées enrichies et balises Open Graph pour WhatsApp/Facebook. Création d'un plan de site dynamique (`sitemap.ts`) et de directives d'exploration adaptatives (`robots.ts`). Intégration de données structurées JSON-LD (Schema.org) sous le type `EducationalOrganization` pour favoriser le référencement auprès de Google et des moteurs de recherche basés sur les IA (Gemini, ChatGPT Search). Correction grammaticale des titres par défaut dans `app/page.tsx` et `CMSClient.tsx`. Enrichissement des mots-clés de ciblage locaux dans `app/layout.tsx` (Lycée Technique d'Abidjan, Lycée Scientifique de Yamoussoukro, Wave CI, MoMo, etc.) et intégration des tarifs en Francs CFA (XOF) et des 6 centres physiques locaux dans les données structurées. Mise en place d'un nettoyage automatique des espaces et espaces insécables (`%C2%A0`) sur le lien WhatsApp de la page d'accueil et lors des sauvegardes CMS pour éviter les erreurs de liens relatifs `localhost:3000/`.
 >
 > **Version 1.14 (Optimisation Performance & Chargement Paresseux PDF) :** Résolution des lenteurs de chargement et d'affichage dans le visualiseur sécurisé. Implémentation du rendu paresseux (Lazy Rendering) des pages PDF sous [SecureViewerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/documents/viewer/SecureViewerClient.tsx). Les dimensions de toutes les pages sont chargées sur le montage initial (pour conserver la hauteur de la barre de défilement), mais le rendu intensif sur les `<canvas>` HTML5 et l'exécution de PDF.js ne se déclenchent que lorsque la page entre dans le viewport (avec une marge de confort de 800px verticalement), soulageant drastiquement la charge mémoire du navigateur.
+>
+> **Version 1.15 (Format & Aspect Ratio Dynamique des Vidéos & Affiches) :** Adapté le lecteur `AutoplayVideo.tsx` pour détecter dynamiquement les dimensions réelles (`videoWidth`, `videoHeight`) de la vidéo au chargement, ajustant la taille du conteneur en fonction de son ratio (carré 1:1, TikTok/portrait 9:16, ou paysage 16:9) sans distorsion. Modifié la galerie `AffichesGallery.tsx` pour supprimer le ratio rigide 3:4 et permettre aux affiches de s'afficher fidèlement selon leur aspect ratio naturel. Ajusté la mise en page de la vidéo sur la page d'accueil dans `app/page.tsx` pour supporter ces ratios adaptatifs.
 
 ---
 
@@ -56,8 +58,13 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[CLAUDE.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/CLAUDE.md)** : Fichier d'inclusion des règles pour l'assistant Claude.
 * **[middleware.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/middleware.ts)** : Middleware global Next.js. Gère les redirections basées sur l'état d'authentification et les rôles.
 * **[manifeste_modules.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/manifeste_modules.md)** : Ce fichier. Registre centralisé des modules.
+* **[cahier_de_recette.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/cahier_de_recette.md)** : Cahier de recette fonctionnel et technique détaillant les rôles, les droits (listes à puces) et les cas de test pas-à-pas de la plateforme (Format Markdown).
+* **[cahier_de_recette.docx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/cahier_de_recette.docx)** : Document Microsoft Word compilé et stylisé du cahier de recette fonctionnel.
+* **[scripts/convert_to_docx.py](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/scripts/convert_to_docx.py)** : Script utilitaire Python de parsing Markdown et compilation Word pour générer le fichier .docx.
 * **[vercel.json](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/vercel.json)** : Configuration de déploiement Vercel. Fixe la région d'exécution des fonctions serverless en Europe (Frankfort `fra1`) pour éliminer la latence réseau avec Supabase.
 * **[.env.local](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/.env.local)** : Variables d'environnement locales (URL/Clés Supabase et DATABASE_URL).
+* **[proposition_commerciale_oge.docx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/.skills/ChefsOge/proposition_commerciale_oge.docx)** : Modèle de proposition commerciale et contrat de partenariat (SaaS à 2% + maintenance) - Version mise à jour.
+* **[comptes_plateforme_oge.docx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/.skills/ChefsOge/comptes_plateforme_oge.docx)** : Liste de tous les comptes d'administration, de gestion et de test configurés en base de données.
 
 ---
 
@@ -121,6 +128,12 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[CookieBanner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/CookieBanner.tsx)**
   * **Description :** Bandeau flottant de consentement cookies persistant localement via LocalStorage.
   * **Relations :** Importé et rendu de manière globale par `app/layout.tsx`.
+* **[AffichesGallery.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/AffichesGallery.tsx)**
+  * **Description :** Galerie responsive des affiches et annonces de l'Académie avec effet de survol dynamique et modal de type Lightbox interactif. S'adapte dynamiquement au ratio d'aspect naturel de chaque image.
+  * **Relations :** Consommé par `app/page.tsx`.
+* **[AutoplayVideo.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/AutoplayVideo.tsx)**
+  * **Description :** Lecteur vidéo optimisé avec lecture/pause automatique à l'entrée dans le viewport (Intersection Observer) et détection dynamique de l'aspect ratio d'origine (carré, portrait/TikTok, paysage).
+  * **Relations :** Consommé par `app/page.tsx`.
 
 ### 📂 components/forms
 * **[OnboardingStep1.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/forms/OnboardingStep1.tsx)**
@@ -284,6 +297,11 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Route API POST d'upload sécurisé pour les administrateurs. Chiffre le document PDF entrant avec AES-256-CBC et le téléverse sur Supabase Storage.
   * **Relations :** Appelée par le formulaire `DocumentsManagerClient.tsx` et consomme `lib/crypto.ts`.
 
+#### 📂 app/api/admin/upload
+* **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/upload/route.ts)**
+  * **Description :** Route API POST d'upload public pour les administrateurs et managers de zone. Reçoit les images (affiches) ou les vidéos (vidéo de présentation), valide leur taille/format, les renomme de manière imprévisible (UUID) et les téléverse dans le dossier public `public-assets` du bucket `documents` sur Supabase Storage.
+  * **Relations :** Appelée par le gestionnaire de contenu `CMSClient.tsx` pour l'upload d'affiches et de la vidéo.
+
 #### 📂 app/api/notifications
 * **[unread/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/notifications/unread/route.ts)**
   * **Description :** Route API GET renvoyant la liste des notifications non lues du candidat connecté.
@@ -402,6 +420,14 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[badge.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/badge.tsx)** : Badges et tags colorés.
 * **[dialog.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/dialog.tsx)** : Boîtes de dialogue modales interactives.
 * **[sonner.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/ui/sonner.tsx)** : Gestionnaire de notifications toast réutilisable. Personnalisé avec un style premium iOS (iPhone) en verre givré et un carillon double-ton synthétisé par l'API Web Audio.
+
+### 📂 components/shared
+* **[AffichesGallery.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/AffichesGallery.tsx)**
+  * **Description :** Composant galerie d'affiches interactif pour la page d'accueil. Affiche une grille d'affiches avec effets de survol premium et gère l'ouverture en plein écran (Lightbox) avec navigation entre les images et transitions douces.
+  * **Relations :** Consommé par la page d'accueil publique ([page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/page.tsx)).
+* **[AutoplayVideo.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/AutoplayVideo.tsx)**
+  * **Description :** Composant lecteur vidéo interactif doté d'un `IntersectionObserver`. Joue la vidéo automatiquement en boucle et muette lorsqu'elle entre dans le viewport de l'utilisateur, et se met en pause de façon fluide lorsqu'il fait défiler la page en dehors de la section.
+  * **Relations :** Consommé par la page d'accueil publique ([page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/page.tsx)).
 
 ---
 

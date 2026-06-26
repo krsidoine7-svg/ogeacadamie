@@ -29,7 +29,8 @@ const DEFAULT_CONTENTS: any = {
     subtitle: "OGE ACADÉMIE vous prépare aux concours de l'INP-HB, de l'ESATIC et du CME grâce à une pédagogie d'excellence, un accompagnement personnalisé et des programmes adaptés aux exigences de chaque école.",
     cta_primary: "S'inscrire",
     cta_secondary: "Se connecter",
-    whatsapp_group_link: "https://chat.whatsapp.com/..."
+    whatsapp_group_link: "https://chat.whatsapp.com/...",
+    video_url: ""
   },
   historique: {
     title: "Notre Histoire & Mission",
@@ -124,6 +125,11 @@ const DEFAULT_CONTENTS: any = {
     ],
     urgence_warning: "⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir."
   },
+  affiches: {
+    title: "Actualités & Affiches",
+    subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
+    images: []
+  },
   footer: {
     facebook: "https://facebook.com/ogeacademie",
     whatsapp: "https://wa.me/2250000000000",
@@ -157,6 +163,12 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
   // Tabs: sections or "blog"
   const [activeTab, setActiveTab] = useState<string>("hero");
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Video and Poster upload states
+  const [videoUploading, setVideoUploading] = useState<boolean>(false);
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  const [imageUploading, setImageUploading] = useState<boolean>(false);
+  const [imageProgress, setImageProgress] = useState<number | null>(null);
 
   // Testimonial Modal State
   const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState<boolean>(false);
@@ -251,6 +263,84 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
       ...prev,
       [key]: value
     }));
+  };
+
+  // Video Upload Handler
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setVideoUploading(true);
+    setVideoProgress(15);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setVideoProgress(40);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      setVideoProgress(80);
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setVideoProgress(100);
+        handleFieldChange("video_url", data.url);
+        toast.success("Vidéo de présentation téléversée avec succès !");
+      } else {
+        toast.error(data.error || "Erreur lors de l'upload de la vidéo.");
+      }
+    } catch (err) {
+      toast.error("Erreur réseau lors de l'upload.");
+    } finally {
+      setVideoUploading(false);
+      setTimeout(() => setVideoProgress(null), 1500);
+    }
+  };
+
+  // Poster Image Upload Handler
+  const handleAfficheUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageUploading(true);
+    setImageProgress(15);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setImageProgress(50);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      setImageProgress(85);
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setImageProgress(100);
+        const newImage = {
+          id: Math.random().toString(36).substring(2, 9),
+          url: data.url,
+          title: file.name.split(".")[0] || "Nouvelle Affiche"
+        };
+        const currentImages = Array.isArray(formFields.images) ? formFields.images : [];
+        handleFieldChange("images", [...currentImages, newImage]);
+        toast.success("Affiche téléversée avec succès !");
+      } else {
+        toast.error(data.error || "Erreur lors de l'upload de l'affiche.");
+      }
+    } catch (err) {
+      toast.error("Erreur réseau lors de l'upload.");
+    } finally {
+      setImageUploading(false);
+      setTimeout(() => setImageProgress(null), 1500);
+    }
   };
 
   // Helper for deep school profile updates
@@ -488,7 +578,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
             <optgroup label="Sections Accueil">
               {sections.map((section) => (
                 <option key={section.id} value={section.cle}>
-                  {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : section.titre} {section.isActive ? "✓" : " (Désactivée)"}
+                  {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : (section.titre || DEFAULT_CONTENTS[section.cle]?.title || section.cle)} {section.isActive ? "✓" : " (Désactivée)"}
                 </option>
               ))}
             </optgroup>
@@ -517,7 +607,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 onClick={() => handleTabChange(section.cle)}
                 className="flex-1 text-left py-1 px-2"
               >
-                {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : section.titre}
+                {section.cle === "historique" ? "Notre Histoire / Centres (Historique)" : (section.titre || DEFAULT_CONTENTS[section.cle]?.title || section.cle)}
               </button>
               <button
                 type="button"
@@ -730,7 +820,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                 <div>
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {activeSection.cle === "historique" ? "Notre Histoire / Centres (Historique)" : activeSection.titre}
+                      {activeSection.cle === "historique" ? "Notre Histoire / Centres (Historique)" : (activeSection.titre || DEFAULT_CONTENTS[activeSection.cle]?.title || activeSection.cle)}
                     </h2>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
@@ -815,6 +905,78 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                         className="w-full text-sm p-3 rounded-xl border border-slate-250 text-blue-600 font-mono"
                         placeholder="https://chat.whatsapp.com/..."
                       />
+                    </div>
+
+                    {/* HERO VIDEO MANAGEMENT BLOCK */}
+                    <div className="pt-6 border-t border-slate-100 space-y-4">
+                      <h3 className="text-sm font-bold text-slate-800">
+                        Vidéo de Présentation (Juste après le Héros)
+                      </h3>
+                      <p className="text-xs text-slate-500 font-normal leading-normal">
+                        Spécifiez l'URL de votre vidéo ou téléversez-en une. Par défaut, si aucun lien n'est configuré, l'image du logo de l'Académie s'affichera à cet emplacement.
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div className="md:col-span-3">
+                          <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">URL Directe de la Vidéo</label>
+                          <input
+                            type="text"
+                            value={formFields.video_url || ""}
+                            onChange={(e) => handleFieldChange("video_url", e.target.value)}
+                            className="w-full text-sm p-3 rounded-xl border border-slate-250 text-blue-600 font-mono focus:ring-1 focus:ring-[#D4A017] outline-none"
+                            placeholder="https://.../video.mp4"
+                          />
+                        </div>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleFieldChange("video_url", "");
+                              toast.info("Vidéo supprimée. Le logo sera affiché par défaut.");
+                            }}
+                            className="w-full py-3.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-red-500 rounded-xl text-xs font-bold transition-all border border-slate-200 cursor-pointer"
+                          >
+                            Réinitialiser (Logo)
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* File Upload Zone */}
+                      <div className="p-5 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+                        <div className="text-center">
+                          <p className="text-xs font-bold text-slate-700 mb-1">Téléverser une vidéo</p>
+                          <p className="text-[10px] text-slate-400 font-medium">MP4, WebM, OGG, MOV (Taille max: 100 Mo)</p>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoUpload}
+                            disabled={videoUploading}
+                            className="hidden"
+                            id="hero-video-file-input"
+                          />
+                          <label
+                            htmlFor="hero-video-file-input"
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              videoUploading ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          >
+                            {videoUploading ? "Téléversement en cours..." : "Sélectionner un fichier"}
+                          </label>
+                        </div>
+                        {videoProgress !== null && (
+                          <div className="w-full max-w-xs space-y-1.5">
+                            <div className="bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-[#D4A017] h-full rounded-full transition-all duration-300"
+                                style={{ width: `${videoProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-center text-[10px] font-bold text-[#D4A017]">{videoProgress}%</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1603,6 +1765,132 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                         onChange={(e) => handleFieldChange("address", e.target.value)}
                         className="w-full text-sm p-3 rounded-xl border border-slate-250"
                       />
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "affiches" && (
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre de la Section</label>
+                      <input
+                        type="text"
+                        value={formFields.title || ""}
+                        onChange={(e) => handleFieldChange("title", e.target.value)}
+                        className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Sous-titre / Description</label>
+                      <input
+                        type="text"
+                        value={formFields.subtitle || ""}
+                        onChange={(e) => handleFieldChange("subtitle", e.target.value)}
+                        className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                      />
+                    </div>
+
+                    <div className="pt-6 border-t border-slate-100 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold text-slate-800">Liste des Affiches</h3>
+                        <span className="text-xs text-slate-400 font-medium">
+                          {formFields.images?.length || 0} affiche(s)
+                        </span>
+                      </div>
+
+                      {/* Dropzone for Poster Image Upload */}
+                      <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-3">
+                        <div className="text-center">
+                          <p className="text-xs font-bold text-slate-700 mb-1">Ajouter une nouvelle affiche</p>
+                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG, JPEG, WEBP, GIF (Taille max: 10 Mo)</p>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAfficheUpload}
+                            disabled={imageUploading}
+                            className="hidden"
+                            id="affiche-file-input"
+                          />
+                          <label
+                            htmlFor="affiche-file-input"
+                            className={`inline-flex items-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              imageUploading ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          >
+                            {imageUploading ? "Téléversement en cours..." : "Choisir une image"}
+                          </label>
+                        </div>
+                        {imageProgress !== null && (
+                          <div className="w-full max-w-xs space-y-1.5">
+                            <div className="bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-[#D4A017] h-full rounded-full transition-all duration-300"
+                                style={{ width: `${imageProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-center text-[10px] font-bold text-[#D4A017]">{imageProgress}%</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Posters grid */}
+                      {(!formFields.images || formFields.images.length === 0) ? (
+                        <div className="text-center py-10 border border-slate-150 rounded-2xl bg-white text-slate-400 text-xs">
+                          Aucune affiche n'a été ajoutée pour le moment.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {formFields.images.map((img: any, idx: number) => (
+                            <div
+                              key={img.id || idx}
+                              className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex gap-4 items-center group shadow-sm hover:border-[#D4A017]/30 transition-all"
+                            >
+                              {/* Preview Mini */}
+                              <div className="w-16 h-20 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 relative">
+                                <img
+                                  src={img.url}
+                                  alt="Affiche"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+
+                              {/* Title editing */}
+                              <div className="flex-1 space-y-1.5">
+                                <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                  Titre de l'affiche
+                                </label>
+                                <input
+                                  type="text"
+                                  value={img.title || ""}
+                                  onChange={(e) => {
+                                    const updatedImages = [...(formFields.images || [])];
+                                    updatedImages[idx] = { ...updatedImages[idx], title: e.target.value };
+                                    handleFieldChange("images", updatedImages);
+                                  }}
+                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white"
+                                  placeholder="Entrez un titre descriptif"
+                                />
+                              </div>
+
+                              {/* Delete button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updatedImages = formFields.images.filter((_: any, i: number) => i !== idx);
+                                  handleFieldChange("images", updatedImages);
+                                  toast.info("Affiche retirée (enregistrez pour appliquer)");
+                                }}
+                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 bg-white"
+                                title="Supprimer cette affiche"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

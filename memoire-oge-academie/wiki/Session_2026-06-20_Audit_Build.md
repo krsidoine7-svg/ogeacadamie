@@ -133,7 +133,37 @@ Mise en place d'un système de notification push simulé/temps réel côté clie
 * **Carillon Synthesizer Web Audio** : Génération instantanée d'un carillon sonore ascendant (arpeggio de C5 à C6) de manière 100% logicielle via la Web Audio API pour avertir l'utilisateur d'un nouveau message sans utiliser de fichier son statique.
 * **Fenêtre Pop Up Modal** : Affichage d'un Dialog vitré sombre (`slate-950/95`) avec une icône de cloche en rebond, le titre, le message et un bouton d'action directe "Marquer comme lu" déclenchant la server action correspondante et rafraîchissant le dashboard.
 
+---
 
+## 13. Référencement Naturel & SEO Technique (Version 1.13)
 
+Afin de garantir un excellent classement dans les moteurs de recherche pour les requêtes ciblées :
+* **Métadonnées Globales Riches (`app/layout.tsx`)** : Configuration des balises de titre descriptives, méta-descriptions optimisées et mots-clés stratégiques liés aux concours d'excellence (INP-HB, CME, ESATIC). Ajout de la configuration Open Graph (OG) complète pour valoriser les partages sur WhatsApp et Facebook.
+* **Directives Googlebot (`app/robots.ts`)** : Fichier `robots.txt` virtuel autorisant l'exploration des chemins d'accès publics du site tout en interdisant le crawl des zones sécurisées et privées (`/admin`, `/dashboard`, `/zone`, `/api`).
+- **Plan de Site Canonique (`app/sitemap.ts`)** : Fichier `sitemap.xml` virtuel recensant la liste des routes publiques afin d'accélérer l'indexation par Google Search Console.
+* **Layouts SEO Dédiés** : Création de fichiers `layout.tsx` individuels pour les dossiers `/connexion`, `/inscription` et `/politique-de-confidentialite` pour injecter des titres et résumés SEO optimisés sans perturber le code des pages clients.
 
+---
 
+## 14. Optimisation pour la recherche par IA & GEO (Generative Engine Optimization)
+
+Pour positionner OGE Académie auprès des LLMs (Gemini, ChatGPT Search, Perplexity) :
+* **Données Structurées JSON-LD (`app/page.tsx`)** : Déclaration sémantique de l'entité sous le type `EducationalOrganization`.
+* **Focus Contexte Ivoirien** : Correction grammaticale de la bannière héro ("INTÉGREZ LES MEILLEURES ÉCOLES IVOIRIENNES") dans `app/page.tsx` et `CMSClient.tsx`. Extension de la liste de mots-clés dans `app/layout.tsx` pour inclure le *Lycée Technique d'Abidjan*, le *Lycée Scientifique de Yamoussoukro*, les modes de paiement locaux (*Wave CI*, *Orange Money*, *MTN Mobile Money*) et les communes cibles.
+* **Intégration de l'Offre Locale** : Déclaration des 6 centres physiques locaux (Bouaké, Yamoussoukro, Yopougon, Abobo, Cocody, Port-Bouët), du tarif officiel (15 000 XOF) et des coordonnées de support ivoiriennes directes.
+
+---
+
+## 15. Chargement Paresseux & Optimisation Performance PDF (Version 1.14)
+
+Pour corriger les ralentissements lors de l'ouverture de supports de cours volumineux :
+* **Séparation Métadonnées & Dessin** : Au chargement du document, le composant parent interroge les métadonnées de toutes les pages (méthode rapide et peu coûteuse `pdf.getPage()`) afin d'obtenir leurs dimensions exactes. Le layout applique ces dimensions en CSS (`aspect-ratio` et `maxWidth`), garantissant que la hauteur totale de la zone de défilement (scrollbar) est correcte dès le départ.
+* **Rendu Canvas Paresseux (IntersectionObserver)** : Le dessin vectoriel lourd sur `<canvas>` HTML5 et l'exécution du thread de rendu de PDF.js (`page.render()`) sont totalement différés. Un nouvel `IntersectionObserver` avec un buffer de **800px verticalement** est associé à chaque page. Les pages ne dessinent leur contenu sur le canvas que lorsqu'elles approchent de l'écran lors du défilement. Cette optimisation libère la mémoire graphique du navigateur (qui n'alloue plus des dizaines de canvas lourds simultanément) et rend les transitions fluides.
+* **Nettoyage automatique à la sauvegarde (CMS)** : Les URL et textes CMS sont nettoyés à la sauvegarde pour éliminer les espaces insécables (`%C2%A0`) accidentels.
+
+---
+
+## 16. Configuration du déploiement Vercel
+
+Pour réduire la latence réseau entre le serveur de production et la base de données :
+* **Création de `vercel.json`** : Ajout d'une configuration qui force le routage et l'exécution des fonctions serverless à Francfort (`fra1`), à proximité directe de la base de données Supabase, faisant passer les temps de transit SQL de 100 ms à moins de 2 ms (amélioration majeure du TTFB).

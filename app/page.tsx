@@ -6,6 +6,8 @@ import { asc, desc, eq, and, isNull } from "drizzle-orm";
 import InteractiveSchoolGuides from "@/components/shared/InteractiveSchoolGuides";
 import BlogGrid from "@/components/shared/BlogGrid";
 import HeaderNavbar from "@/components/shared/HeaderNavbar";
+import AffichesGallery from "@/components/shared/AffichesGallery";
+import AutoplayVideo from "@/components/shared/AutoplayVideo";
 import { 
   BookOpen, 
   GraduationCap, 
@@ -29,7 +31,8 @@ const DEFAULT_CONTENTS: any = {
     subtitle: "OGE ACADÉMIE vous prépare aux concours de l'INP-HB, de l'ESATIC et du CME grâce à une pédagogie d'excellence, un accompagnement personnalisé et des programmes adaptés aux exigences de chaque école.",
     cta_primary: "S'inscrire",
     cta_secondary: "Se connecter",
-    whatsapp_group_link: "https://chat.whatsapp.com/L123456789"
+    whatsapp_group_link: "https://chat.whatsapp.com/L123456789",
+    video_url: ""
   },
   historique: {
     title: "Notre Histoire & Mission",
@@ -123,6 +126,11 @@ const DEFAULT_CONTENTS: any = {
     ],
     urgence_warning: "⚠️ Le concours n'attend pas. C'est maintenant que se décide votre avenir."
   },
+  affiches: {
+    title: "Actualités & Affiches",
+    subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
+    images: []
+  },
   footer: {
     facebook: "https://facebook.com/ogeacademie",
     whatsapp: "https://wa.me/2250000000000",
@@ -162,9 +170,35 @@ const formatTitle = (title: string) => {
 
 export default async function Home() {
   // Fetch active sections
-  const dbSections = await db.query.pageSections.findMany({
+  let dbSections = await db.query.pageSections.findMany({
     orderBy: [asc(pageSections.ordre)]
   });
+
+  // Ensure "affiches" section is seeded in the database
+  const hasAffiches = dbSections.some((s) => s.cle === "affiches");
+  if (!hasAffiches) {
+    try {
+      await db.insert(pageSections).values({
+        cle: "affiches",
+        titre: "Affiches & Annonces",
+        contenu: {
+          title: "Actualités & Affiches",
+          subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
+          images: []
+        },
+        ordre: 2, // Just after hero (1) and before historique (3)
+        isActive: true
+      });
+      // Re-fetch
+      dbSections = await db.query.pageSections.findMany({
+        orderBy: [asc(pageSections.ordre)]
+      });
+    } catch (err: any) {
+      if (err.code !== "23505") {
+        console.error("Error auto-seeding affiches section in Home:", err);
+      }
+    }
+  }
 
   // Fetch active testimonials
   const dbTestimonials = await db.query.temoignages.findMany({
@@ -392,15 +426,54 @@ export default async function Home() {
         {/* HERO VIDEO SECTION */}
         {activeMap.hero && (
           <div className="mx-4 max-w-3xl sm:mx-auto mt-6 sm:mt-8 relative z-10 px-4 sm:px-0">
-            <div className="relative rounded-[16px] sm:rounded-[24px] overflow-hidden shadow-xl border border-slate-200 bg-slate-950 aspect-video">
-              <video 
-                src="https://ydaqlbwnxqmkfbuapbhv.supabase.co/storage/v1/object/public/documents/presentation.mp4" 
-                controls 
-                className="w-full h-full object-cover"
+            {contentMap.hero.video_url ? (
+              <AutoplayVideo 
+                src={contentMap.hero.video_url} 
                 poster="/logo.jpeg"
               />
-            </div>
+            ) : (
+              <div className="relative rounded-[16px] sm:rounded-[24px] overflow-hidden shadow-xl border border-slate-200 bg-slate-950 aspect-video flex items-center justify-center">
+                <div className="relative w-full h-full bg-slate-950 flex flex-col items-center justify-center p-8 text-center select-none group">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,160,23,0.15),transparent_65%)] pointer-events-none" />
+                  <img 
+                    src="/logo.jpeg" 
+                    alt="Logo OGE Académie" 
+                    className="w-36 h-36 sm:w-48 sm:h-48 object-contain rounded-2xl shadow-lg border border-white/10 group-hover:scale-105 transition-all duration-500" 
+                  />
+                  <div className="absolute bottom-4 left-0 right-0 text-slate-400 font-medium text-xs tracking-wider uppercase opacity-80">
+                    OGE Académie • Excellence & Succès
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* GALLERY / AFFICHES SECTION */}
+        {activeMap.affiches && (
+          <section id="affiches" className="py-20 px-4 sm:px-8 bg-slate-50 border-b border-slate-200">
+            <div className="max-w-7xl mx-auto space-y-12">
+              <div className="text-center max-w-3xl mx-auto space-y-3">
+                <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider block">
+                  Actualités de l'Académie
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                  {contentMap.affiches.title || "Nos Affiches & Annonces"}
+                </h2>
+                <p className="text-slate-550 text-base font-light max-w-2xl mx-auto">
+                  {contentMap.affiches.subtitle || "Consultez nos dernières affiches de campagne et informations officielles."}
+                </p>
+              </div>
+
+              {(!contentMap.affiches.images || contentMap.affiches.images.length === 0) ? (
+                <div className="text-center py-16 px-4 rounded-[24px] border border-dashed border-slate-200 bg-white/50 max-w-lg mx-auto">
+                  <p className="text-sm text-slate-400 font-light">Aucune affiche disponible pour le moment. Revenez bientôt !</p>
+                </div>
+              ) : (
+                <AffichesGallery images={contentMap.affiches.images} />
+              )}
+            </div>
+          </section>
         )}
 
         {/* HISTORIQUE SECTION WITH DETAILED CENTERS */}
