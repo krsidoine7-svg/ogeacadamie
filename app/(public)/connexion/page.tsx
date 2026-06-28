@@ -18,9 +18,6 @@ import { Label } from "@/components/ui/label"
 const loginSchema = z.object({
   email: z.string().email({ message: "Adresse e-mail invalide" }),
   password: z.string().min(6, { message: "Le mot de passe doit faire au moins 6 caractères" }),
-  acceptTerms: z.literal(true, {
-    message: "Vous devez accepter les conditions d'utilisation",
-  }),
 })
 
 type LoginFormValues = z.infer<typeof loginSchema>
@@ -41,7 +38,6 @@ export default function ConnexionPage() {
     defaultValues: {
       email: "",
       password: "",
-      acceptTerms: false as any,
     },
   })
 
@@ -167,34 +163,7 @@ export default function ConnexionPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 pt-1">
-                <input
-                  id="acceptTerms"
-                  type="checkbox"
-                  {...register("acceptTerms")}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-350 text-gold focus:ring-gold/20 accent-[#D4A017] cursor-pointer"
-                />
-                <label
-                  htmlFor="acceptTerms"
-                  className="text-xs text-slate-500 leading-normal select-none cursor-pointer"
-                >
-                  J'accepte les{" "}
-                  <a
-                    href="/politique-de-confidentialite"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gold hover:underline font-semibold"
-                  >
-                    Conditions Générales d'Utilisation
-                  </a>{" "}
-                  et la politique de confidentialité.
-                </label>
-              </div>
-              {errors.acceptTerms && (
-                <p className="text-xs text-rose-500 font-medium">{errors.acceptTerms.message}</p>
-              )}
-            </div>
+
 
             <Button
               type="submit"

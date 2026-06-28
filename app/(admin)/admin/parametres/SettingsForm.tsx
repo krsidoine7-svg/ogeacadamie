@@ -15,6 +15,8 @@ interface SettingsFormProps {
   isSuperAdmin: boolean;
   initialSystemConfig: {
     allow_manager_edit: boolean;
+    concepteur_whatsapp?: string;
+    concepteur_email?: string;
   };
 }
 
@@ -60,6 +62,8 @@ export default function SettingsForm({
         enable_wave: true,
         enable_momo: false,
         enable_orange: false,
+        concepteur_whatsapp: sysConfig.concepteur_whatsapp,
+        concepteur_email: sysConfig.concepteur_email,
       });
       if (res.success) {
         toast.success("Configuration système mise à jour avec succès.");
@@ -122,6 +126,39 @@ export default function SettingsForm({
 
               <div className="bg-blue-50/50 border border-blue-200/50 p-4 rounded-2xl text-xs text-blue-800 font-medium">
                 Note : La plateforme est configurée pour accepter uniquement les paiements via **Wave CI**. Chaque zone dispose de son propre compte Wave Marchand.
+              </div>
+
+              {/* Contacts Concepteur / Développeur */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                  Contacts du Concepteur (Affichés dans le Footer public)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                      Numéro WhatsApp du Concepteur
+                    </label>
+                    <input
+                      type="text"
+                      value={sysConfig.concepteur_whatsapp || ""}
+                      onChange={(e) => setSysConfig(prev => ({ ...prev, concepteur_whatsapp: e.target.value }))}
+                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-gold/30 focus:border-gold outline-none"
+                      placeholder="ex: +225 0503681588"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
+                      Email de contact du Concepteur
+                    </label>
+                    <input
+                      type="email"
+                      value={sysConfig.concepteur_email || ""}
+                      onChange={(e) => setSysConfig(prev => ({ ...prev, concepteur_email: e.target.value }))}
+                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-gold/30 focus:border-gold outline-none"
+                      placeholder="ex: krsidoine7@gmail.com"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

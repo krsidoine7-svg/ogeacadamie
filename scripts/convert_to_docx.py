@@ -357,6 +357,11 @@ def convert_md_to_docx(md_path, docx_path):
     print(f"File successfully converted to {docx_path}")
 
 if __name__ == '__main__':
-    md_file = "c:\\Users\\Toto.ADMINISTRATOR\\Desktop\\oge-academie\\cahier_de_recette.md"
-    docx_file = "c:\\Users\\Toto.ADMINISTRATOR\\Desktop\\oge-academie\\cahier_de_recette.docx"
+    import sys
+    if len(sys.argv) > 2:
+        md_file = sys.argv[1]
+        docx_file = sys.argv[2]
+    else:
+        md_file = "c:\\Users\\Toto.ADMINISTRATOR\\Desktop\\oge-academie\\cahier_de_recette.md"
+        docx_file = "c:\\Users\\Toto.ADMINISTRATOR\\Desktop\\oge-academie\\cahier_de_recette.docx"
     convert_md_to_docx(md_file, docx_file)

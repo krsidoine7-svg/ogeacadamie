@@ -5,6 +5,14 @@ import { toast } from "sonner";
 import { createDocument, toggleDocumentActive, deleteDocument } from "../actions";
 import { createClient } from "@/utils/supabase/client";
 import { Plus, Trash2, Calendar, FileText, Globe, Check, X, ShieldAlert, AlertCircle, Video, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface DocumentsManagerClientProps {
   initialDocuments: any[];
@@ -16,6 +24,21 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
   const [isLive, setIsLive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+  // Confirm Modal State
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    type: "deactivate" | "delete" | null;
+    docId: string | null;
+    docTitle: string | null;
+    isLive: boolean;
+  }>({
+    isOpen: false,
+    type: null,
+    docId: null,
+    docTitle: null,
+    isLive: false,
+  });
 
   // Form State
   const [form, setForm] = useState({
@@ -33,11 +56,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
   const supabase = createClient();
 
-  const handleToggleActive = async (id: string, active: boolean) => {
-    if (!active) {
-      if (!confirm("Voulez-vous vraiment désactiver ce support ? Il ne sera plus visible par les candidats.")) return;
-    }
-
+  const executeToggleActive = async (id: string, active: boolean) => {
     try {
       const res = await toggleDocumentActive(id, active);
       if (res.success) {
@@ -53,9 +72,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Voulez-vous vraiment supprimer ce support ? Cela annulera également l'événement Google Calendar associé.")) return;
-
+  const executeDelete = async (id: string) => {
     try {
       const res = await deleteDocument(id);
       if (res.success) {
@@ -67,6 +84,30 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
     } catch (err) {
       toast.error("Erreur réseau.");
     }
+  };
+
+  const handleToggleActive = (id: string, active: boolean, titre: string, isLiveCourse: boolean) => {
+    if (!active) {
+      setConfirmState({
+        isOpen: true,
+        type: "deactivate",
+        docId: id,
+        docTitle: titre,
+        isLive: isLiveCourse,
+      });
+    } else {
+      executeToggleActive(id, true);
+    }
+  };
+
+  const handleDelete = (id: string, titre: string, isLiveCourse: boolean) => {
+    setConfirmState({
+      isOpen: true,
+      type: "delete",
+      docId: id,
+      docTitle: titre,
+      isLive: isLiveCourse,
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -446,7 +487,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                       <div className="flex items-center justify-end gap-2">
                         {/* Toggle Active Button */}
                         <button
-                          onClick={() => handleToggleActive(doc.id, !doc.isActive)}
+                          onClick={() => handleToggleActive(doc.id, !doc.isActive, doc.titre, !!doc.scheduledAt)}
                           className={`p-1.5 rounded-lg border transition-all ${
                             doc.isActive
                               ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
@@ -459,7 +500,7 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
                         {/* Delete Button */}
                         <button
-                          onClick={() => handleDelete(doc.id)}
+                          onClick={() => handleDelete(doc.id, doc.titre, !!doc.scheduledAt)}
                           className="p-1.5 bg-red-55 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
                           title="Supprimer définitivement"
                         >
@@ -526,11 +567,10 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
                       </span>
                     )}
                   </div>
-
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Toggle Active Button */}
                     <button
-                      onClick={() => handleToggleActive(doc.id, !doc.isActive)}
+                      onClick={() => handleToggleActive(doc.id, !doc.isActive, doc.titre, !!doc.scheduledAt)}
                       className={`p-1.5 rounded-lg border transition-all ${
                         doc.isActive
                           ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
@@ -543,8 +583,8 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
 
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="p-1.5 bg-red-50 border border-red-250 text-red-700 hover:bg-red-100 rounded-lg transition-all"
+                      onClick={() => handleDelete(doc.id, doc.titre, !!doc.scheduledAt)}
+                      className="p-1.5 bg-red-50 border border-red-255 text-red-700 hover:bg-red-100 rounded-lg transition-all"
                       title="Supprimer définitivement"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -556,6 +596,107 @@ export default function DocumentsManagerClient({ initialDocuments }: DocumentsMa
           </div>
         </div>
       )}
+
+      {/* CONFIRMATION DIALOG (PREMIUM & IMPACT MAPPING) */}
+      <Dialog
+        open={confirmState.isOpen}
+        onOpenChange={(open) => !open && setConfirmState(prev => ({ ...prev, isOpen: false }))}
+      >
+        <DialogContent className="max-w-md bg-white border border-slate-200 shadow-2xl rounded-3xl p-6 md:p-8" showCloseButton={false}>
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                confirmState.type === "delete" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"
+              }`}>
+                {confirmState.type === "delete" ? (
+                  <Trash2 className="w-5 h-5" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5" />
+                )}
+              </div>
+              <DialogTitle className="text-lg font-extrabold text-slate-900 tracking-tight leading-none">
+                {confirmState.type === "delete" ? "Supprimer le support ?" : "Désactiver le support ?"}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-slate-500 font-medium leading-relaxed pt-1">
+              Vous êtes sur le point de {confirmState.type === "delete" ? "supprimer" : "désactiver"} le support d'étude :
+              <strong className="block text-slate-805 text-sm mt-1 font-bold">{confirmState.docTitle}</strong>
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* IMPACT MAPPING SECTION (PREMIUM DESIGN) */}
+          <div className="my-5 p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+            <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-slate-450" />
+              Cartographie d'Impact & Conséquences
+            </h4>
+            <ul className="space-y-2.5 text-xs text-slate-600 leading-normal font-medium">
+              {confirmState.type === "deactivate" ? (
+                <>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>Les candidats ne verront plus ce support dans leur espace.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <span>L'historique et le fichier PDF chiffré restent stockés de manière sécurisée et pourront être réactivés à tout moment.</span>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                    <span>Les candidats perdront <strong>définitivement</strong> l'accès à ce cours/exercice.</span>
+                  </li>
+                  {confirmState.isLive ? (
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                      <span className="text-red-700 font-semibold">
+                        L'événement programmé et le lien Google Calendar associé seront annulés et supprimés.
+                      </span>
+                    </li>
+                  ) : (
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                      <span>Le fichier PDF chiffré sur le serveur sera rendu inaccessible.</span>
+                    </li>
+                  )}
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                    <span>Cette suppression est irréversible (soft delete appliqué).</span>
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
+
+          <DialogFooter className="flex flex-row items-center gap-3 justify-end pt-2 border-t border-slate-100">
+            <button
+              onClick={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+              className="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-xs font-bold text-slate-700 cursor-pointer transition-all"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={() => {
+                if (confirmState.type === "delete") {
+                  executeDelete(confirmState.docId!);
+                } else {
+                  executeToggleActive(confirmState.docId!, false);
+                }
+                setConfirmState(prev => ({ ...prev, isOpen: false }));
+              }}
+              className={`px-6 py-2.5 rounded-xl text-xs font-bold text-white cursor-pointer transition-all shadow-sm ${
+                confirmState.type === "delete"
+                  ? "bg-red-600 hover:bg-red-700 shadow-red-100"
+                  : "bg-amber-600 hover:bg-amber-700 shadow-amber-100"
+              }`}
+            >
+              Confirmer
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

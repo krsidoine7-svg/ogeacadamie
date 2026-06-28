@@ -53,7 +53,12 @@ export default async function SettingsPage() {
     enable_wave: true,
     enable_momo: true,
     enable_orange: true,
+    concepteur_whatsapp: "+225 0503681588",
+    concepteur_email: "krsidoine7@gmail.com",
   };
+
+  if (systemConfig.concepteur_whatsapp === undefined) systemConfig.concepteur_whatsapp = "+225 0503681588";
+  if (systemConfig.concepteur_email === undefined) systemConfig.concepteur_email = "krsidoine7@gmail.com";
 
   return (
     <div className="space-y-8 animate-fade-in">

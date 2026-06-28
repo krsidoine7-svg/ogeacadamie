@@ -174,6 +174,17 @@ export default async function Home() {
     orderBy: [asc(pageSections.ordre)]
   });
 
+  // Fetch system config for Concepteur contact
+  const systemConfigRow = await db.query.pageSections.findFirst({
+    where: eq(pageSections.cle, "system_config"),
+  });
+  const systemConfig = systemConfigRow?.contenu as any || {
+    concepteur_whatsapp: "+225 0503681588",
+    concepteur_email: "krsidoine7@gmail.com",
+  };
+  if (systemConfig.concepteur_whatsapp === undefined) systemConfig.concepteur_whatsapp = "+225 0503681588";
+  if (systemConfig.concepteur_email === undefined) systemConfig.concepteur_email = "krsidoine7@gmail.com";
+
   // Ensure "affiches" section is seeded in the database
   const hasAffiches = dbSections.some((s) => s.cle === "affiches");
   if (!hasAffiches) {
@@ -953,8 +964,28 @@ export default async function Home() {
           </div>
 
           <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-550">
-            <div>
-              &copy; {new Date().getFullYear()} OGE Académie. Tous droits réservés.
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-6">
+              <span>&copy; {new Date().getFullYear()} OGE Académie. Tous droits réservés.</span>
+              {(systemConfig.concepteur_email || systemConfig.concepteur_whatsapp) && (
+                <span className="text-slate-500">
+                  Créé par :{" "}
+                  {systemConfig.concepteur_email && (
+                    <a href={`mailto:${systemConfig.concepteur_email}`} className="hover:text-white underline decoration-dotted transition-all mr-3">
+                      {systemConfig.concepteur_email}
+                    </a>
+                  )}
+                  {systemConfig.concepteur_whatsapp && (
+                    <a
+                      href={`https://wa.me/${systemConfig.concepteur_whatsapp.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-white underline decoration-dotted transition-all"
+                    >
+                      WhatsApp : {systemConfig.concepteur_whatsapp}
+                    </a>
+                  )}
+                </span>
+              )}
             </div>
             <div>
               <Link href="/politique-de-confidentialite" className="hover:text-white hover:underline transition-all">

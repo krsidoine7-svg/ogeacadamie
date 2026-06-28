@@ -1411,6 +1411,8 @@ export async function updateSystemConfig(config: {
   enable_wave: boolean;
   enable_momo: boolean;
   enable_orange: boolean;
+  concepteur_whatsapp?: string;
+  concepteur_email?: string;
 }) {
   try {
     await verifySuperAdminSession();
@@ -1419,10 +1421,16 @@ export async function updateSystemConfig(config: {
       where: eq(pageSections.cle, "system_config"),
     });
 
+    const currentConfig = existingRow?.contenu as any || {};
+    const mergedConfig = {
+      ...currentConfig,
+      ...config,
+    };
+
     if (existingRow) {
       await db.update(pageSections)
         .set({
-          contenu: config,
+          contenu: mergedConfig,
           updatedAt: new Date(),
         })
         .where(eq(pageSections.cle, "system_config"));
@@ -1430,7 +1438,7 @@ export async function updateSystemConfig(config: {
       await db.insert(pageSections).values({
         cle: "system_config",
         titre: "Configuration Système",
-        contenu: config,
+        contenu: mergedConfig,
         ordre: 99,
         isActive: true,
       });
