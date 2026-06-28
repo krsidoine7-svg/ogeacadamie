@@ -71,7 +71,7 @@ def create_roles_table(doc, roles_data):
     for c_idx, text in enumerate(headers):
         cell = hdr_row.cells[c_idx]
         set_cell_margins(cell, top=140, bottom=140, left=180, right=180)
-        set_cell_background(cell, "1A5276")
+        set_cell_background(cell, "FF7900")
         p = cell.paragraphs[0]
         run = p.add_run(text)
         run.bold = True
@@ -163,7 +163,7 @@ def create_word_table(doc, rows):
             add_runs_to_paragraph(p, cell_text)
             
             if r_idx == 0:
-                set_cell_background(cell, "1A5276")
+                set_cell_background(cell, "FF7900")
                 for run in p.runs:
                     run.bold = True
                     run.font.color.rgb = RGBColor(255, 255, 255)
@@ -188,7 +188,7 @@ def convert_md_to_docx(md_path, docx_path):
     style_normal = doc.styles['Normal']
     style_normal.font.name = 'Calibri'
     style_normal.font.size = Pt(11)
-    style_normal.font.color.rgb = RGBColor(33, 37, 41)
+    style_normal.font.color.rgb = RGBColor(0, 0, 0)
     
     with open(md_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -229,7 +229,7 @@ def convert_md_to_docx(md_path, docx_path):
             run = h.runs[0]
             run.font.name = 'Calibri Light'
             run.font.size = Pt(16)
-            run.font.color.rgb = RGBColor(26, 82, 118)
+            run.font.color.rgb = RGBColor(0, 0, 0)
             i += 1
             continue
             
@@ -300,17 +300,20 @@ def convert_md_to_docx(md_path, docx_path):
             run.font.name = 'Calibri Light'
             if level == 1:
                 run.font.size = Pt(20)
-                run.font.color.rgb = RGBColor(10, 14, 23)
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)
             elif level == 2:
                 run.font.size = Pt(16)
-                run.font.color.rgb = RGBColor(26, 82, 118)
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)
             elif level == 3:
                 run.font.size = Pt(13)
-                run.font.color.rgb = RGBColor(46, 64, 87)
+                run.font.bold = True
+                run.font.color.rgb = RGBColor(0, 0, 0)
             else:
                 run.font.size = Pt(11)
                 run.font.bold = True
-                run.font.color.rgb = RGBColor(50, 50, 50)
+                run.font.color.rgb = RGBColor(0, 0, 0)
                 
             i += 1
             continue

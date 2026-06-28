@@ -47,5 +47,6 @@ Cette session a permis de :
 2. **Optimisation Middleware** : Baisse drastique des temps de chargement publics en sautant les requêtes réseau Supabase Auth pour le prefetching et les assets.
 3. **Mise en Cache Next.js 16** : Implémentation du double niveau de cache (React `cache` + `unstable_cache` avec tag invalidation `'max'`) sur la base de données.
 4. **Validation du Build** : Compilation finale Next.js validée sans aucune erreur. Poussé sur GitHub via Token d'accès sécurisé.
+5. **Contrat & Couleurs de Marque** : Mise à jour du contrat avec un engagement de 10 ans, une pénalité forfaitaire de 500 000 FCFA + 12% sur changement, un plafond de responsabilité à 1%, la formalisation de la gestion des données exclusivement par le CMS (les administrateurs font les mises à jour eux-mêmes, le concepteur n'intervient que pour les pannes) et l'application des couleurs Blanc, Orange et Rose pour un rendu professionnel.
 
 
