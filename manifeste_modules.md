@@ -45,6 +45,12 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.19 (Correction Connexion - Retrait Conditions d'Utilisation) :** Retrait de la case à cocher obligatoire d'acceptation des Conditions Générales d'Utilisation et de la politique de confidentialité sur la page de connexion (`connexion/page.tsx`), et ajustement associé de son schéma de validation Zod, cette validation n'étant légitime que lors de la phase d'inscription.
 >
 > **Version 1.20 (Modale de Confirmation Premium / Documents) :** Remplacement des boîtes de dialogue natives `confirm()` par une modale de confirmation interactive premium (`Dialog` de `@base-ui`) sur la page de gestion des documents (`/admin/documents`). Cette modale affiche en temps réel une cartographie d'impact détaillée des conséquences de la désactivation (perte de visibilité) ou de la suppression d'un support (suppression définitive, annulation Google Calendar pour les directs), sécurisant ainsi l'administration des cours.
+>
+> **Version 1.21 (Intégration du template de tests de charge Locust) :** Intégration du dossier `locust-template` (situé dans `.skills/ChefsOge/banques_skills/locust-template`) dans le système multi-agents. Mise à jour du manifeste de compétences principal (`manifeste_competence.md`, `manifeste_competence.json`), du skill manager `ChefsOge/SKILL.md`, des manifestes locaux des agents (`codebase-pattern-finder_manifest.md` / `.json`, `general-purpose_manifest.md` / `.json`) et des règles globales d'architecture (`GEMINI.md`) pour documenter la délégation, le chargement et l'utilisation du skill de test de charge `run-load-test`.
+>
+> **Version 1.22 (Optimisation des performances de navigation - Middleware) :** Correction d'un goulot d'étranglement majeur où le middleware exécutait des requêtes réseau à Supabase Auth (`getUser()`) et des requêtes en base de données (`profiles`) sur absolument toutes les requêtes (y compris les pages publiques comme l'accueil, et les pré-chargements de liens / prefetching). Désormais, ces appels sont immédiatement court-circuités pour toutes les routes publiques non authentifiées.
+>
+> **Version 1.23 (Caching Intelligent & Revalidation Turbopack/Next.js 16) :** Création de `lib/cached-queries.ts` regroupant les requêtes profil, CMS et documents dans des fonctions React cache et unstable_cache. Intégration dans la page d'accueil, le layout et la page candidat ainsi que le visualiseur candidat. Liaison des purges de cache de tags (avec signature standardisée 'max' pour Next.js 16) dans les Server Actions d'administration et de gestion de zone.
 
 ---
 
@@ -102,6 +108,9 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 
 ## ⚙️ Logique & Validation (`/lib`)
 
+* **[cached-queries.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/cached-queries.ts)**
+  * **Description :** Module regroupant toutes les requêtes SQL enveloppées dans les fonctions de cache de React (`cache`) et de Next.js (`unstable_cache`).
+  * **Relations :** Consommé par la page d'accueil, le dashboard candidat (layout et pages) et le visualiseur candidat.
 * **[db.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/db.ts)**
   * **Description :** Client de connexion direct PostgreSQL utilisant `postgres-js` et configuré pour l'ORM Drizzle.
   * **Relations :** Consommé par les Server Actions pour effectuer des opérations de base de données (lecture, écriture, mises à jour RLS-bypass).

@@ -10,6 +10,17 @@ const ROLE_REDIRECTS: Record<string, string> = {
 
 export async function middleware(request: NextRequest) {
   const supabaseResponse = NextResponse.next({ request })
+  const pathname = request.nextUrl.pathname
+
+  // Routes protégées
+  const protectedPaths = ['/dashboard', '/admin', '/zone']
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
+  const isAuthPage = pathname === '/connexion' || pathname === '/inscription'
+
+  // Éviter tout appel API réseau ou BDD Supabase pour les pages publiques non authentifiées
+  if (!isProtected && !isAuthPage) {
+    return supabaseResponse
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,11 +41,6 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  const pathname = request.nextUrl.pathname
-
-  // Routes protégées
-  const protectedPaths = ['/dashboard', '/admin', '/zone']
-  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
   // Non connecté sur route protégée → redirection vers connexion
   if (!user && isProtected) {
@@ -42,7 +48,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Connecté sur page auth (connexion/inscription) → redirection selon rôle
-  if (user && (pathname === '/connexion' || pathname === '/inscription')) {
+  if (user && isAuthPage) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')

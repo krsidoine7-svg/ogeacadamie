@@ -33,6 +33,12 @@
               "path": "banques_skills/skills-globales/veille-securite/SKILL.md",
               "role": "Expert cybersécurité, conformité RGPD, OWASP et veille CVE",
               "triggers": ["audit sécurité", "npm audit", "CVE", "RGPD", "RLS", "XSS", "injection SQL", "VDOS.md", "incident sécurité"]
+            },
+            {
+              "id": "run-load-test",
+              "path": "banques_skills/locust-template/skills/run-load-test/SKILL.md",
+              "role": "Exécuter des tests de charge, de stress, de pic et d'endurance avec Locust",
+              "triggers": ["charge", "stress", "performance", "locust", "rupture", "latence", "simulation"]
             }
           ]
         },
@@ -81,6 +87,11 @@
           "id": "memoire-oge-academie",
           "path": "banques_skills/memoire-oge-academie/",
           "role": "Système de mémoire et guide"
+        },
+        {
+          "id": "locust-template",
+          "path": "banques_skills/locust-template/",
+          "role": "Template professionnel de tests de charge et performance (Locust)"
         }
       ]
     }

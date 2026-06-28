@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
+import { getCachedUserProfile } from "@/lib/cached-queries";
 import { profiles, concoursInscrits } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { BookOpen, Award, FileText, CheckCircle2, ChevronRight, MessageSquare, MapPin, Calendar } from "lucide-react";
@@ -21,10 +22,8 @@ export default async function DashboardPage() {
     redirect("/connexion");
   }
 
-  // 2. Fetch candidate profile
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  // 2. Fetch candidate profile (cached)
+  const profile = await getCachedUserProfile(user.id);
 
   if (!profile) {
     redirect("/connexion");

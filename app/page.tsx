@@ -1,8 +1,9 @@
 import React from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { pageSections, temoignages, blogArticles } from "@/drizzle/schema";
-import { asc, desc, eq, and, isNull } from "drizzle-orm";
+import { pageSections } from "@/drizzle/schema";
+import { asc } from "drizzle-orm";
+import { getCachedPageSections, getCachedTestimonials, getCachedBlogArticles } from "@/lib/cached-queries";
 import InteractiveSchoolGuides from "@/components/shared/InteractiveSchoolGuides";
 import BlogGrid from "@/components/shared/BlogGrid";
 import HeaderNavbar from "@/components/shared/HeaderNavbar";
@@ -169,15 +170,11 @@ const formatTitle = (title: string) => {
 };
 
 export default async function Home() {
-  // Fetch active sections
-  let dbSections = await db.query.pageSections.findMany({
-    orderBy: [asc(pageSections.ordre)]
-  });
+  // Fetch active sections (cached)
+  let dbSections = await getCachedPageSections();
 
-  // Fetch system config for Concepteur contact
-  const systemConfigRow = await db.query.pageSections.findFirst({
-    where: eq(pageSections.cle, "system_config"),
-  });
+  // Fetch system config for Concepteur contact (from cached list in memory)
+  const systemConfigRow = dbSections.find((s) => s.cle === "system_config");
   const systemConfig = systemConfigRow?.contenu as any || {
     concepteur_whatsapp: "+225 0503681588",
     concepteur_email: "krsidoine7@gmail.com",
@@ -200,7 +197,7 @@ export default async function Home() {
         ordre: 2, // Just after hero (1) and before historique (3)
         isActive: true
       });
-      // Re-fetch
+      // Re-fetch using standard DB call (only happens once during first load)
       dbSections = await db.query.pageSections.findMany({
         orderBy: [asc(pageSections.ordre)]
       });
@@ -211,22 +208,11 @@ export default async function Home() {
     }
   }
 
-  // Fetch active testimonials
-  const dbTestimonials = await db.query.temoignages.findMany({
-    where: and(
-      eq(temoignages.isActive, true),
-      isNull(temoignages.deletedAt)
-    )
-  });
+  // Fetch active testimonials (cached)
+  const dbTestimonials = await getCachedTestimonials();
 
-  // Fetch published blog articles
-  const dbArticles = await db.query.blogArticles.findMany({
-    where: and(
-      eq(blogArticles.isPublished, true),
-      isNull(blogArticles.deletedAt)
-    ),
-    orderBy: [desc(blogArticles.publishedAt)]
-  });
+  // Fetch published blog articles (cached)
+  const dbArticles = await getCachedBlogArticles();
 
   const fallbackTestimonials = [
     {

@@ -36,6 +36,7 @@ ChefsOge applique 3 procédures fondamentales :
 - Lorsqu'un sous-agent a besoin de l'expertise d'un autre sous-agent, il doit demander la validation de **ChefsOge**.
 - L'ensemble des skills et des manifestes est encapsulé de manière relative dans le dossier `.skills/ChefsOge` pour garantir la portabilité du système.
 - **Visualisation de flux** : pour brainstorming, nouvelle fonctionnalité, modification, workflows, onboarding ou UX — ChefsOge délègue à `mermaid-diagram-specialist` avec `skill-mermaidH`.
+- **Tests de Charge & Performance** : pour tester la charge, le stress, les pics de trafic ou l'endurance — ChefsOge délègue à `codebase-pattern-finder` ou `general-purpose` avec le skill `run-load-test` dans `.skills/ChefsOge/banques_skills/locust-template/skills/run-load-test/SKILL.md`.
 - **Interdit** : délégation en chaîne (A→B→C) sans nouvelle approbation à chaque maillon.
 
 ### Règles d'Or

@@ -1,0 +1,38 @@
+name: Performance Load Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  performance-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Run setup script
+      run: |
+        python setup.py
+
+    - name: Run Headless Load Test
+      run: |
+        # Active l'environnement virtuel et lance le test
+        source .venv/bin/activate
+        python skills/run-load-test/scripts/run_headless.py -f scenarios/basic_test.py -u 10 -r 2 -t 30s --host http://localhost:3000 -o results/report.md
+      continue-on-error: true # Permet de ne pas bloquer le build complet si le serveur de test n'est pas déployé
+
+    - name: Upload HTML and Markdown Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: locust-performance-reports
+        path: |
+          results/

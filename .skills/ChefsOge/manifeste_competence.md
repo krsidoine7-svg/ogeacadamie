@@ -31,6 +31,10 @@ Ces agents se concentrent sur la base de code, les motifs architecturaux et la d
   - **Lien** : [📁 Consulter le SKILL](./banques_skills/skills-globales/veille-securite/SKILL.md)
   - **Rôle** : Expert cybersécurité, conformité RGPD, OWASP et veille CVE. Audit de dépendances (`npm audit`), vérification RLS Supabase, prévention XSS/Injection SQL, maintenance du registre VDOS.md.
   - **Déclencheurs** : Audit de sécurité, vérification de dépendances, revue de code orientée sécurité, analyse d'impact RGPD, incident de sécurité (CVSS > 7.0).
+- **🚀 Skill attaché : `run-load-test`**
+  - **Lien** : [📁 Consulter le SKILL](./banques_skills/locust-template/skills/run-load-test/SKILL.md)
+  - **Rôle** : Exécuter des tests de charge, stress, pic et endurance avec Locust, et analyser les performances de l'application.
+  - **Déclencheurs** : Test de charge, test de stress, test de performance, point de rupture, latence de l'application, simulation d'utilisateurs.
 
 ### `mermaid-diagram-specialist`
 - **Lien** : [📁 Consulter le SKILL](./agents/mermaid-diagram-specialist.md) | [📄 Manifeste Local](./agents/manifestes/mermaid-diagram-specialist_manifest.md)
@@ -70,6 +74,10 @@ En plus des sous-agents, ChefsOge dispose de banques de compétences intégrées
 ### `memoire-oge-academie`
 - **Lien** : [📁 Accéder à la Mémoire](./banques_skills/memoire-oge-academie/)
 - **Rôle** : Mémoire externe structurée du projet (fourtour, wiki, sessions, décisions, erreurs, bonnes pratiques).
+
+### `locust-template`
+- **Lien** : [📁 Accéder au Template](./banques_skills/locust-template/)
+- **Rôle** : Template professionnel de tests de charge et de performance (Locust, scénarios de base, auth, csrf, db_intensive, scripts headless/stress et guides).
 
 ---
 

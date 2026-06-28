@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, zoneConfig, notifications, concoursInscrits, paiements, pageSections, temoignages, blogArticles, documents, adminPendingActions } from "@/drizzle/schema";
@@ -580,6 +580,7 @@ export async function toggleSectionActive(sectionId: string, isActive: boolean) 
       .where(eq(pageSections.id, sectionId));
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("page-sections", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in toggleSectionActive:", error);
@@ -599,6 +600,7 @@ export async function updateSectionContent(sectionId: string, titre: string, con
       .where(eq(pageSections.id, sectionId));
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("page-sections", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in updateSectionContent:", error);
@@ -635,6 +637,7 @@ export async function createTestimonial(data: {
     });
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("testimonials", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in createTestimonial:", error);
@@ -676,6 +679,7 @@ export async function updateTestimonial(
       .where(eq(temoignages.id, id));
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("testimonials", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in updateTestimonial:", error);
@@ -695,6 +699,7 @@ export async function toggleTestimonialActive(id: string, isActive: boolean) {
       .where(eq(temoignages.id, id));
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("testimonials", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in toggleTestimonialActive:", error);
@@ -714,6 +719,7 @@ export async function deleteTestimonial(id: string) {
       .where(eq(temoignages.id, id));
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("testimonials", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in deleteTestimonial:", error);
@@ -779,6 +785,7 @@ export async function createBlogArticle(data: {
 
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("blog-articles", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in createBlogArticle:", error);
@@ -846,6 +853,7 @@ export async function updateBlogArticle(
 
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("blog-articles", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in updateBlogArticle:", error);
@@ -870,6 +878,7 @@ export async function toggleBlogArticlePublished(id: string, isPublished: boolea
 
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("blog-articles", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in toggleBlogArticlePublished:", error);
@@ -890,6 +899,7 @@ export async function deleteBlogArticle(id: string) {
 
     revalidatePath("/");
     revalidatePath("/admin/contenu");
+    revalidateTag("blog-articles", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in deleteBlogArticle:", error);
@@ -1085,6 +1095,7 @@ export async function createDocument(data: any) {
     
     revalidatePath("/dashboard/documents");
     revalidatePath("/admin/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in createDocument:", error);
@@ -1105,6 +1116,7 @@ export async function toggleDocumentActive(id: string, isActive: boolean) {
       
     revalidatePath("/dashboard/documents");
     revalidatePath("/admin/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in toggleDocumentActive:", error);
@@ -1137,6 +1149,7 @@ export async function deleteDocument(id: string) {
     
     revalidatePath("/dashboard/documents");
     revalidatePath("/admin/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in deleteDocument:", error);

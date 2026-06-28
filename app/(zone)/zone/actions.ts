@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, paiements, zoneConfig, documents, notifications, concoursInscrits } from "@/drizzle/schema";
@@ -426,6 +426,7 @@ export async function managerCreateDocument(data: {
 
     revalidatePath("/dashboard/documents");
     revalidatePath("/zone/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in managerCreateDocument:", error);
@@ -462,6 +463,7 @@ export async function managerToggleDocumentActive(id: string, isActive: boolean)
 
     revalidatePath("/dashboard/documents");
     revalidatePath("/zone/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in managerToggleDocumentActive:", error);
@@ -498,6 +500,7 @@ export async function managerDeleteDocument(id: string) {
 
     revalidatePath("/dashboard/documents");
     revalidatePath("/zone/documents");
+    revalidateTag("all-active-documents", "max");
     return { success: true };
   } catch (error: any) {
     console.error("Error in managerDeleteDocument:", error);

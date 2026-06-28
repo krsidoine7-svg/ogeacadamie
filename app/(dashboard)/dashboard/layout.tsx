@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
-import { profiles, paiements, zoneConfig, notifications, pageSections } from "@/drizzle/schema";
+import { getCachedUserProfile, getCachedZoneConfig } from "@/lib/cached-queries";
+import { profiles, paiements, zoneConfig, notifications } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
 import PaiementModalWrapper from "@/components/dashboard/candidat/PaiementModalWrapper";
@@ -30,10 +31,8 @@ export default async function DashboardLayout({
     redirect("/connexion");
   }
 
-  // 2. Fetch candidate profile
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  // 2. Fetch candidate profile (cached)
+  const profile = await getCachedUserProfile(user.id);
 
   if (!profile) {
     redirect("/connexion");
@@ -57,12 +56,10 @@ export default async function DashboardLayout({
 
   const paymentStatus = payment?.statut || "en_attente";
 
-  // 5. Load specific zone configuration if not yet validated
+  // 5. Load specific zone configuration if not yet validated (cached)
   let zoneConfigData = null;
   if (paymentStatus !== "valide" && profile.zone) {
-    zoneConfigData = await db.query.zoneConfig.findFirst({
-      where: eq(zoneConfig.zone, profile.zone),
-    });
+    zoneConfigData = await getCachedZoneConfig(profile.zone);
   }
 
 

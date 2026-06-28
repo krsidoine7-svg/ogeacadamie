@@ -1,6 +1,6 @@
 {
   "id": "codebase-pattern-finder",
   "manager": "ChefsOge",
-  "skills": ["code_analysis", "pattern_recognition", "architecture_review"],
+  "skills": ["code_analysis", "pattern_recognition", "architecture_review", "load_testing"],
   "delegation_policy": "require_manager_approval"
 }

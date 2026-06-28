@@ -2,9 +2,10 @@ import React from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { getCachedUserProfile, getCachedAllActiveDocuments } from "@/lib/cached-queries";
 import { db } from "@/lib/db";
 import { profiles, documents, concoursInscrits, paiements } from "@/drizzle/schema";
-import { eq, and, or, inArray, asc, desc, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import DocumentsList from "./DocumentsList";
 import { BookOpen, AlertCircle } from "lucide-react";
 
@@ -27,10 +28,8 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     redirect("/connexion");
   }
 
-  // 2. Fetch profile
-  const profile = await db.query.profiles.findFirst({
-    where: eq(profiles.id, user.id),
-  });
+  // 2. Fetch profile (cached)
+  const profile = await getCachedUserProfile(user.id);
 
   if (!profile) {
     redirect("/connexion");
@@ -52,45 +51,19 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
   const registeredConcoursList = registrations.map((r) => r.concours as string);
 
-  // 5. Fetch documents related to candidate's registered concours, mode of training, and zone
-  const availableDocuments = await db
-    .select({
-      id: documents.id,
-      titre: documents.titre,
-      description: documents.description,
-      fichierUrl: documents.fichierUrl,
-      concours: documents.concours,
-      type: documents.type,
-      modeFormation: documents.modeFormation,
-      zone: documents.zone,
-      createdAt: documents.createdAt,
-    })
-    .from(documents)
-    .where(
-      and(
-        eq(documents.isActive, true),
-        isNull(documents.deletedAt),
-        registeredConcoursList.length > 0
-          ? or(
-              eq(documents.concours, "tous"),
-              inArray(documents.concours, registeredConcoursList)
-            )
-          : eq(documents.concours, "tous"),
-        profile.modeFormation
-          ? or(
-              eq(documents.modeFormation, "tous"),
-              eq(documents.modeFormation, profile.modeFormation)
-            )
-          : eq(documents.modeFormation, "tous"),
-        profile.zone
-          ? or(
-              eq(documents.zone, "tous"),
-              eq(documents.zone, profile.zone)
-            )
-          : eq(documents.zone, "tous")
-      )
-    )
-    .orderBy(asc(documents.ordre), desc(documents.createdAt));
+  // 5. Fetch documents related to candidate's registered concours, mode of training, and zone (cached & filtered in-memory)
+  const allActiveDocs = await getCachedAllActiveDocuments();
+  
+  const availableDocuments = allActiveDocs.filter((doc) => {
+    const matchConcours = registeredConcoursList.length > 0
+      ? (doc.concours === "tous" || registeredConcoursList.includes(doc.concours as string))
+      : (doc.concours === "tous");
+      
+    const matchMode = !profile.modeFormation || doc.modeFormation === "tous" || doc.modeFormation === profile.modeFormation;
+    const matchZone = !profile.zone || doc.zone === "tous" || doc.zone === profile.zone;
+    
+    return matchConcours && matchMode && matchZone;
+  });
 
   return (
     <div className="space-y-8 animate-fade-in">
