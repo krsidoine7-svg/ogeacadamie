@@ -29,8 +29,23 @@ Cette session a permis de :
 * **[app/(admin)/admin/parametres/SettingsForm.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/SettingsForm.tsx)** [MODIFY] : Interface et affichage des champs d'édition pour Super-Admin.
 * **[app/(public)/connexion/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/connexion/page.tsx)** [MODIFY] : Retrait de la case obligatoire des CGU et de la politique de confidentialité sur la page de connexion et mise à jour de son schéma de validation.
 * **[app/(admin)/admin/documents/DocumentsManagerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/documents/DocumentsManagerClient.tsx)** [MODIFY] : Intégration de la modale de confirmation `Dialog` premium avec la cartographie d'impact des actions.
-* **[manifeste_modules.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/manifeste_modules.md)** [MODIFY] : Ajout des versions 1.17, 1.18, 1.19 et 1.20 dans l'historique du manifeste.
+* **[manifeste_modules.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/manifeste_modules.md)** [MODIFY] : Ajout des versions 1.17 à 1.23 dans l'historique du manifeste.
 * **[memoire-oge-academie/wiki/Session_2026-06-28_Proposition_Commerciale.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/memoire-oge-academie/wiki/Session_2026-06-28_Proposition_Commerciale.md)** [MODIFY] : Fiche wiki de la proposition mise à jour.
 * **[memoire-oge-academie/wiki/Session_2026-06-28_Documents_Confirmation.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/memoire-oge-academie/wiki/Session_2026-06-28_Documents_Confirmation.md)** [NEW] : Fiche wiki de la modale de confirmation.
 * **[memoire-oge-academie/fourtour/Session_2026-06-28_Fourtour.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/memoire-oge-academie/fourtour/Session_2026-06-28_Fourtour.md)** [MODIFY] : Ce journal de session.
+* **[lib/cached-queries.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/cached-queries.ts)** [NEW] : Fichier utilitaire regroupant l'ensemble des requêtes mémorisées (React `cache()`) et persistées (Next.js `unstable_cache()`).
+* **[app/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/page.tsx)**, **[app/(dashboard)/dashboard/layout.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/layout.tsx)**, **[app/(dashboard)/dashboard/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/page.tsx)**, **[app/(dashboard)/dashboard/documents/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(dashboard)/dashboard/documents/page.tsx)** [MODIFY] : Remplacement des accès base de données par les requêtes en cache.
+* **[app/(admin)/admin/actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/actions.ts)**, **[app/(zone)/zone/actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/actions.ts)** [MODIFY] : Ajout de la revalidation de cache par tag (signature à 2 arguments Next.js 16).
+* **[middleware.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/middleware.ts)** [MODIFY] : Optimisation du middleware pour court-circuiter l'authentification et l'appel profil sur les routes publiques.
+* **[.skills/ChefsOge/banques_skills/locust-template/](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/.skills/ChefsOge/banques_skills/locust-template/)** [NEW] : Intégration du template Locust de tests de charge.
+
+---
+
+## 🎯 Sujet additionnel : Intégration de Locust et Optimisation Cache / Middleware
+
+1. **Intégration de Locust** : Les manifestes multi-agents ont été mis à jour pour donner le skill `run-load-test` aux agents codebase-pattern-finder et general-purpose.
+2. **Optimisation Middleware** : Baisse drastique des temps de chargement publics en sautant les requêtes réseau Supabase Auth pour le prefetching et les assets.
+3. **Mise en Cache Next.js 16** : Implémentation du double niveau de cache (React `cache` + `unstable_cache` avec tag invalidation `'max'`) sur la base de données.
+4. **Validation du Build** : Compilation finale Next.js validée sans aucune erreur. Poussé sur GitHub via Token d'accès sécurisé.
+
 
