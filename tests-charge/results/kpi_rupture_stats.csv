@@ -1,0 +1,9 @@
+Métrique de Rupture,Valeur,Description
+Hôte testé,http://localhost:3000,Serveur web analysé
+Scénario,scenarios/oge_public_test.py,Scénario Locust exécuté
+Nombre d'utilisateurs Max,200,Charge maximale demandée
+RPS Max brut atteint,82.10,Débit maximal brut enregistré
+Point de rupture (Users),Non atteint,Nombre d'utilisateurs simultanés ayant provoqué l'échec
+Point de rupture (RPS),Non atteint,RPS à la rupture
+Limite de sécurité (Users),200,Charge maximale supportée de façon stable
+Limite de sécurité (RPS),76.80,Débit maximal supporté de façon stable

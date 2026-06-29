@@ -2,6 +2,11 @@ import React from "react";
 import Link from "next/link";
 import { ArrowLeft, ShieldCheck, Eye, Lock, FileText, Smartphone } from "lucide-react";
 
+// Cette page est 100% statique (aucune requête BDD, aucune auth)
+// Elle est pré-rendue une fois au build et servie depuis le CDN Vercel.
+export const dynamic = "force-static";
+export const revalidate = false;
+
 export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">

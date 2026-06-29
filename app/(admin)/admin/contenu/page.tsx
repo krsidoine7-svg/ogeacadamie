@@ -3,6 +3,8 @@ import { pageSections, temoignages, blogArticles } from "@/drizzle/schema";
 import { asc, desc, isNull } from "drizzle-orm";
 import CMSClient from "./CMSClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function CMSPage() {
   let sections = await db.query.pageSections.findMany({
     orderBy: [asc(pageSections.ordre)],

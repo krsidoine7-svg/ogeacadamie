@@ -1,0 +1,1010 @@
+================================================================================
+          CAHIER DES CHARGES FONCTIONNEL ET TECHNIQUE
+          PLATEFORME OGE ACADÉMIE — VERSION 1.0
+          Préparation aux Concours d'Élite de Côte d'Ivoire
+================================================================================
+Document rédigé le : 28 Juin 2026
+Auteur : M. Sidoine K. (Concepteur Principal)
+Classification : CONFIDENTIEL Usage interne et contractuel uniquement
+--------------------------------------------------------------------------------
+
+================================================================================
+TABLE DES MATIÈRES
+================================================================================
+
+1.  CONTEXTE ET PRÉSENTATION DU PROJET
+    1.1 Origine et Vision du Projet
+    1.2 Public Cible et Acteurs
+    1.3 Périmètre Géographique
+
+2.  OBJECTIFS DE LA PLATEFORME
+    2.1 Objectifs Fonctionnels
+    2.2 Objectifs Non-Fonctionnels (Qualité, Performance, Sécurité)
+
+3.  ARCHITECTURE TECHNIQUE
+    3.1 Stack Technologique
+    3.2 Architecture Applicative (Routing & Middleware)
+    3.3 Modèle de Données (Base de Données Relationnelle)
+    3.4 Infrastructure & Hébergement
+    3.5 Système de Cache Intelligent
+
+4.  PROFILS UTILISATEURS ET DROITS D'ACCÈS
+    4.1 Candidat (user)
+    4.2 Responsable de Zone / Manager (manager_zone)
+    4.3 Administrateur Global (admin)
+    4.4 Super Administrateur Technique (super_admin)
+    4.5 Visiteur Public (non connecté)
+
+5.  FONCTIONNALITÉS DÉTAILLÉES
+    5.1 Espace Public (Page d'Accueil & CMS)
+    5.2 Onboarding Candidat (Inscription Multi-Étapes)
+    5.3 Authentification et Gestion de Session
+    5.4 Dashboard Candidat
+    5.5 Système de Paiement Wave (Reçu & Validation)
+    5.6 Visualiseur PDF Sécurisé (DRM & Anti-Piratage)
+    5.7 Système de Notifications Temps Réel
+    5.8 Espace Responsable de Zone
+    5.9 Espace Administrateur Global
+    5.10 CMS Intégré (Gestion de Contenu)
+    5.11 Espace Super Administrateur
+    5.12 SEO & Conformité RGPD
+    5.13 Optimisation de Performance
+
+6.  RÈGLES MÉTIER ET CONTRAINTES
+    6.1 Règles de Paiement et d'Accès
+    6.2 Cloisonnement des Données par Zone
+    6.3 Sécurité des Documents PDF
+    6.4 Double Contrôle des Actions Sensibles
+    6.5 Soft Delete (Suppression Logique Obligatoire)
+
+7.  EXIGENCES DE SÉCURITÉ
+    7.1 Authentification & Autorisation
+    7.2 Chiffrement des Documents PDF (AES-256-CBC)
+    7.3 Protection du Visualiseur PDF
+    7.4 Sécurité du Middleware & Routage
+
+8.  CONTENU STATIQUE ET DYNAMIQUE DU SITE
+    8.1 Sections de la Page d'Accueil
+    8.2 Blog et Articles
+
+9.  INDICATEURS DE PERFORMANCE ET KPIs
+    9.1 KPIs Côté Candidat
+    9.2 KPIs Côté Manager
+    9.3 KPIs Côté Administrateur
+
+10. MAINTENANCE ET ÉVOLUTIONS
+    10.1 Maintenance Incluse
+    10.2 Responsabilités des Entrepreneurs
+    10.3 Procédures d'Évolution
+
+11. GLOSSAIRE DES TERMES ET DES RÔLES
+
+
+================================================================================
+1. CONTEXTE ET PRÉSENTATION DU PROJET
+================================================================================
+
+1.1 ORIGINE ET VISION DU PROJET
+--------------------------------
+OGE Académie (Objectifs Grandes Écoles) est une initiative portée par un groupe
+de jeunes entrepreneurs diplômés des plus grandes écoles d'ingénieurs et de 
+management de Côte d'Ivoire. Forts de leur expérience personnelle dans la 
+préparation aux concours d'accès aux grandes écoles, ils ont décidé de 
+structurer une offre professionnelle de cours de préparation, animés par des
+professeurs qualifiés et expérimentés.
+
+Pour gérer et faire évoluer leur activité de manière efficace et sécurisée, une
+plateforme numérique sur mesure a été commandée et développée. Ce cahier des 
+charges décrit l'intégralité des fonctionnalités, contraintes techniques et 
+règles métier de cette plateforme, dénommée "OGE Académie".
+
+La vision est simple et pragmatique :
+  - Offrir aux candidats une expérience d'inscription et d'accès aux cours
+    entièrement numérisée et accessible depuis n'importe quel appareil.
+  - Donner aux entrepreneurs (managers et administrateurs) un outil de
+    pilotage opérationnel puissant, simple à utiliser et ne nécessitant 
+    aucune intervention du concepteur pour les mises à jour de contenu.
+  - Protéger rigoureusement la valeur intellectuelle des supports de cours
+    produits par les professeurs grâce à un système de sécurité DRM robuste.
+
+1.2 PUBLIC CIBLE ET ACTEURS
+-----------------------------
+La plateforme sert 4 types d'acteurs principaux :
+
+  a) LES CANDIDATS (Élèves)
+     Lycéens et étudiants préparant les concours d'entrée aux grandes écoles
+     ivoiriennes (INP-HB, ESATIC, CME). Ils utilisent la plateforme pour
+     s'inscrire, payer les frais de scolarité via Wave et accéder à leurs
+     supports de cours.
+
+  b) LES RESPONSABLES DE ZONE (Managers)
+     Agents locaux désignés par les Entrepreneurs pour gérer opérationnellement
+     l'une des 6 zones géographiques : valider les paiements, gérer les
+     candidats locaux, et configurer les coordonnées du centre physique.
+
+  c) LES ADMINISTRATEURS GLOBAUX (Admins)
+     Gestionnaires globaux qui pilotent l'ensemble des zones, du contenu CMS,
+     des articles de blog, des notifications et des statistiques globales.
+
+  d) LE SUPER ADMINISTRATEUR (Super Admin / Concepteur)
+     Administrateur technique détenant les accès de configuration système
+     (variables d'environnement en BDD, bascule de la sécurité PDF, accès
+     au paramétrage de l'API Google Calendar, etc.).
+
+1.3 PÉRIMÈTRE GÉOGRAPHIQUE
+---------------------------
+La plateforme est opérationnelle dans 6 zones géographiques de Côte d'Ivoire :
+
+  - Zone 1 : Yamoussoukro
+  - Zone 2 : Yopougon (Abidjan)
+  - Zone 3 : Abobo (Abidjan)
+  - Zone 4 : Cocody (Abidjan)
+  - Zone 5 : Port-Bouët (Abidjan)
+  - Zone 6 : Bouaké
+
+Chaque zone dispose de sa propre configuration (manager, lien Wave, adresse
+physique du centre, téléphone de contact, lien MoMo, lien Orange Money).
+
+
+================================================================================
+2. OBJECTIFS DE LA PLATEFORME
+================================================================================
+
+2.1 OBJECTIFS FONCTIONNELS
+---------------------------
+  OF-1  : Permettre aux candidats de s'inscrire en ligne en 3 étapes guidées.
+  OF-2  : Gérer les paiements locaux via le système de transfert Wave CI.
+  OF-3  : Distribuer des supports de cours numériques de façon sécurisée.
+  OF-4  : Offrir un visualiseur PDF haute qualité (retina, lazy rendering).
+  OF-5  : Cloisonner rigoureusement les données candidats par zone géographique.
+  OF-6  : Fournir un CMS complet aux administrateurs pour gérer le contenu du
+           site sans intervention d'un développeur.
+  OF-7  : Envoyer des notifications ciblées en temps réel aux candidats.
+  OF-8  : Planifier et diffuser des sessions de cours en visioconférence via
+           Google Meet, avec intégration Google Calendar.
+  OF-9  : Produire des indicateurs de suivi (KPIs) en temps réel dans les
+           dashboards des managers et des administrateurs.
+  OF-10 : Permettre la gestion des articles de blog depuis le back-office.
+  OF-11 : Mettre en œuvre un système de double contrôle pour les actions
+           sensibles (blocage/activation de candidats).
+
+2.2 OBJECTIFS NON-FONCTIONNELS
+--------------------------------
+  ONF-1 (SÉCURITÉ)     : Les documents PDF doivent être chiffrés avec AES-256-CBC
+                          et servis à la volée depuis un endpoint sécurisé.
+  ONF-2 (CONFIDENTIALITÉ): Les données personnelles des candidats doivent être
+                          isolées par zone et inaccessibles horizontalement.
+  ONF-3 (PERFORMANCE)  : Les pages publiques doivent se charger en moins de 2
+                          secondes. Les données statiques doivent être servies
+                          depuis le cache du serveur (Next.js Data Cache).
+  ONF-4 (FIABILITÉ)    : Le système doit offrir un SLA de disponibilité de 99%
+                          sur la période active (juillet-octobre). L'assistance
+                          en cas de panne critique est sous 4h ouvrables (8h-20h).
+  ONF-5 (RESPONSIVE)   : La plateforme doit être entièrement utilisable sur
+                          mobile, tablette et ordinateur de bureau.
+  ONF-6 (ACCESSIBILITÉ): Les interfaces doivent respecter les principes
+                          d'accessibilité WCAG 2.1 de niveau AA.
+  ONF-7 (MAINTENABILITÉ): Le code doit être structuré de façon modulaire et
+                          documenté dans le manifeste des modules.
+  ONF-8 (SCALABILITÉ)  : L'architecture doit pouvoir accueillir jusqu'à 5 000
+                          candidats simultanément sans dégradation notable.
+
+
+================================================================================
+3. ARCHITECTURE TECHNIQUE
+================================================================================
+
+3.1 STACK TECHNOLOGIQUE
+------------------------
+  FRAMEWORK      : Next.js 16 (App Router, Server Components, Server Actions)
+  LANGAGE        : TypeScript 5
+  UI             : React 19, Tailwind CSS 4, ShadcnUI, Base UI
+  BASE DE DONNÉES: PostgreSQL (via Supabase)
+  ORM            : Drizzle ORM 0.45 (typage fort, migrations SQL)
+  AUTH           : Supabase Auth (@supabase/ssr, sessions cookie-based)
+  STOCKAGE       : Supabase Storage (fichiers PDF et reçus de paiement)
+  CACHE          : React cache() + Next.js unstable_cache() (double niveau)
+  FORMULAIRES    : React Hook Form + Zod (validation côté client et serveur)
+  ICONS          : Lucide React
+  NOTIFICATIONS  : Toast Sonner + Web Audio API (carillon sonore)
+  CALENDRIER     : Google Calendar API (planification des sessions Meet)
+  SEO            : Sitemap + Robots.ts natifs Next.js, JSON-LD structuré
+  DÉPLOIEMENT    : Vercel (CI/CD automatisé sur branche main)
+
+3.2 ARCHITECTURE APPLICATIVE (ROUTING & MIDDLEWARE)
+-----------------------------------------------------
+L'application est divisée en 4 Route Groups Next.js étanches :
+
+  /app/(public)/          — Pages accessibles sans connexion
+    /inscription            Onboarding candidat (3 étapes)
+    /connexion              Formulaire de connexion
+    /mot-de-passe-oublie    Demande de réinitialisation
+    /reinitialiser-mot-de-passe  Formulaire de nouveau mot de passe
+    /politique-de-confidentialite  Page légale RGPD
+
+  /app/(dashboard)/       — Espace Candidat (rôle : user)
+    /dashboard              Tableau de bord principal
+    /dashboard/documents    Cours et supports de révision
+    /dashboard/paiement     Statut et upload du reçu
+    /dashboard/notifications  Mes notifications
+    /dashboard/profil       Modification du profil candidat
+
+  /app/(zone)/            — Espace Manager de Zone (rôle : manager_zone)
+    /zone                   Dashboard KPIs de la zone
+    /zone/candidats         Liste et gestion des candidats
+    /zone/paiements         Validation des reçus Wave
+    /zone/documents         Gestion des cours de la zone
+    /zone/parametres        Configuration du centre (Wave, adresse)
+
+  /app/(admin)/           — Espace Administrateur (rôle : admin / super_admin)
+    /admin                  Dashboard KPIs global toutes zones
+    /admin/candidats        Gestion globale de tous les candidats
+    /admin/managers         Gestion des responsables de zone
+    /admin/paiements        Vue globale des paiements
+    /admin/documents        Gestion des cours globaux
+    /admin/contenu          CMS : textes, témoignages, blog
+    /admin/notifications    Envoi de notifications groupées
+    /admin/zones            Configuration de toutes les zones
+    /admin/parametres       Paramètres système (Super Admin uniquement)
+
+MIDDLEWARE (middleware.ts) :
+  - Les routes protégées sont : /dashboard, /admin, /zone
+  - Pour toutes les pages publiques (y compris le prefetching), le middleware
+    retourne immédiatement sans appel réseau, pour des performances maximales.
+  - Pour les routes protégées, il vérifie la session Supabase Auth.
+  - Si un utilisateur connecté visite une page d'auth, il est redirigé selon
+    son rôle (user→/dashboard, manager_zone→/zone, admin/super_admin→/admin).
+
+3.3 MODÈLE DE DONNÉES (SCHÉMA DE LA BASE DE DONNÉES)
+------------------------------------------------------
+La base de données PostgreSQL contient les tables suivantes :
+
+TABLE : profiles
+  Stocke tous les utilisateurs de la plateforme.
+  Champs principaux : id (UUID, PK), nom, prenom, email (unique), whatsapp,
+  serie_bac, zone (enum), mode_formation (enum), role (enum), is_active,
+  avatar_url, created_at, updated_at, deleted_at (soft delete).
+
+  Énumérations :
+    - user_role    : user | manager_zone | admin | super_admin
+    - zone_name    : yamoussoukro | yopougon | abobo | cocody | port-bouet | bouake
+    - mode_formation: presentiel | en_ligne
+
+TABLE : concours_inscrits
+  Lie un profil à un ou plusieurs concours d'inscription.
+  Champs : id, user_id (FK→profiles), concours (enum), created_at, deleted_at.
+  Énumération concours_type : inphb | esatic | cme
+
+TABLE : paiements
+  Enregistre le statut de paiement de chaque candidat.
+  Champs : id, user_id (FK), zone, montant (défaut : 15 000 FCFA), statut (enum),
+  capture_url (reçu dans Supabase Storage), moyen_paiement, valide_par (FK),
+  valide_at, notes, created_at, updated_at, deleted_at.
+  Énumération paiement_statut : en_attente | en_cours | valide | rejete
+
+TABLE : zone_config
+  Configuration de chaque zone géographique.
+  Champs : id, zone (unique), manager_id (FK), lien_wave, numero_wave,
+  lien_momo, lien_orange, adresse, telephone, updated_at.
+
+TABLE : documents
+  Supports de cours, exercices et corrigés.
+  Champs : id, titre, description, fichier_url (chiffré en AES-256-CBC),
+  concours (text : inphb|esatic|cme|tous), type (enum), mode_formation,
+  zone, ordre, is_active, scheduled_at, meeting_url, calendar_event_id,
+  created_by (FK), created_at, updated_at, deleted_at.
+  Énumération document_type : cours | exercice | corrige
+
+TABLE : acces_documents
+  Journal de consultation des documents par les candidats.
+  Champs : id, user_id (FK), document_id (FK), created_at.
+
+TABLE : notifications
+  Notifications envoyées aux utilisateurs.
+  Champs : id, destinataire_id (FK), titre, message, type (enum), lu, lien,
+  created_at, deleted_at.
+  Énumération notif_type : info | alerte | cours
+
+TABLE : blog_articles
+  Articles du blog public.
+  Champs : id, titre, slug (unique), contenu, extrait, image_url, concours,
+  auteur_id (FK), is_published, published_at, created_at, updated_at, deleted_at.
+
+TABLE : page_sections
+  Contenu des sections de la page d'accueil (CMS).
+  Champs : id, cle (unique : hero|historique|formation|resultats|temoignages
+           |inscription|footer), titre, contenu (JSONB), ordre, is_active,
+           updated_at.
+
+TABLE : temoignages
+  Témoignages d'élèves affichés sur la page d'accueil.
+  Champs : id, nom, prenom, zone, concours, message, note (1-5), photo_url,
+  is_active, created_at, deleted_at.
+
+TABLE : admin_pending_actions
+  File d'attente pour le système de double contrôle des actions admin.
+  Champs : id, type (edit_manager|block_manager|activate_manager),
+  target_id (FK), initiated_by (FK), details (JSONB), statut (en_attente|
+  approuve|rejete), traite_par (FK), traite_at, created_at, updated_at.
+
+3.4 INFRASTRUCTURE ET HÉBERGEMENT
+-----------------------------------
+  APPLICATION   : Vercel (déploiement automatisé sur push sur branche "main")
+  BASE DE DONNÉES: Supabase PostgreSQL (plan gratuit au démarrage)
+  AUTH          : Supabase Auth (gestion des sessions cookie-based SSR)
+  STOCKAGE FILES: Supabase Storage → Migration vers Cloudflare R2 (10 Go gratuit)
+  DOMAINE       : Acheté et configuré par le Concepteur, sans refacturation initiale
+  ABONNEMENTS   : Activés uniquement en période active (juillet–octobre) si
+                  dépassement des quotas gratuits. À la charge des Entrepreneurs.
+
+3.5 SYSTÈME DE CACHE INTELLIGENT
+----------------------------------
+La plateforme intègre un double niveau de cache pour minimiser les appels BDD :
+
+NIVEAU 1 — React cache() (memoization par requête)
+  getCachedUserProfile(userId) : Profil utilisateur, mutualisé entre layout et page
+                                  pour éviter les doubles requêtes SQL dans un rendu.
+
+NIVEAU 2 — Next.js unstable_cache() (Data Cache cross-requêtes)
+  getCachedPageSections()       : Sections CMS, tag "page-sections"
+  getCachedTestimonials()        : Témoignages actifs, tag "testimonials"
+  getCachedBlogArticles()        : Articles publiés, tag "blog-articles"
+  getCachedZoneConfig(zone)      : Config d'une zone, tags "zone-config-{zone}"
+  getCachedAllActiveDocuments()  : Tous les documents actifs (filtrage en mémoire)
+                                   tag "all-active-documents"
+
+INVALIDATION DU CACHE (revalidateTag) :
+  Chaque Server Action de création, modification ou suppression dans les modules
+  admin et zone appellent revalidateTag(tag, 'max') pour invalider les entrées
+  de cache correspondantes et forcer le rechargement à la prochaine requête.
+
+
+================================================================================
+4. PROFILS UTILISATEURS ET DROITS D'ACCÈS
+================================================================================
+
+4.1 CANDIDAT (rôle : user)
+---------------------------
+DESCRIPTION :
+  Lycéen ou étudiant cherchant à préparer les concours INP-HB, ESATIC ou CME.
+
+DROITS ACCORDÉS :
+  - S'inscrire en ligne via le formulaire multi-étapes (/inscription)
+  - Se connecter et réinitialiser son mot de passe
+  - Visualiser les coordonnées Wave de sa zone (modal bloquante initiale)
+  - Uploader son reçu de paiement Wave (PDF/Image, max 5 Mo)
+  - Consulter le statut de son paiement (En cours, Validé, Rejeté + motif)
+  - Accéder à ses cours (filtrés par concours inscrit, zone et mode de formation)
+  - Utiliser le visualiseur PDF sécurisé réactif (retina + lazy rendering)
+  - Recevoir des notifications en temps réel avec carillon sonore
+  - Mettre à jour son profil (WhatsApp, mot de passe)
+  - Rejoindre les sessions Google Meet planifiées
+  - Consulter le planning des prochains cours (séances programmées)
+
+ACTIONS STRICTEMENT INTERDITES :
+  - Accéder au dashboard et aux cours sans paiement validé
+  - Consulter les cours d'un concours auquel il n'est pas inscrit
+  - Accéder aux routes /admin/* ou /zone/*
+  - Contourner les protections du visualiseur PDF (téléchargement, clic droit,
+    impression Ctrl+P, capture d'écran, perte de focus)
+  - Modifier son rôle ou sa zone géographique
+
+4.2 RESPONSABLE DE ZONE (rôle : manager_zone)
+----------------------------------------------
+DESCRIPTION :
+  Agent local désigné pour piloter une zone géographique spécifique.
+
+DROITS ACCORDÉS :
+  - Accéder à /zone avec les KPIs filtrés sur sa zone uniquement
+  - Consulter la liste et le détail des candidats de sa zone
+  - Inspecter les reçus de paiement via la modal d'inspection (CaptureViewer)
+  - Valider (→ active le candidat) ou rejeter un paiement (avec motif obligatoire)
+  - Demander le blocage ou le déblocage d'un candidat (soumis à double contrôle)
+  - Uploader et gérer les cours/TD spécifiques à sa zone
+  - Configurer le lien marchand Wave, le numéro de contact et l'adresse physique
+    du centre local dans /zone/parametres (si l'option allow_manager_edit est
+    activée par le Super Admin)
+
+ACTIONS STRICTEMENT INTERDITES :
+  - Consulter ou valider les données de candidats d'une autre zone
+  - Créer manuellement des comptes ou modifier des rôles
+  - Accéder aux réglages système globaux de /admin/*
+  - Modifier le contenu CMS de la page d'accueil
+  - Désactiver la sécurité PDF globale
+
+4.3 ADMINISTRATEUR GLOBAL (rôle : admin)
+-----------------------------------------
+DESCRIPTION :
+  Gestionnaire global de la plateforme, avec accès à toutes les zones.
+
+DROITS ACCORDÉS :
+  - Dashboard KPIs global consolidé (toutes zones confondues)
+  - Recherche, filtrage et export CSV des candidats et paiements
+  - Valider ou rejeter les paiements de toutes les zones
+  - Gérer les managers (promotion, affectation géographique)
+  - Valider les demandes d'action du système de double contrôle
+  - Configurer les coordonnées Wave et physiques de toutes les zones
+  - Envoyer des notifications groupées (ciblage par école, zone, mode)
+  - Gérer le contenu CMS (page d'accueil, témoignages, historique, résultats)
+  - Créer, éditer et publier/dépublier des articles de blog
+  - Uploader des cours globaux et planifier des sessions Google Meet / Calendar
+  - Accès à la vue de tous les documents (cours, exercices, corrigés)
+
+ACTIONS STRICTEMENT INTERDITES :
+  - Créer ou promouvoir des comptes au statut Admin ou Super Admin
+  - Modifier les variables système (system_config) réservées au Super Admin
+  - Modifier les schémas de la base de données
+
+4.4 SUPER ADMINISTRATEUR TECHNIQUE (rôle : super_admin)
+---------------------------------------------------------
+DESCRIPTION :
+  Administrateur technique avec tous les privilèges du système.
+
+DROITS ACCORDÉS (en plus de tous les droits Admin) :
+  - Accès à /admin/parametres pour les variables système (system_config)
+  - Activer/désactiver l'édition Wave par les managers (allow_manager_edit)
+  - Configurer les secrets d'API (Google Calendar, webhooks Make/n8n)
+  - Activer/désactiver globalement la sécurité PDF (togglePdfSecurity)
+    → Désactivé : filigranes retirés, téléchargement direct réactivé
+    → Activé : filigranes nominatifs, restrictions anti-copie actives
+  - Créer manuellement des comptes Admin et Manager de zone
+  - Gérer les informations de contact du Concepteur (affichées en pied de page)
+
+ACTIONS STRICTEMENT INTERDITES :
+  - Effectuer des suppressions physiques de données (le soft delete est OBLIGATOIRE)
+
+4.5 VISITEUR PUBLIC (non connecté)
+------------------------------------
+  - Consulter la page d'accueil (/ )
+  - Accéder au formulaire d'inscription (/inscription)
+  - Consulter la politique de confidentialité
+  - Demander une réinitialisation de mot de passe
+
+
+================================================================================
+5. FONCTIONNALITÉS DÉTAILLÉES
+================================================================================
+
+5.1 ESPACE PUBLIC — PAGE D'ACCUEIL ET CMS
+------------------------------------------
+La page d'accueil (/) est générée côté serveur (SSR) et servie depuis le cache.
+Elle est composée de sections dynamiques pilotées depuis le CMS admin :
+
+  SECTION HERO    : Titre principal, sous-titre, bouton CTA d'inscription,
+                    visuel accrocheur.
+  SECTION HISTOIRE: Présentation de l'équipe et de l'origine du projet.
+  SECTION OFFRES  : Onglets interactifs par école (INP-HB, ESATIC, CME) présentant
+                    les concours, filières et tarifs.
+  SECTION RÉSULTATS: Tableau interactif des taux de réussite des anciens élèves
+                     par école et par année.
+  SECTION FORMATIONS: Présentation des modes de préparation (présentiel/en ligne).
+  SECTION TÉMOIGNAGES: Carrousel de témoignages d'élèves admis aux concours.
+  SECTION BLOG   : Grille des articles de blog publiés et actifs.
+  SECTION FOOTER : Adresses, contacts, réseaux sociaux, lien CGU.
+
+WIDGET WHATSAPP  : Bouton flottant en bas à droite renvoyant vers le numéro
+                   officiel (+225 01 71 61 95 31) via lien WhatsApp deeplink.
+
+BANDEAU COOKIES  : Affiché à la première visite. Consent stocké en localStorage.
+                   Conforme RGPD.
+
+SEO AVANCÉ       : Balises meta (title, description), Open Graph, Twitter Card,
+                   JSON-LD (EducationalOrganization avec centres locaux, tarifs XOF).
+                   Sitemap.xml et robots.txt générés automatiquement.
+
+5.2 ONBOARDING CANDIDAT — INSCRIPTION MULTI-ÉTAPES
+----------------------------------------------------
+Le processus d'inscription se fait sur la page /inscription en 3 étapes :
+
+ÉTAPE 1 — IDENTITÉ :
+  - Saisie : Nom, Prénom, Email, WhatsApp
+  - Sélection de la série de Bac (A, C, D, E, F, G)
+  - Création d'un mot de passe sécurisé
+  - Acceptation obligatoire des CGU et de la Politique de Confidentialité
+  - Validation : Schéma Zod, unicité de l'email (vérification Supabase)
+
+ÉTAPE 2 — PROJET :
+  - Sélection d'un ou plusieurs concours (INP-HB, ESATIC, CME)
+  - Choix du mode de préparation : Présentiel ou En ligne
+  - Validation : Au moins un concours sélectionné
+
+ÉTAPE 3 — ZONE & VALIDATION :
+  - Sélection de la zone géographique (parmi les 6 zones disponibles)
+  - Récapitulatif complet de toutes les informations saisies
+  - Soumission finale (Server Action)
+
+POST-INSCRIPTION :
+  - Création du compte Supabase Auth
+  - Insertion dans la table "profiles" (is_active = false)
+  - Insertion dans la table "concours_inscrits" (un enregistrement par concours)
+  - Envoi automatique d'un email de bienvenue via Resend
+  - Redirection vers /connexion
+
+5.3 AUTHENTIFICATION ET GESTION DE SESSION
+-------------------------------------------
+  - Connexion par email/mot de passe sur /connexion
+  - Sessions persistantes gérées par Supabase Auth (cookies HttpOnly SSR)
+  - Réinitialisation de mot de passe par lien email sécurisé (expiration 24h)
+  - Déconnexion propre (suppression des cookies de session)
+  - Redirection automatique par rôle après connexion
+  - Protection des routes côté serveur via le middleware Next.js
+
+5.4 DASHBOARD CANDIDAT
+-----------------------
+Accessible à /dashboard uniquement si is_active = true (paiement validé).
+
+  - Vue d'accueil : Résumé du profil, concours inscrits, statut du compte
+  - Mes Documents  : Accès aux cours filtrés (par concours et zone)
+  - Paiement       : Statut actuel + formulaire d'upload du reçu
+  - Notifications  : Liste des notifications reçues
+  - Profil         : Modification de WhatsApp et mot de passe
+
+GARDE D'ACCÈS (MODAL BLOQUANTE) :
+  Si le paiement du candidat n'est pas encore validé (is_active = false),
+  une modal plein écran non fermable s'affiche avec :
+  - Le lien marchand Wave CI de sa zone
+  - Le numéro de téléphone Wave pour transfert manuel
+  - Un formulaire d'upload du reçu de paiement
+  Le candidat ne peut naviguer nulle part tant que ce paiement n'est pas validé.
+
+5.5 SYSTÈME DE PAIEMENT WAVE
+------------------------------
+Le paiement est géré par preuve de virement (sans passerelle de paiement directe).
+
+PROCESSUS CÔTÉ CANDIDAT :
+  1. Réception des coordonnées Wave dans la modal bloquante
+  2. Virement manuel de 15 000 FCFA via l'application Wave CI
+  3. Upload du reçu de paiement (PDF ou image, max 5 Mo)
+     - Validation : formats acceptés = PDF, PNG, JPG, JPEG
+     - Validation : taille < 5 Mo (rejet automatique si dépassement)
+     - Upload vers Supabase Storage dans le bucket privé "receipts/{userId}/"
+  4. Statut passe à "en_cours" (En attente de validation)
+
+PROCESSUS CÔTÉ MANAGER :
+  1. Notification de nouveaux reçus en attente
+  2. Accès à /zone/paiements → Inspection du reçu via la modal CaptureViewer
+  3. Action : Valider (is_active → true, statut → "valide") ou Rejeter (avec motif)
+  4. Une notification automatique est envoyée au candidat avec le résultat
+
+5.6 VISUALISEUR PDF SÉCURISÉ (DRM & ANTI-PIRATAGE)
+----------------------------------------------------
+C'est la fonctionnalité cœur différenciante de la plateforme.
+
+CHIFFREMENT À L'UPLOAD :
+  - Tout PDF uploadé par un admin ou manager est chiffré AES-256-CBC
+  - La clé de dérivation est générée dynamiquement (SHA-256)
+  - Le binaire chiffré est stocké dans Supabase Storage
+  - Le fichier est ILLISIBLE si téléchargé directement depuis le bucket
+
+DÉCHIFFREMENT ET DIFFUSION SÉCURISÉE :
+  - API Route : /api/documents/[id]/view
+  - Vérifie que l'utilisateur est authentifié et autorisé (concours, zone)
+  - Déchiffre le PDF à la volée en mémoire serveur
+  - Retourne un stream binaire (.pdf) au client pour rendu uniquement
+  - Enregistre automatiquement un log dans la table "acces_documents"
+
+RENDU DANS LE VISUALISEUR (PDF.js) :
+  - Rendu sur balise <canvas> HTML5 (aucun HTML natif PDF)
+  - Qualité retina (devicePixelRatio x2 pour les écrans HiDPI)
+  - Lazy Rendering : seules les pages visibles sont rendues en mémoire
+  - Contrôles : Zoom In/Out, Ajuster à la largeur, Numéro de page
+  - Thèmes de lecture : Clair, Sombre, Sépia
+
+SÉCURITÉ DU VISUALISEUR (lorsque sécurité PDF activée) :
+  - Clic droit BLOQUÉ sur le canvas (contextmenu preventDefault)
+  - Copie de texte BLOQUÉE (selectstart preventDefault)
+  - Impression BLOQUÉE (Ctrl+P intercepté, afterprint event géré)
+  - FLOUTAGE AUTOMATIQUE si la fenêtre perd le focus (blur event) :
+    simulant qu'un outil de capture d'écran a pris le focus
+  - FILIGRANE NOMINATIF répété en surimpression sur chaque page :
+    "Prénom NOM — email@candidat.ci" en mode watermark SVG semi-transparent
+  - AUCUN bouton de téléchargement dans l'interface
+  - Recharge automatique du canvas au retour de focus (unfocus attack mitigation)
+
+SÉCURITÉ PDF DÉSACTIVÉE (mode Super Admin uniquement) :
+  - Filigranes retirés
+  - Clic droit et impression réactivés
+  - Bouton de téléchargement direct du PDF original visible
+
+5.7 SYSTÈME DE NOTIFICATIONS TEMPS RÉEL
+-----------------------------------------
+  - Envoi de notifications depuis /admin/notifications
+  - Ciblage : par zone, par concours inscrit, par mode de formation, ou à tous
+  - Types : info | alerte | cours
+  - Réception en temps réel : polling léger (max 20s de délai)
+  - CARILLON SONORE : double-ton mélodieux généré par Web Audio API
+  - Modal de notification premium affichée à la réception
+  - Marquage manuel comme "lu" par le candidat
+  - Historique des notifications dans /dashboard/notifications
+  - Lien optionnel cliquable dans la notification (ex : lien Meet)
+
+5.8 ESPACE RESPONSABLE DE ZONE
+--------------------------------
+Dashboard accessible à /zone, cloisonné rigoureusement à la zone du manager.
+
+  /zone           : KPIs de la zone (candidats inscrits, validés, en attente)
+  /zone/candidats : Liste filtré sur sa zone uniquement. Recherche, filtres.
+                    Fiche détaillée de chaque candidat. Demande de blocage.
+  /zone/paiements : Reçus de paiement en attente. Modal CaptureViewer.
+                    Boutons Valider / Rejeter (avec motif).
+  /zone/documents : Upload et gestion des cours de la zone. Définition de
+                    l'ordre d'affichage, du concours cible, du type (cours/
+                    exercice/corrigé), planification d'une session Meet.
+  /zone/parametres: Configuration du centre local :
+                    - Lien marchand Wave CI (si autorisé par Super Admin)
+                    - Numéro de téléphone Wave
+                    - Lien MoMo / Orange Money
+                    - Adresse physique du centre
+                    - Téléphone de contact
+
+CLOISONNEMENT GÉOGRAPHIQUE ABSOLU :
+  Toutes les requêtes BDD des managers sont filtrées par zone (WHERE zone = ?).
+  L'accès forcé à un dossier d'une autre zone par URL est rejeté côté serveur.
+
+5.9 ESPACE ADMINISTRATEUR GLOBAL
+----------------------------------
+Dashboard accessible à /admin avec une vision globale de toutes les zones.
+
+  /admin              : Dashboard KPIs global
+                        - Nombre total de candidats par zone
+                        - Camemberts (donut chart) des statuts de paiement
+                        - Carte des inscriptions par concours
+                        - File des demandes de double contrôle en attente
+                        - Bascule sécurité PDF (Super Admin uniquement)
+  /admin/candidats    : Grille globale de tous les candidats. Recherche full-text.
+                        Filtres (zone, statut, concours, mode). Export CSV.
+  /admin/managers     : Gestion des managers (créer, éditer, bloquer, désactiver).
+                        Affectation géographique. Soumission via double contrôle.
+  /admin/paiements    : Vue globale des paiements. Validation/rejet multi-zones.
+  /admin/documents    : Gestion des cours globaux. Upload, ordre, ciblage.
+                        Planification de sessions Google Meet (via Calendar API).
+  /admin/contenu      : CMS complet (cf. section 5.10)
+  /admin/notifications: Envoi de notifications groupées avec ciblage avancé.
+  /admin/zones        : Configuration des coordonnées de toutes les zones.
+  /admin/parametres   : (Super Admin uniquement) Variables système, sécurité PDF,
+                        activation de l'édition Wave pour managers.
+
+5.10 CMS INTÉGRÉ — GESTION DE CONTENU
+---------------------------------------
+Accessible à /admin/contenu par les administrateurs.
+Permet la gestion autonome du contenu sans intervention du Concepteur.
+
+GESTION DES SECTIONS (page_sections) :
+  - Hero : modification du titre, sous-titre et CTA
+  - Histoire : texte de présentation de l'équipe
+  - Résultats : tableau interactif des taux de réussite par école et année
+  - Formations : descriptions des modes de préparation
+  - Footer : adresses, contacts et liens de réseaux sociaux
+
+GESTION DES TÉMOIGNAGES :
+  - Ajouter, modifier, supprimer un témoignage
+  - Champs : Nom, Prénom, Zone, Concours, Message, Note (1-5), Photo
+  - Activation/désactivation par switch interactif
+
+GESTION DU BLOG :
+  - Créer, éditer et supprimer des articles de blog
+  - Champs : Titre, Slug (auto-généré), Contenu, Extrait, Image, Concours cible
+  - Publication : switch interactif Brouillon ↔ Publié
+  - Mise à jour en temps réel sur la page d'accueil publique (cache invalidé)
+
+RÈGLE FONDAMENTALE DU CMS :
+  Les mises à jour de contenu (textes, coordonnées, photos, témoignages, blog)
+  sont de la responsabilité EXCLUSIVE des administrateurs et managers via ce
+  dashboard. Le Concepteur n'intervient PAS pour des modifications de contenu.
+  Son rôle est strictement limité aux problèmes techniques et aux bugs système.
+
+5.11 ESPACE SUPER ADMINISTRATEUR
+----------------------------------
+  /admin/parametres :
+    - Gestion des variables système (table system_config) :
+      * allow_manager_edit : autorise/interdit les managers à modifier les
+                              paramètres Wave de leur zone
+      * pdf_security_enabled : active/désactive la sécurité PDF globalement
+      * Informations du Concepteur (email, WhatsApp) affichées en pied de page
+    - Bascule sécurité PDF depuis le dashboard principal /admin
+
+5.12 SEO ET CONFORMITÉ RGPD
+-----------------------------
+  SEO :
+    - Balises <title>, <meta name="description"> sur chaque page
+    - Open Graph et Twitter Card pour le partage social
+    - JSON-LD (EducationalOrganization) avec centres locaux, tarifs en FCFA
+    - Sitemap.xml généré dynamiquement (/app/sitemap.ts)
+    - Robots.txt configuré (/app/robots.ts)
+    - Structure HTML sémantique (h1 unique par page, landmarks ARIA)
+
+  RGPD :
+    - Bandeau de consentement des cookies (première visite)
+    - Consentement stocké en localStorage
+    - Page /politique-de-confidentialite accessible sans connexion
+    - Acceptation des CGU obligatoire lors de l'inscription (case à cocher)
+    - Données personnelles cloisonnées et non accessibles horizontalement
+
+5.13 OPTIMISATION DE PERFORMANCE
+----------------------------------
+  - Middleware allégé : early return pour pages publiques (zéro appel réseau)
+  - Double niveau de cache (React cache + Next.js unstable_cache)
+  - Server Components par défaut (zéro JavaScript inutile côté client)
+  - Lazy Rendering du PDF (seules les pages visibles sont rendues)
+  - Images optimisées via next/image
+  - Prefetching natif de Next.js pour les liens de navigation
+
+
+================================================================================
+6. RÈGLES MÉTIER ET CONTRAINTES
+================================================================================
+
+6.1 RÈGLES DE PAIEMENT ET D'ACCÈS
+-----------------------------------
+  RM-01 : Le montant des frais de scolarité est fixé à 15 000 FCFA par défaut.
+  RM-02 : Un candidat non payé (is_active = false) ne peut pas accéder aux cours.
+  RM-03 : La modal de paiement est non-fermable et bloque toute navigation.
+  RM-04 : Le reçu de paiement doit être en format PDF, PNG, JPG ou JPEG,
+           et ne pas dépasser 5 Mo.
+  RM-05 : La validation du paiement active automatiquement le compte (is_active→true).
+  RM-06 : Le rejet d'un paiement doit obligatoirement inclure un motif écrit.
+  RM-07 : Tous les candidats (présentiel et en ligne) doivent passer par la
+           plateforme. Aucun paiement hors-système n'est autorisé.
+
+6.2 CLOISONNEMENT DES DONNÉES PAR ZONE
+----------------------------------------
+  RM-08 : Un manager ne peut voir et agir que sur les candidats de SA zone.
+  RM-09 : Les documents uploadés avec une zone spécifique ne sont visibles que
+           par les candidats de cette zone (sauf si zone = "tous").
+  RM-10 : Les KPIs d'un manager sont calculés uniquement sur sa zone.
+  RM-11 : Toute tentative d'accès à une ressource d'une autre zone est bloquée
+           côté serveur avec renvoi d'une erreur d'autorisation.
+
+6.3 SÉCURITÉ DES DOCUMENTS PDF
+--------------------------------
+  RM-12 : Tout PDF uploadé est OBLIGATOIREMENT chiffré en AES-256-CBC.
+  RM-13 : La lecture d'un document enregistre un log dans "acces_documents".
+  RM-14 : Lorsque la sécurité PDF est activée :
+           a) Le clic droit est bloqué sur le visualiseur.
+           b) La copie de texte est bloquée.
+           c) L'impression (Ctrl+P) est bloquée.
+           d) La perte de focus floute le document.
+           e) Un filigrane nominatif est affiché sur chaque page.
+           f) Aucun bouton de téléchargement n'est disponible.
+  RM-15 : Un candidat ne peut pas accéder aux cours d'un concours auquel
+           il n'est pas inscrit.
+
+6.4 DOUBLE CONTRÔLE DES ACTIONS SENSIBLES
+-------------------------------------------
+  RM-16 : Toute demande de blocage, déblocage ou modification d'un manager
+           initiée par un admin est d'abord enregistrée en "en_attente" dans
+           "admin_pending_actions".
+  RM-17 : La demande doit être approuvée par un AUTRE administrateur (ou le
+           super admin) avant d'être appliquée.
+  RM-18 : La demande peut être rejetée avec un motif. Elle disparaît alors
+           de la file d'attente.
+
+6.5 SOFT DELETE OBLIGATOIRE
+-----------------------------
+  RM-19 : AUCUNE suppression physique (DELETE SQL) n'est autorisée sur les
+           entités clés (profiles, documents, paiements, notifications, etc.).
+  RM-20 : La suppression logique est obligatoire : mise à jour de deleted_at
+           avec l'horodatage de suppression.
+  RM-21 : Toutes les requêtes de lecture doivent filtrer isNull(deleted_at)
+           pour exclure les enregistrements supprimés.
+
+
+================================================================================
+7. EXIGENCES DE SÉCURITÉ
+================================================================================
+
+7.1 AUTHENTIFICATION ET AUTORISATION
+--------------------------------------
+  - Authentification par Supabase Auth (JWT + cookies HttpOnly SSR)
+  - Vérification du rôle côté serveur sur chaque route protégée
+  - Aucune information sensible dans les URLs ou le localStorage
+  - Rotation automatique des tokens de session par Supabase
+  - Hashage des mots de passe par Supabase (bcrypt)
+  - Liens de réinitialisation à usage unique, expirés après 24h
+
+7.2 CHIFFREMENT DES DOCUMENTS PDF (AES-256-CBC)
+-------------------------------------------------
+  - Algorithme : AES-256-CBC (Advanced Encryption Standard, 256 bits)
+  - Implémentation : module lib/crypto.ts avec Node.js crypto natif
+  - Clé de dérivation : SHA-256 appliqué à une seed secrète + document ID
+  - IV (Initialisation Vector) : généré aléatoirement par document
+  - Stockage : seul le binaire chiffré est stocké dans Supabase Storage
+  - Décryptage : uniquement en mémoire serveur, sur la route API sécurisée
+
+7.3 PROTECTION DU VISUALISEUR PDF
+-----------------------------------
+  - Le canvas PDF.js ne stocke aucun fichier en cache navigateur
+  - Les chunks PDF sont streamés depuis l'API, non téléchargeables
+  - Désactivation des raccourcis clavier sensibles (Ctrl+P, Ctrl+S, Ctrl+A)
+  - Désactivation du menu contextuel (clic droit)
+  - Filigrane SVG affiché en surcouche non sélectionnable
+  - Floutage CSS (filter: blur) à la perte de focus de l'onglet
+
+7.4 SÉCURITÉ DU MIDDLEWARE ET ROUTAGE
+---------------------------------------
+  - Vérification de session sur chaque requête vers /dashboard, /admin, /zone
+  - Redirection immédiate vers /connexion si session invalide ou absente
+  - Aucun appel réseau ou BDD pour les pages publiques non authentifiées
+  - Protection CSRF native par les cookies SameSite et les Server Actions Next.js
+
+
+================================================================================
+8. CONTENU STATIQUE ET DYNAMIQUE DU SITE
+================================================================================
+
+8.1 SECTIONS DE LA PAGE D'ACCUEIL
+------------------------------------
+Toutes les sections sont administrables depuis /admin/contenu.
+Les données sont stockées dans la table "page_sections" (JSONB flexible).
+
+  HERO          : Titre accrocheur, sous-titre, bouton CTA, fond visuel
+  HISTOIRE      : Récit de création d'OGE Académie, valeurs, équipe fondatrice
+  OFFRES        : Onglets par école (INP-HB / ESATIC / CME) avec :
+                    - Nombre de places, coefficient, filières, tarifs
+                    - Planning des cours (mois de préparation)
+                    - Avantages de la préparation OGE Académie
+  RÉSULTATS     : Tableau interactif des taux de réussite par école et par année
+  FORMATIONS    : Présentation des 2 modes (présentiel physique + en ligne)
+  TÉMOIGNAGES   : Carousel ou grille des témoignages des anciens élèves admis
+  BLOG          : Grille des derniers articles publiés (max 6 visibles)
+  FOOTER        : Adresses des 6 centres, email, téléphone, réseaux sociaux,
+                  lien vers politique de confidentialité, copyright
+
+8.2 BLOG ET ARTICLES
+---------------------
+  - Articles réduits par les administrateurs dans le CMS
+  - Chaque article a un slug unique auto-généré (ex: /blog/conseils-inphb-2026)
+  - Statut : Brouillon (non visible) ou Publié (visible sur le site)
+  - Filtrable par concours (INP-HB, ESATIC, CME, Général)
+  - Image de couverture, extrait et contenu libre (markdown ou texte riche)
+  - Affichage dynamique sur la page d'accueil dès publication
+
+
+================================================================================
+9. INDICATEURS DE PERFORMANCE ET KPIS
+================================================================================
+
+9.1 KPIs DU DASHBOARD CANDIDAT
+--------------------------------
+  - Statut du compte (Actif / En attente de validation)
+  - Concours inscrits avec icônes et couleurs
+  - Statut du paiement (Validé / En cours / Rejeté + motif)
+  - Nombre de cours disponibles
+  - Nombre de sessions Google Meet à venir
+
+9.2 KPIs DU DASHBOARD MANAGER
+--------------------------------
+  - Total des candidats inscrits dans sa zone
+  - Candidats actifs (paiement validé) vs en attente
+  - Paiements : Validés | En cours | Rejetés (donut chart)
+  - Candidats par concours inscrit (INP-HB, ESATIC, CME)
+  - Candidats par mode de formation (présentiel vs en ligne)
+  - Demandes de double contrôle en attente
+  - Liste des dernières inscriptions (ordre chronologique)
+
+9.3 KPIs DU DASHBOARD ADMINISTRATEUR GLOBAL
+---------------------------------------------
+  - Total global candidats (toutes zones confondues)
+  - Répartition par zone géographique
+  - Répartition par concours d'inscription
+  - Paiements : total validé, en cours, rejeté, en attente
+  - Montant total des inscriptions validées (x 15 000 FCFA)
+  - Candidats par mode de formation (global)
+  - File des demandes de double contrôle en attente
+  - Statistiques par zone individuelle (donut chart multi-zones)
+
+
+================================================================================
+10. MAINTENANCE ET ÉVOLUTIONS
+================================================================================
+
+10.1 MAINTENANCE INCLUSE (CONCEPTEUR)
+---------------------------------------
+  - Correction des anomalies bloquantes (bugs techniques système)
+  - Correction des erreurs d'affichage sur les navigateurs supportés
+  - Mise à jour de l'année scolaire de référence sur la plateforme
+  - Migrations techniques gratuites (ex : Supabase Storage → Cloudflare R2)
+  - Intégrations techniques (configuration d'abonnements, déploiements)
+
+10.2 RESPONSABILITÉS DES ENTREPRENEURS
+----------------------------------------
+  - Mise à jour de TOUTES les informations du site (textes, photos, coordonnées,
+    tarifs, managers, candidats, témoignages, articles de blog) via le CMS
+  - Financement des abonnements payants (Supabase Pro, Vercel, Cloudflare) en
+    cas de dépassement des quotas gratuits
+  - Gestion opérationnelle des 6 zones (managers, candidats, paiements)
+  - Signalement des bugs ou problèmes techniques au Concepteur
+
+10.3 PROCÉDURES D'ÉVOLUTION (NOUVELLES FONCTIONNALITÉS)
+---------------------------------------------------------
+  1. L'Entrepreneur formule une demande écrite de nouvelle fonctionnalité.
+  2. Le Concepteur analyse la demande et produit un document écrit détaillant :
+     a) Les avantages et inconvénients de la fonctionnalité
+     b) La complexité technique et le délai d'implémentation
+     c) Le prix au forfait pour l'implémentation
+  3. Si l'Entrepreneur refuse le forfait, les deux parties peuvent convenir
+     d'une hausse du pourcentage de commission (ex : 2% → 2.5% ou 3%).
+
+
+================================================================================
+11. GLOSSAIRE DES TERMES ET DES RÔLES
+================================================================================
+
+  AES-256-CBC     : Algorithme de chiffrement symétrique militaire à 256 bits
+                    utilisé pour sécuriser les documents PDF.
+
+  App Router      : Système de routage basé sur le système de fichiers de
+                    Next.js 16 (dossier /app).
+
+  Cache Data      : Cache côté serveur Next.js (unstable_cache) qui stocke les
+                    résultats de requêtes BDD entre les requêtes utilisateurs.
+
+  CME             : Concours du Cycle de Management d'Excellence (grande école
+                    de management ivoirienne).
+
+  CMS             : Content Management System. Interface de gestion de contenu
+                    accessible aux administrateurs depuis /admin/contenu.
+
+  Drizzle ORM     : Couche d'abstraction de base de données TypeScript-first
+                    utilisée pour écrire des requêtes SQL typées.
+
+  DRM             : Digital Rights Management. Ensemble des mesures techniques
+                    de protection des droits d'auteur sur les contenus numériques.
+
+  ESATIC          : École Supérieure Africaine des TIC. Grande école d'ingénieurs
+                    en technologies de l'information de Côte d'Ivoire.
+
+  FCFA            : Franc CFA. Monnaie officielle de Côte d'Ivoire. Devise : XOF.
+
+  Google Meet     : Service de visioconférence de Google utilisé pour les cours
+                    en ligne planifiés via Google Calendar API.
+
+  INP-HB          : Institut National Polytechnique Félix Houphouët-Boigny.
+                    Principale école d'ingénieurs de Côte d'Ivoire.
+
+  JSON-LD         : Format de données structurées (JavaScript Object Notation
+                    for Linked Data) utilisé pour le SEO (référencement naturel).
+
+  Lazy Rendering  : Technique de rendu différé où seules les parties visibles
+                    à l'écran sont calculées et affichées, économisant la RAM.
+
+  Manager/Zone    : Responsable local désigné pour gérer une zone géographique.
+
+  Middleware      : Couche intermédiaire exécutée sur chaque requête HTTP avant
+                    la page cible. Gère l'authentification et les redirections.
+
+  PDF.js          : Bibliothèque JavaScript open-source de Mozilla pour rendre
+                    des fichiers PDF sur un canvas HTML5 côté navigateur.
+
+  RGPD            : Règlement Général sur la Protection des Données. Législation
+                    européenne sur la protection de la vie privée numérique.
+
+  Route Group     : Dossier Next.js entre parenthèses (ex: (admin)) qui organise
+                    les routes sans créer de segment d'URL.
+
+  Soft Delete     : Suppression logique par mise à jour du champ deleted_at
+                    plutôt que suppression physique de l'enregistrement en BDD.
+
+  SLA             : Service Level Agreement. Engagement contractuel de niveau
+                    de service (délai d'assistance en cas de panne).
+
+  Supabase        : Plateforme Backend-as-a-Service open-source fournissant
+                    PostgreSQL, Auth, Storage et API REST/Realtime.
+
+  Super Admin     : Rôle technique le plus élevé de la plateforme.
+                    Détient l'accès à toutes les configurations système.
+
+  Vercel          : Plateforme de déploiement cloud spécialisée dans Next.js.
+
+  Wave CI         : Application de paiement mobile de Côte d'Ivoire utilisée
+                    pour les transferts d'argent et les paiements marchands.
+
+  Zod             : Bibliothèque TypeScript de validation de schémas de données
+                    utilisée pour valider les formulaires et les Server Actions.
+
+================================================================================
+FIN DU DOCUMENT
+Version 1.0 — OGE Académie © 2025-2026 — CONFIDENTIEL
+Concepteur : M. Sidoine K. (krsidoine7@gmail.com | +225 05 03 68 15 88)
+Stocké dans : .skills/ChefsOge/cahier_des_charges_oge_academie.txt
+================================================================================

@@ -1,4 +1,4 @@
-import { pgTable, text, boolean, timestamp, pgEnum, uuid, integer, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, pgEnum, uuid, integer, jsonb, varchar, index } from "drizzle-orm/pg-core";
 
 export const userRoleEnum = pgEnum("user_role", ["user", "manager_zone", "admin", "super_admin"]);
 export const zoneNameEnum = pgEnum("zone_name", ["yamoussoukro", "yopougon", "abobo", "cocody", "port-bouet", "bouake"]);
@@ -153,6 +153,58 @@ export const adminPendingActions = pgTable("admin_pending_actions", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
+
+// ============================================================
+// Tables et types pour le Système d'Analytics
+// ============================================================
+
+export const pageViews = pgTable("page_views", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: varchar("session_id", { length: 64 }).notNull(),
+  path: text("path").notNull(),
+  referrer: text("referrer"),
+  userAgent: text("user_agent"),
+  ipAnonymized: varchar("ip_anonymized", { length: 32 }),
+  country: varchar("country", { length: 8 }),
+  duration: integer("duration").default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  pathIdx: index("page_views_path_idx").on(table.path),
+  sessionIdx: index("page_views_session_idx").on(table.sessionId),
+  createdAtIdx: index("page_views_created_at_idx").on(table.createdAt),
+}));
+
+export const clickEvents = pgTable("click_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: varchar("session_id", { length: 64 }).notNull(),
+  path: text("path").notNull(),
+  elementId: varchar("element_id", { length: 128 }),
+  elementText: text("element_text"),
+  elementType: varchar("element_type", { length: 32 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  pathIdx: index("click_events_path_idx").on(table.path),
+  sessionIdx: index("click_events_session_idx").on(table.sessionId),
+  createdAtIdx: index("click_events_created_at_idx").on(table.createdAt),
+}));
+
+export const dailyStats = pgTable("daily_stats", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(),
+  totalPageViews: integer("total_page_views").default(0).notNull(),
+  uniqueVisitors: integer("unique_visitors").default(0).notNull(),
+  totalClicks: integer("total_clicks").default(0).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  dateIdx: index("daily_stats_date_idx").on(table.date),
+}));
+
+export type PageView = typeof pageViews.$inferSelect;
+export type NewPageView = typeof pageViews.$inferInsert;
+export type ClickEvent = typeof clickEvents.$inferSelect;
+export type NewClickEvent = typeof clickEvents.$inferInsert;
+export type DailyStat = typeof dailyStats.$inferSelect;
+
 
 
 

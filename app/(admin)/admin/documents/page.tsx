@@ -4,6 +4,8 @@ import { documents } from "@/drizzle/schema";
 import { isNull, desc } from "drizzle-orm";
 import DocumentsManagerClient from "./DocumentsManagerClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDocumentsPage() {
   const dbDocs = await db.query.documents.findMany({
     where: isNull(documents.deletedAt),

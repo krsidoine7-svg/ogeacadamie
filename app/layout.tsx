@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import CookieBanner from "@/components/shared/CookieBanner";
+import { AnalyticsProvider } from "@/components/analytics-provider";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -87,10 +81,12 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${plusJakartaSans.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col font-sans">
-        {children}
+        <AnalyticsProvider>
+          {children}
+        </AnalyticsProvider>
         <CookieBanner />
         <Toaster position="top-center" richColors />
       </body>

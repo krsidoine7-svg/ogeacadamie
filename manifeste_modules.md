@@ -51,6 +51,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.22 (Optimisation des performances de navigation - Middleware) :** Correction d'un goulot d'étranglement majeur où le middleware exécutait des requêtes réseau à Supabase Auth (`getUser()`) et des requêtes en base de données (`profiles`) sur absolument toutes les requêtes (y compris les pages publiques comme l'accueil, et les pré-chargements de liens / prefetching). Désormais, ces appels sont immédiatement court-circuités pour toutes les routes publiques non authentifiées.
 >
 > **Version 1.23 (Caching Intelligent & Revalidation Turbopack/Next.js 16) :** Création de `lib/cached-queries.ts` regroupant les requêtes profil, CMS et documents dans des fonctions React cache et unstable_cache. Intégration dans la page d'accueil, le layout et la page candidat ainsi que le visualiseur candidat. Liaison des purges de cache de tags (avec signature standardisée 'max' pour Next.js 16) dans les Server Actions d'administration et de gestion de zone.
+>
+> **Version 1.24 (Validation de Charge & Optimisations de Rendu) :** Création de l'infrastructure de tests de charge (`tests-charge/`) avec 3 scénarios Locust (Public, Candidat, Manager/Admin). Déplacement du seed bloquant "affiches" en asynchrone non-bloquant sur la page d'accueil, parallélisation des requêtes de cache via `Promise.all` et gestion try-catch pour les builds offline. Forçage du mode `force-dynamic` sur `/admin/documents` et `/admin/contenu` et `force-static` sur `/politique-de-confidentialite` pour éliminer les appels BDD et timeouts réseau lors des builds de production Next.js. Création de squelettes animés (`loading.tsx`) pour supprimer l'effet d'écran blanc perçu au chargement des bundles client.
 
 ---
 

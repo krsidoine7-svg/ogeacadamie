@@ -1,0 +1,6 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+GET,[Public] Page d'accueil (/),"CatchResponseError(""Erreur 0 sur la page d'accueil"")",49,2026-06-29T08:08:09Z,2026-06-29T08:17:04Z
+GET,[Public] Politique de confidentialité,CatchResponseError('Erreur 0'),15,2026-06-29T08:08:09Z,2026-06-29T08:17:04Z
+GET,[Public] Inscription,CatchResponseError('Erreur 0 sur /inscription'),12,2026-06-29T08:08:09Z,2026-06-29T08:17:04Z
+GET,[Public] Connexion,CatchResponseError('Erreur 0 sur /connexion'),17,2026-06-29T08:10:18Z,2026-06-29T08:17:04Z
+GET,[Public] Mot de passe oublié,CatchResponseError('Erreur 0'),7,2026-06-29T08:10:18Z,2026-06-29T08:15:41Z

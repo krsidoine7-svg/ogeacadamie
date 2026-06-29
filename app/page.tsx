@@ -2,7 +2,6 @@ import React from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { pageSections } from "@/drizzle/schema";
-import { asc } from "drizzle-orm";
 import { getCachedPageSections, getCachedTestimonials, getCachedBlogArticles } from "@/lib/cached-queries";
 import InteractiveSchoolGuides from "@/components/shared/InteractiveSchoolGuides";
 import BlogGrid from "@/components/shared/BlogGrid";
@@ -169,11 +168,30 @@ const formatTitle = (title: string) => {
   return title;
 };
 
-export default async function Home() {
-  // Fetch active sections (cached)
-  let dbSections = await getCachedPageSections();
+// Revalider les données cachées toutes les heures (3600s).
+// En production Vercel, la page est servie depuis le cache CDN entre les revalidations.
+export const revalidate = 3600;
 
-  // Fetch system config for Concepteur contact (from cached list in memory)
+export default async function Home() {
+  let dbSectionsRaw: any[] = [];
+  let dbTestimonials: any[] = [];
+  let dbArticles: any[] = [];
+
+  try {
+    const [sections, testimonials, articles] = await Promise.all([
+      getCachedPageSections(),
+      getCachedTestimonials(),
+      getCachedBlogArticles(),
+    ]);
+    dbSectionsRaw = sections;
+    dbTestimonials = testimonials;
+    dbArticles = articles;
+  } catch (err) {
+    console.warn("[Build/Runtime] Database connection timed out or offline. Using default fallbacks.");
+  }
+  let dbSections = dbSectionsRaw;
+
+  // Extraire la config système (contact Concepteur) depuis les sections cachées
   const systemConfigRow = dbSections.find((s) => s.cle === "system_config");
   const systemConfig = systemConfigRow?.contenu as any || {
     concepteur_whatsapp: "+225 0503681588",
@@ -182,37 +200,26 @@ export default async function Home() {
   if (systemConfig.concepteur_whatsapp === undefined) systemConfig.concepteur_whatsapp = "+225 0503681588";
   if (systemConfig.concepteur_email === undefined) systemConfig.concepteur_email = "krsidoine7@gmail.com";
 
-  // Ensure "affiches" section is seeded in the database
+  // Seed de la section "affiches" si absente — fait en arrière-plan, JAMAIS bloqué sur le rendu
   const hasAffiches = dbSections.some((s) => s.cle === "affiches");
   if (!hasAffiches) {
-    try {
-      await db.insert(pageSections).values({
-        cle: "affiches",
-        titre: "Affiches & Annonces",
-        contenu: {
-          title: "Actualités & Affiches",
-          subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
-          images: []
-        },
-        ordre: 2, // Just after hero (1) and before historique (3)
-        isActive: true
-      });
-      // Re-fetch using standard DB call (only happens once during first load)
-      dbSections = await db.query.pageSections.findMany({
-        orderBy: [asc(pageSections.ordre)]
-      });
-    } catch (err: any) {
+    // fire-and-forget : on ne bloque PAS le rendu pour cette écriture
+    db.insert(pageSections).values({
+      cle: "affiches",
+      titre: "Affiches & Annonces",
+      contenu: {
+        title: "Actualités & Affiches",
+        subtitle: "Consultez nos dernières affiches de campagne et informations officielles.",
+        images: []
+      },
+      ordre: 2,
+      isActive: true
+    }).catch((err: any) => {
       if (err.code !== "23505") {
-        console.error("Error auto-seeding affiches section in Home:", err);
+        console.error("Error auto-seeding affiches section:", err);
       }
-    }
+    });
   }
-
-  // Fetch active testimonials (cached)
-  const dbTestimonials = await getCachedTestimonials();
-
-  // Fetch published blog articles (cached)
-  const dbArticles = await getCachedBlogArticles();
 
   const fallbackTestimonials = [
     {

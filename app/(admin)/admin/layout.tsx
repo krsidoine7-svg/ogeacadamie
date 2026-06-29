@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
-import { LayoutDashboard, Users, CreditCard, UserCheck, MapPin, Send, ShieldCheck, Globe, FileText, Settings } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, UserCheck, MapPin, Send, ShieldCheck, Globe, FileText, Settings, LineChart } from "lucide-react";
 import Link from "next/link";
 import AdminMobileNav from "@/components/dashboard/AdminMobileNav";
 
@@ -143,6 +143,16 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
               <FileText className="w-4 h-4 text-slate-400" />
               <span>Supports & Directs</span>
             </Link>
+
+            {profile.role === "super_admin" && (
+              <Link
+                href="/admin/analytics"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-755 hover:bg-slate-100 font-semibold text-sm tracking-tight transition-all duration-200"
+              >
+                <LineChart className="w-4 h-4 text-slate-400" />
+                <span>Statistiques</span>
+              </Link>
+            )}
 
             <Link
               href="/admin/parametres"

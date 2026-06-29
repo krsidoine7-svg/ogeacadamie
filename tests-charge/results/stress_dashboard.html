@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport de Stress Test Locust</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0B0F19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --neon-blue: #00F0FF;
+            --neon-purple: #9D4EDD;
+            --neon-pink: #FF007F;
+            --neon-green: #39FF14;
+            --danger-red: #FF3333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            padding: 40px 20px;
+            background-image: radial-gradient(circle at 10% 20%, rgba(90, 40, 200, 0.15) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.12) 0%, transparent 45%);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Grid des KPIs */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+
+        .kpi-card h3 {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .kpi-card .value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #FFF;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .kpi-card.breaking-point .value {
+            color: var(--neon-pink);
+            text-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
+        }
+
+        .kpi-card.safe-limit .value {
+            color: var(--neon-green);
+            text-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+        }
+
+        .kpi-card .unit {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        /* Graphiques */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--neon-blue);
+            padding-left: 12px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+        }
+
+        .donut-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 350px;
+        }
+
+        /* Tableau Croisé */
+        .pivot-section {
+            margin-bottom: 40px;
+        }
+
+        .pivot-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .pivot-controls select, .pivot-controls input {
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid var(--card-border);
+            color: #FFF;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .pivot-table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+            background: rgba(17, 24, 39, 0.4);
+        }
+
+        th, td {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th {
+            background: rgba(31, 41, 55, 0.7);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            color: #FFF;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        td.code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge.get { background: rgba(0, 240, 255, 0.15); color: var(--neon-blue); }
+        .badge.post { background: rgba(157, 78, 221, 0.15); color: var(--neon-purple); }
+        .badge.put { background: rgba(57, 255, 20, 0.15); color: var(--neon-green); }
+        .badge.delete { background: rgba(255, 0, 127, 0.15); color: var(--neon-pink); }
+
+        .text-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Rapport de Stress Test Locust</h1>
+            <p>Hôte ciblé : <strong>http://localhost:3000</strong> | Scénario : <strong>scenarios/oge_public_test.py</strong></p>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card safe-limit">
+                <h3>Limite de Sécurité</h3>
+                <div class="value">200<span class="unit">users</span></div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Max supporté sans erreur</p>
+            </div>
+            <div class="kpi-card safe-limit">
+                <h3>RPS Limite de Sécurité</h3>
+                <div class="value">76.8<span class="unit">req/s</span></div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Débit maximal stabilisé</p>
+            </div>
+            <div class="kpi-card breaking-point">
+                <h3>Point de Rupture</h3>
+                <div class="value">Non atteint<span class="unit">users</span></div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Début de la dégradation</p>
+            </div>
+            <div class="kpi-card">
+                <h3>RPS Maximum</h3>
+                <div class="value">82.1<span class="unit">req/s</span></div>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 8px;">Pic de requêtes brut atteint</p>
+            </div>
+        </div>
+
+        <!-- Rangée des Graphiques -->
+        <div class="chart-row">
+            <!-- Courbe de charge et performances -->
+            <div class="card">
+                <h2>Courbe de Performance Globale</h2>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Camembert/Donut des requêtes (Succès vs Échecs) -->
+            <div class="card">
+                <h2>Statut des Requêtes</h2>
+                <div class="donut-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Tableau Croisé Dynamique -->
+        <div class="card pivot-section">
+            <h2>Tableau Croisé Dynamique des Requêtes</h2>
+            <div class="pivot-controls">
+                <input type="text" id="endpointSearch" placeholder="Rechercher une route..." onkeyup="filterPivot()">
+                <select id="methodFilter" onchange="filterPivot()">
+                    <option value="">Toutes les méthodes</option>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+            <div class="pivot-table-container">
+                <table id="pivotTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Méthode</th>
+                            <th onclick="sortTable(1)">Endpoint</th>
+                            <th onclick="sortTable(2)" class="text-right">Requêtes</th>
+                            <th onclick="sortTable(3)" class="text-right">Échecs</th>
+                            <th onclick="sortTable(4)" class="text-right">Moyenne (ms)</th>
+                            <th onclick="sortTable(5)" class="text-right">Min (ms)</th>
+                            <th onclick="sortTable(6)" class="text-right">Max (ms)</th>
+                            <th onclick="sortTable(7)" class="text-right">RPS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pivotBody">
+                        <!-- Rempli par JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données injectées depuis Python
+        const history = [{"timestamp": "09:33:34", "users": 10, "rps": 0.0, "failures_s": 0.0, "p50": 130.0, "p95": 170.0, "error_rate": 0.0}, {"timestamp": "09:33:35", "users": 20, "rps": 0.0, "failures_s": 0.0, "p50": 170.0, "p95": 240.0, "error_rate": 0.0}, {"timestamp": "09:33:36", "users": 30, "rps": 10.0, "failures_s": 0.0, "p50": 110.0, "p95": 240.0, "error_rate": 0.0}, {"timestamp": "09:33:37", "users": 40, "rps": 5.0, "failures_s": 0.0, "p50": 94.0, "p95": 230.0, "error_rate": 0.0}, {"timestamp": "09:33:38", "users": 50, "rps": 10.666667, "failures_s": 0.0, "p50": 80.0, "p95": 230.0, "error_rate": 0.0}, {"timestamp": "09:33:39", "users": 60, "rps": 13.25, "failures_s": 0.0, "p50": 67.0, "p95": 230.0, "error_rate": 0.0}, {"timestamp": "09:33:40", "users": 70, "rps": 14.8, "failures_s": 0.0, "p50": 63.0, "p95": 220.0, "error_rate": 0.0}, {"timestamp": "09:33:41", "users": 80, "rps": 15.833333, "failures_s": 0.0, "p50": 46.0, "p95": 200.0, "error_rate": 0.0}, {"timestamp": "09:33:42", "users": 100, "rps": 17.142857, "failures_s": 0.0, "p50": 43.0, "p95": 190.0, "error_rate": 0.0}, {"timestamp": "09:33:43", "users": 110, "rps": 21.125, "failures_s": 0.0, "p50": 40.0, "p95": 180.0, "error_rate": 0.0}, {"timestamp": "09:33:44", "users": 120, "rps": 21.222222, "failures_s": 0.0, "p50": 38.0, "p95": 170.0, "error_rate": 0.0}, {"timestamp": "09:33:45", "users": 130, "rps": 24.1, "failures_s": 0.0, "p50": 38.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:46", "users": 140, "rps": 26.8, "failures_s": 0.0, "p50": 40.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:47", "users": 150, "rps": 31.3, "failures_s": 0.0, "p50": 37.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:48", "users": 160, "rps": 33.5, "failures_s": 0.0, "p50": 35.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:49", "users": 170, "rps": 38.1, "failures_s": 0.0, "p50": 39.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:51", "users": 180, "rps": 41.2, "failures_s": 0.0, "p50": 36.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:52", "users": 190, "rps": 46.0, "failures_s": 0.0, "p50": 36.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:53", "users": 200, "rps": 52.5, "failures_s": 0.0, "p50": 38.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:54", "users": 200, "rps": 57.7, "failures_s": 0.0, "p50": 34.0, "p95": 160.0, "error_rate": 0.0}, {"timestamp": "09:33:55", "users": 200, "rps": 61.6, "failures_s": 0.0, "p50": 34.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:56", "users": 200, "rps": 66.5, "failures_s": 0.0, "p50": 33.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:57", "users": 200, "rps": 68.4, "failures_s": 0.0, "p50": 32.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:58", "users": 200, "rps": 72.0, "failures_s": 0.0, "p50": 32.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:33:59", "users": 200, "rps": 74.1, "failures_s": 0.0, "p50": 31.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:34:00", "users": 200, "rps": 76.4, "failures_s": 0.0, "p50": 31.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:34:01", "users": 200, "rps": 78.7, "failures_s": 0.0, "p50": 31.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:34:02", "users": 200, "rps": 77.8, "failures_s": 0.0, "p50": 31.0, "p95": 150.0, "error_rate": 0.0}, {"timestamp": "09:34:03", "users": 200, "rps": 79.5, "failures_s": 0.0, "p50": 31.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:04", "users": 200, "rps": 79.3, "failures_s": 0.0, "p50": 31.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:05", "users": 200, "rps": 79.3, "failures_s": 0.0, "p50": 30.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:06", "users": 200, "rps": 78.7, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:07", "users": 200, "rps": 80.9, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:08", "users": 200, "rps": 82.1, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:09", "users": 200, "rps": 80.1, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:10", "users": 200, "rps": 80.7, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:11", "users": 200, "rps": 79.4, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:12", "users": 200, "rps": 81.0, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:13", "users": 200, "rps": 79.3, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:14", "users": 200, "rps": 80.8, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:15", "users": 200, "rps": 80.7, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:16", "users": 200, "rps": 80.1, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:17", "users": 200, "rps": 78.9, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:18", "users": 200, "rps": 78.9, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:19", "users": 200, "rps": 79.4, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:20", "users": 200, "rps": 77.9, "failures_s": 0.0, "p50": 29.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:21", "users": 200, "rps": 79.4, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:22", "users": 200, "rps": 78.0, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:23", "users": 200, "rps": 81.2, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:24", "users": 200, "rps": 78.7, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:25", "users": 200, "rps": 78.1, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:26", "users": 200, "rps": 79.4, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:27", "users": 200, "rps": 80.2, "failures_s": 0.0, "p50": 28.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:28", "users": 200, "rps": 76.5, "failures_s": 0.0, "p50": 27.0, "p95": 140.0, "error_rate": 0.0}, {"timestamp": "09:34:29", "users": 200, "rps": 76.8, "failures_s": 0.0, "p50": 27.0, "p95": 140.0, "error_rate": 0.0}];
+        const endpoints = [{"method": "GET", "name": "[Public] Connexion", "requests": "555", "failures": "0", "avg_response_time": "38.12207405419752", "min_response_time": "5.343500000890344", "max_response_time": "220.30610000365414", "current_rps": "0.0"}, {"method": "GET", "name": "[Public] Inscription", "requests": "773", "failures": "0", "avg_response_time": "39.69210970246674", "min_response_time": "5.99819999479223", "max_response_time": "241.85349998879246", "current_rps": "0.0"}, {"method": "GET", "name": "[Public] Mot de passe oubli\u00e9", "requests": "191", "failures": "0", "avg_response_time": "39.63514659695476", "min_response_time": "5.733500001952052", "max_response_time": "215.46709998801816", "current_rps": "0.0"}, {"method": "GET", "name": "[Public] Page d'accueil (/)", "requests": "1943", "failures": "0", "avg_response_time": "45.819303345433255", "min_response_time": "9.09420000971295", "max_response_time": "258.093700002064", "current_rps": "0.0"}, {"method": "GET", "name": "[Public] Politique de confidentialit\u00e9", "requests": "383", "failures": "0", "avg_response_time": "41.21052297595135", "min_response_time": "5.54559999727644", "max_response_time": "231.04830000374932", "current_rps": "0.0"}];
+        const failures = [];
+
+        // 1. Initialisation du graphique de Performance
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(perfCtx, {
+            type: 'line',
+            data: {
+                labels: history.map(row => row.timestamp),
+                datasets: [
+                    {
+                        label: 'Utilisateurs actifs',
+                        data: history.map(row => row.users),
+                        borderColor: '#9D4EDD',
+                        backgroundColor: 'rgba(157, 78, 221, 0.1)',
+                        yAxisID: 'y-users',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'RPS (Requêtes/s)',
+                        data: history.map(row => row.rps),
+                        borderColor: '#00F0FF',
+                        yAxisID: 'y-rps',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Latence p95 (ms)',
+                        data: history.map(row => row.p95),
+                        borderColor: '#FF007F',
+                        yAxisID: 'y-latency',
+                        borderWidth: 1.5,
+                        borderDash: [5, 5],
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    'y-users': {
+                        type: 'linear',
+                        position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#9CA3AF' }
+                    },
+                    'y-rps': {
+                        type: 'linear',
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#9CA3AF' }
+                    },
+                    'y-latency': {
+                        type: 'linear',
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#9CA3AF' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: '#F3F4F6', font: { family: 'Outfit' } }
+                    }
+                }
+            }
+        });
+
+        // 2. Initialisation du graphique en Donut (Success vs Failures)
+        const totalRequests = endpoints.reduce((sum, row) => sum + parseInt(row.requests), 0);
+        const totalFailures = endpoints.reduce((sum, row) => sum + parseInt(row.failures), 0);
+        const totalSuccess = totalRequests - totalFailures;
+
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Succès', 'Échecs'],
+                datasets: [{
+                    data: [totalSuccess, totalFailures],
+                    backgroundColor: ['#39FF14', '#FF3333'],
+                    borderColor: '#0B0F19',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#F3F4F6', font: { family: 'Outfit' } }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Remplissage du tableau croisé dynamique
+        const tableBody = document.getElementById('pivotBody');
+        
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                const badgeClass = row.method.toLowerCase();
+                tr.innerHTML = `
+                    <td><span class="badge ${badgeClass}">${row.method}</span></td>
+                    <td class="code">${row.name}</td>
+                    <td class="text-right">${parseInt(row.requests).toLocaleString()}</td>
+                    <td class="text-right" style="color: ${parseInt(row.failures) > 0 ? 'var(--danger-red)' : 'inherit'}">${parseInt(row.failures).toLocaleString()}</td>
+                    <td class="text-right">${parseFloat(row.avg_response_time).toFixed(1)}</td>
+                    <td class="text-right">${row.min_response_time}</td>
+                    <td class="text-right">${row.max_response_time}</td>
+                    <td class="text-right">${parseFloat(row.current_rps).toFixed(1)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        renderTable(endpoints);
+
+        // Filtrage dynamique
+        function filterPivot() {
+            const searchVal = document.getElementById('endpointSearch').value.toLowerCase();
+            const methodVal = document.getElementById('methodFilter').value;
+            
+            const filtered = endpoints.filter(row => {
+                const matchesSearch = row.name.toLowerCase().includes(searchVal);
+                const matchesMethod = methodVal === '' || row.method === methodVal;
+                return matchesSearch && matchesMethod;
+            });
+            
+            renderTable(filtered);
+        }
+
+        // Tri du tableau
+        let sortDirection = false;
+        function sortTable(columnIndex) {
+            sortDirection = !sortDirection;
+            const keyMap = ['method', 'name', 'requests', 'failures', 'avg_response_time', 'min_response_time', 'max_response_time', 'current_rps'];
+            const key = keyMap[columnIndex];
+
+            endpoints.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+                
+                // Conversion numérique si nécessaire
+                if (['requests', 'failures', 'avg_response_time', 'min_response_time', 'max_response_time', 'current_rps'].includes(key)) {
+                    valA = parseFloat(valA);
+                    valB = parseFloat(valB);
+                }
+
+                if (valA < valB) return sortDirection ? -1 : 1;
+                if (valA > valB) return sortDirection ? 1 : -1;
+                return 0;
+            });
+
+            filterPivot();
+        }
+    </script>
+</body>
+</html>
