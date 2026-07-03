@@ -53,6 +53,10 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.23 (Caching Intelligent & Revalidation Turbopack/Next.js 16) :** Création de `lib/cached-queries.ts` regroupant les requêtes profil, CMS et documents dans des fonctions React cache et unstable_cache. Intégration dans la page d'accueil, le layout et la page candidat ainsi que le visualiseur candidat. Liaison des purges de cache de tags (avec signature standardisée 'max' pour Next.js 16) dans les Server Actions d'administration et de gestion de zone.
 >
 > **Version 1.24 (Validation de Charge & Optimisations de Rendu) :** Création de l'infrastructure de tests de charge (`tests-charge/`) avec 3 scénarios Locust (Public, Candidat, Manager/Admin). Déplacement du seed bloquant "affiches" en asynchrone non-bloquant sur la page d'accueil, parallélisation des requêtes de cache via `Promise.all` et gestion try-catch pour les builds offline. Forçage du mode `force-dynamic` sur `/admin/documents` et `/admin/contenu` et `force-static` sur `/politique-de-confidentialite` pour éliminer les appels BDD et timeouts réseau lors des builds de production Next.js. Création de squelettes animés (`loading.tsx`) pour supprimer l'effet d'écran blanc perçu au chargement des bundles client.
+>
+> **Version 1.25 (Sécurité Admin & Modération Super Admin) :** Ajout de la colonne forcePasswordReset au schéma des profils. Implémentation de la réinitialisation de mot de passe par le Super Admin avec invalidation immédiate de session (via auth.sessions) et redirection forcée vers la page de changement de mot de passe /nouveau-mot-de-passe. Création d'une API universelle de téléversement d'avatars et possibilité pour tout utilisateur (Candidat, Manager, Admin) de modifier ses informations personnelles. Intégration de champs CMS pour les trust checks et le badge d'histoire. Planification temporelle des affiches avec support des vidéos dans la galerie. Création de l'Espace de Modération centralisé pour auditer les contenus et les comptes.
+>
+> **Version 1.26 (Correctifs de sécurité, de permissions d'écriture et de structure des paramètres) :** Résolution des erreurs d'autorisation d'écriture (`auth` schema permission error) en base de données Supabase. Création et déploiement de fonctions SQL `SECURITY DEFINER` (`public.admin_update_auth_user_email` et `public.admin_reset_user_password_and_sessions`) qui se synchronisent avec `auth.users` et `auth.identities` (provider_id et JSONB identity_data), évitant les erreurs d'identifiants invalides lors des reconnexions. Redesign complet des pages de paramètres du Super Administrateur (`SettingsForm.tsx`) et des Managers de zone (`ZoneParametresClient.tsx`) pour afficher toutes les informations et options d'édition (nom, prénom, email, WhatsApp, avatar et mot de passe) sur une seule page responsive en 2 colonnes sans onglets cachés.
 
 ---
 
@@ -397,6 +401,18 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[parametres/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/page.tsx)**
   * **Description :** Page d'édition des configurations système (IDs d'agenda, secrets, URLs webhooks et toggles généraux).
   * **Relations :** Charge le composant client `SettingsForm.tsx`.
+* **[moderation/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/moderation/page.tsx)**
+  * **Description :** Page d'audit de sécurité et de modération globale, réservée exclusivement au rôle `super_admin`.
+  * **Relations :** Charge le composant client `ModerationClient.tsx`.
+* **[moderation/ModerationClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/moderation/ModerationClient.tsx)**
+  * **Description :** Console d'audit interactive permettant d'activer/désactiver les cours, articles de blog, témoignages et médias d'actualités, ainsi que de modifier les profils et réinitialiser les mots de passe de tous les utilisateurs de la plateforme avec déconnexion instantanée de leurs sessions actives.
+  * **Relations :** Consommé par `moderation/page.tsx` et appelle les actions serveurs d'administration.
+
+#### 📂 app/(public)/nouveau-mot-de-passe
+* **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/nouveau-mot-de-passe/page.tsx)**
+  * **Description :** Page de redirection forcée pour les utilisateurs dont le mot de passe a été réinitialisé par un administrateur.
+  * **Relations :** Intercepté par le middleware et géré lors de la connexion.
+
 * **[parametres/SettingsForm.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/SettingsForm.tsx)**
   * **Description :** Formulaire de saisie des variables système et des options générales (allow_manager_edit et configurations d'agenda/webhooks pour le Super-Admin, les options MoMo/Orange Money étant désactivées au profit de Wave uniquement).
   * **Relations :** Appelle les actions serveur `updateSystemSettings` et `updateSystemConfig`.

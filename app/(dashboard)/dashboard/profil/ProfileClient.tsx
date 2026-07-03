@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { updateCandidateProfile } from "@/app/(dashboard)/dashboard/actions";
+import { updatePersonalProfile } from "@/app/(dashboard)/dashboard/actions";
 import { toast } from "sonner";
 import { User, Phone, MapPin, Landmark, BookOpen, KeyRound, CheckCircle2, Loader2, Save } from "lucide-react";
 
@@ -15,6 +15,7 @@ interface ProfileClientProps {
     whatsapp: string | null;
     modeFormation: "presentiel" | "en_ligne" | null;
     zone: "yamoussoukro" | "yopougon" | "abobo" | "cocody" | "port-bouet" | "bouake" | null;
+    avatarUrl?: string | null;
   };
   registeredConcours: string[];
 }
@@ -24,7 +25,12 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
   const supabase = createClient();
 
   // General profile state
+  const [nom, setNom] = useState(profile.nom || "");
+  const [prenom, setPrenom] = useState(profile.prenom || "");
+  const [email, setEmail] = useState(profile.email || "");
   const [whatsapp, setWhatsapp] = useState(profile.whatsapp || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [modeFormation, setModeFormation] = useState<"presentiel" | "en_ligne">(
     profile.modeFormation || "en_ligne"
   );
@@ -38,12 +44,43 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAvatarUrl(data.url);
+        toast.success("Photo de profil mise à jour !");
+        router.refresh();
+      } else {
+        toast.error(data.error || "Erreur lors de l'upload.");
+      }
+    } catch (err) {
+      toast.error("Erreur de connexion lors de l'upload.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdatingProfile(true);
 
     try {
-      const result = await updateCandidateProfile({
+      const result = await updatePersonalProfile({
+        nom,
+        prenom,
+        email,
         whatsapp,
       });
 
@@ -119,14 +156,39 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
         {/* Profile Card */}
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-full bg-slate-105 border border-slate-200 text-[#0F172A] flex items-center justify-center mx-auto shadow-sm">
-              <User className="w-8 h-8" />
+            <div className="relative w-20 h-20 mx-auto group">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-20 h-20 rounded-full object-cover border border-slate-200 shadow-sm"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 text-[#0F172A] flex items-center justify-center shadow-sm">
+                  <User className="w-10 h-10" />
+                </div>
+              )}
+              {avatarUploading ? (
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              ) : (
+                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-full flex items-center justify-center text-white text-[10px] font-bold cursor-pointer transition-all">
+                  Modifier
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
             <div>
               <h2 className="font-extrabold text-slate-800 text-lg">
-                {profile.prenom} {profile.nom}
+                {prenom} {nom}
               </h2>
-              <p className="text-sm text-slate-400 font-medium">{profile.email}</p>
+              <p className="text-sm text-slate-450 font-medium">{email}</p>
             </div>
           </div>
 
@@ -187,35 +249,41 @@ export default function ProfileClient({ profile, registeredConcours }: ProfileCl
           </div>
 
           <form onSubmit={handleUpdateProfile} className="space-y-5">
-            {/* Disabled Inputs (Nom, Prenom, Email) */}
+            {/* Editable Inputs (Nom, Prenom, Email) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-455 uppercase">Nom</label>
+                <label htmlFor="nomInput" className="text-xs font-bold text-slate-700 uppercase">Nom</label>
                 <input
+                  id="nomInput"
                   type="text"
-                  value={profile.nom}
-                  disabled
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-500 font-semibold cursor-not-allowed"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4A017] focus:border-transparent"
+                  required
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-455 uppercase">Prénom</label>
+                <label htmlFor="prenomInput" className="text-xs font-bold text-slate-700 uppercase">Prénom</label>
                 <input
+                  id="prenomInput"
                   type="text"
-                  value={profile.prenom}
-                  disabled
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-500 font-semibold cursor-not-allowed"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4A017] focus:border-transparent"
+                  required
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-455 uppercase">Adresse Email</label>
+              <label htmlFor="emailInput" className="text-xs font-bold text-slate-700 uppercase">Adresse Email</label>
               <input
+                id="emailInput"
                 type="email"
-                value={profile.email}
-                disabled
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-500 font-semibold cursor-not-allowed"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-[#D4A017] focus:border-transparent"
+                required
               />
             </div>
 

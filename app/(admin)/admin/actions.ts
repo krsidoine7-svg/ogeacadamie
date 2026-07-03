@@ -5,7 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, zoneConfig, notifications, concoursInscrits, paiements, pageSections, temoignages, blogArticles, documents, adminPendingActions } from "@/drizzle/schema";
-import { eq, and, isNull, inArray } from "drizzle-orm";
+import { eq, and, isNull, inArray, sql, or } from "drizzle-orm";
 import { createCalendarEvent, deleteCalendarEvent } from "@/lib/googleCalendar";
 import { triggerNewDocumentWebhook } from "@/lib/webhooks";
 
@@ -1272,6 +1272,13 @@ async function executeManagerActionDirectly(
       })
       .where(eq(profiles.id, targetId));
 
+    // 1.5 Update auth.users and auth.identities email via security definer if changed
+    if (email.trim().toLowerCase() !== target.email) {
+      await db.execute(sql`
+        SELECT public.admin_update_auth_user_email(${targetId}, ${email.trim().toLowerCase()})
+      `);
+    }
+
     // 2. If zone has changed, re-assign configurations
     if (zone !== target.zone) {
       // Clear from previous zone config
@@ -1516,6 +1523,166 @@ export async function togglePdfSecurity() {
     return { success: true, enabled: currentConfig.enable_pdf_security };
   } catch (error: any) {
     console.error("Error in togglePdfSecurity:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Resets a user's password, deletes their sessions, and forces reset flag. (Super Admin only)
+ */
+export async function adminResetUserPassword(userId: string, newPassword: string) {
+  try {
+    await verifySuperAdminSession();
+
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: "Le mot de passe doit faire au moins 6 caractères." };
+    }
+
+    // 1. Update password and invalidate sessions in Supabase Auth via security definer
+    await db.execute(sql`
+      SELECT public.admin_reset_user_password_and_sessions(${userId}, ${newPassword})
+    `);
+
+    // 3. Mark force_password_reset in profiles
+    await db.update(profiles)
+      .set({
+        forcePasswordReset: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, userId));
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in adminResetUserPassword:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Updates a user's profile details and email address. (Super Admin only)
+ */
+export async function adminUpdateUserProfile(
+  userId: string,
+  data: {
+    nom: string;
+    prenom: string;
+    email: string;
+    role: "user" | "manager_zone" | "admin" | "super_admin";
+    whatsapp?: string;
+    zone?: any;
+  }
+) {
+  try {
+    await verifySuperAdminSession();
+
+    const newEmail = data.email.trim().toLowerCase();
+
+    // Verify email uniqueness if it has changed
+    const existing = await db.query.profiles.findFirst({
+      where: and(eq(profiles.email, newEmail), sql`id != ${userId}`),
+    });
+    if (existing) {
+      return { success: false, error: "Cette adresse email est déjà utilisée." };
+    }
+
+    const currentProfile = await db.query.profiles.findFirst({
+      where: eq(profiles.id, userId),
+    });
+
+    if (!currentProfile) {
+      return { success: false, error: "Profil introuvable." };
+    }
+
+    // Update profiles table
+    await db.update(profiles)
+      .set({
+        nom: data.nom.trim(),
+        prenom: data.prenom.trim(),
+        email: newEmail,
+        role: data.role,
+        whatsapp: data.whatsapp?.trim() || null,
+        zone: data.zone || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, userId));
+
+    // Update auth.users table email via security definer function
+    await db.execute(sql`
+      SELECT public.admin_update_auth_user_email(${userId}, ${newEmail})
+    `);
+
+    // If zone config needs to be updated
+    if (data.zone !== currentProfile.zone) {
+      if (currentProfile.zone) {
+        await db.update(zoneConfig)
+          .set({ managerId: null, updatedAt: new Date() })
+          .where(eq(zoneConfig.zone, currentProfile.zone as any));
+      }
+      if (data.zone && data.role === "manager_zone") {
+        await db.update(zoneConfig)
+          .set({ managerId: userId, updatedAt: new Date() })
+          .where(eq(zoneConfig.zone, data.zone as any));
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/candidats");
+    revalidatePath("/admin/managers");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in adminUpdateUserProfile:", error);
+    return { success: false, error: error.message || "Une erreur est survenue." };
+  }
+}
+
+/**
+ * Toggles the activation of documents, articles, testimonials or affiches for moderation. (Admin / Super Admin)
+ */
+export async function adminToggleContentActive(
+  type: "document" | "blog" | "testimonial" | "affiche",
+  id: string,
+  active: boolean
+) {
+  try {
+    await verifyAdminSession();
+
+    if (type === "document") {
+      await db.update(documents).set({ isActive: active, updatedAt: new Date() }).where(eq(documents.id, id));
+      revalidatePath("/admin/documents");
+      revalidatePath("/dashboard/documents");
+    } else if (type === "blog") {
+      await db.update(blogArticles).set({ isPublished: active, updatedAt: new Date() }).where(eq(blogArticles.id, id));
+      revalidatePath("/admin/contenu");
+      revalidatePath("/");
+    } else if (type === "testimonial") {
+      await db.update(temoignages).set({ isActive: active }).where(eq(temoignages.id, id));
+      revalidatePath("/admin/contenu");
+      revalidatePath("/");
+    } else if (type === "affiche") {
+      // For campaigns posters, fetch the affiches page section, update the image isActive property
+      const sec = await db.query.pageSections.findFirst({
+        where: eq(pageSections.cle, "affiches"),
+      });
+      if (sec && sec.contenu) {
+        const contenu = sec.contenu as any;
+        const images = (contenu.images || []).map((img: any) => {
+          if (img.id === id) {
+            return { ...img, isActive: active };
+          }
+          return img;
+        });
+        await db.update(pageSections)
+          .set({ contenu: { ...contenu, images }, updatedAt: new Date() })
+          .where(eq(pageSections.cle, "affiches"));
+      }
+      revalidatePath("/admin/contenu");
+      revalidatePath("/");
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in adminToggleContentActive:", error);
     return { success: false, error: error.message || "Une erreur est survenue." };
   }
 }

@@ -42,7 +42,10 @@ export default function AdminMobileNav({ profile }: AdminMobileNavProps) {
     { href: "/admin/contenu", label: "Éditeur Accueil", icon: Globe },
     { href: "/admin/documents", label: "Supports & Directs", icon: FileText },
     ...(profile.role === "super_admin"
-      ? [{ href: "/admin/analytics", label: "Statistiques", icon: LineChart }]
+      ? [
+          { href: "/admin/moderation", label: "Centre Modération", icon: ShieldCheck },
+          { href: "/admin/analytics", label: "Statistiques", icon: LineChart }
+        ]
       : []),
     { href: "/admin/parametres", label: "Paramètres", icon: Settings },
   ];

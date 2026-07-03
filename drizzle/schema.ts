@@ -23,6 +23,7 @@ export const profiles = pgTable("profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  forcePasswordReset: boolean("force_password_reset").default(false),
 });
 
 export const concoursInscrits = pgTable("concours_inscrits", {

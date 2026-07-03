@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, zoneConfig, adminPendingActions, pageSections } from "@/drizzle/schema";
-import { eq, and, isNull, desc, inArray } from "drizzle-orm";
+import { eq, and, or, isNull, desc, inArray } from "drizzle-orm";
 import ManagersListClient from "./ManagersListClient";
 import { UserCheck } from "lucide-react";
 
@@ -30,10 +30,34 @@ export default async function AdminManagersPage() {
     redirect("/connexion");
   }
 
-  // 3. Fetch all manager profiles
+  // 3. Fetch IDs of target managers who were deactivated
+  const deactivatedActions = await db
+    .select({
+      targetId: adminPendingActions.targetId,
+    })
+    .from(adminPendingActions)
+    .where(
+      and(
+        eq(adminPendingActions.type, "deactivate_manager"),
+        eq(adminPendingActions.statut, "approuve")
+      )
+    );
+
+  const deactivatedIds = deactivatedActions.map((a) => a.targetId);
+
+  // Fetch all manager profiles (both active managers and deactivated former managers)
   const managerProfiles = await db.query.profiles.findMany({
     where: and(
-      eq(profiles.role, "manager_zone"),
+      or(
+        eq(profiles.role, "manager_zone"),
+        and(
+          eq(profiles.role, "user"),
+          inArray(
+            profiles.id,
+            deactivatedIds.length > 0 ? deactivatedIds : ["00000000-0000-0000-0000-000000000000"]
+          )
+        )
+      ),
       isNull(profiles.deletedAt)
     ),
   });
@@ -106,6 +130,7 @@ export default async function AdminManagersPage() {
           zone: m.zone,
           isActive: m.isActive ?? false,
           whatsapp: m.whatsapp || "",
+          role: m.role || "user",
         }))}
         zones={zoneConfigs.map((z) => ({
           id: z.id,

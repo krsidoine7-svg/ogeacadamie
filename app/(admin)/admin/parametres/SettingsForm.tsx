@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { updateSystemSettings, updateSystemConfig } from "../actions";
-import { Save, Key, Globe, Calendar, ShieldAlert, Settings } from "lucide-react";
+import { updatePersonalProfile } from "@/app/(dashboard)/dashboard/actions";
+import { Save, Key, Globe, Calendar, ShieldAlert, Settings, User, Loader2, KeyRound, Mail, User2, Phone } from "lucide-react";
 
 interface SettingsFormProps {
   initialSettings: {
@@ -11,6 +13,7 @@ interface SettingsFormProps {
     make_webhook_url: string;
     n8n_webhook_url: string;
     google_calendar_id: string;
+    general_link?: string;
   };
   isSuperAdmin: boolean;
   initialSystemConfig: {
@@ -18,20 +21,50 @@ interface SettingsFormProps {
     concepteur_whatsapp?: string;
     concepteur_email?: string;
   };
+  profile: {
+    nom: string;
+    prenom: string;
+    email: string;
+    whatsapp: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 export default function SettingsForm({
   initialSettings,
   isSuperAdmin,
   initialSystemConfig,
+  profile,
 }: SettingsFormProps) {
+  const router = useRouter();
+
   // Integration settings state
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState({
+    webhook_secret: initialSettings.webhook_secret || "",
+    make_webhook_url: initialSettings.make_webhook_url || "",
+    n8n_webhook_url: initialSettings.n8n_webhook_url || "",
+    google_calendar_id: initialSettings.google_calendar_id || "",
+    general_link: initialSettings.general_link || "",
+  });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // System config state
   const [sysConfig, setSysConfig] = useState(initialSystemConfig);
   const [isSavingSys, setIsSavingSys] = useState(false);
+
+  // Profile Settings state
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [nom, setNom] = useState(profile.nom || "");
+  const [prenom, setPrenom] = useState(profile.prenom || "");
+  const [email, setEmail] = useState(profile.email || "");
+  const [whatsapp, setWhatsapp] = useState(profile.whatsapp || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Password state
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
 
   const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +110,99 @@ export default function SettingsForm({
     }
   };
 
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+
+    try {
+      const result = await updatePersonalProfile({
+        nom,
+        prenom,
+        email,
+        whatsapp,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      toast.success("Votre profil personnel a été mis à jour.");
+      router.refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Erreur de mise à jour.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAvatarUrl(data.url);
+        toast.success("Photo de profil mise à jour !");
+        router.refresh();
+      } else {
+        toast.error(data.error || "Erreur lors de l'upload.");
+      }
+    } catch (err) {
+      toast.error("Erreur de connexion lors de l'upload.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!password) {
+      toast.error("Saisissez un nouveau mot de passe.");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Minimum 6 caractères.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error("Mots de passe non identiques.");
+      return;
+    }
+
+    setIsSavingPassword(true);
+    try {
+      const result = await updatePersonalProfile({
+        nom,
+        prenom,
+        email,
+        whatsapp,
+        password,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      toast.success("Mot de passe modifié avec succès !");
+      setPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de la modification.");
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
+
   const handleChange = (key: string, value: string) => {
     setSettings((prev) => ({
       ...prev,
@@ -91,196 +217,376 @@ export default function SettingsForm({
     }));
   };
 
+  const handleSysChange = (key: string, value: string) => {
+    setSysConfig((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   return (
-    <div className="space-y-8 max-w-3xl">
-      {/* 1. Global System Configuration (Super Admin Only) */}
-      {isSuperAdmin ? (
-        <form onSubmit={handleSysSubmit} className="space-y-6">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2 pb-4 border-b border-slate-100">
-              <Settings className="w-5 h-5 text-[#D4A017]" />
-              Configuration Générale Système (Super-Admin)
-            </h2>
+    <div className="max-w-6xl mx-auto font-sans">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        {/* LEFT COLUMN: SYSTEM CONFIGURATION & INTEGRATIONS */}
+        <div className="space-y-8">
+          
+          {/* Card 1: Global System Configuration (Super Admin Only) */}
+          {isSuperAdmin && (
+            <form onSubmit={handleSysSubmit} className="space-y-6">
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+                <h2 className="text-base font-bold text-slate-850 tracking-tight flex items-center gap-2 pb-4 border-b border-slate-100">
+                  <Settings className="w-5 h-5 text-[#D4A017]" />
+                  <span>Configuration Générale du Système</span>
+                </h2>
 
-            <div className="space-y-5">
-              {/* Toggle allow_manager_edit */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold text-slate-800 uppercase block">
-                    Autoriser la modification des managers
-                  </span>
-                  <span className="text-[11px] text-slate-450 leading-normal font-medium block max-w-md">
-                    Si désactivé, les boutons de modification, blocage et suppression des managers seront masqués pour les administrateurs standards.
-                  </span>
+                <div className="space-y-4 text-xs font-semibold">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-150">
+                    <div>
+                      <span className="font-bold text-slate-800 block text-xs">
+                        Autoriser l'édition des centres par les managers
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                        Permet aux responsables locaux d'éditer l'adresse, le Wave et le téléphone de leur centre géographique.
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={sysConfig.allow_manager_edit}
+                        onChange={handleSysToggle}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-250 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D4A017]"></div>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">
+                        Concepteur WhatsApp (Footer)
+                      </label>
+                      <input
+                        type="text"
+                        value={sysConfig.concepteur_whatsapp || ""}
+                        onChange={(e) => handleSysChange("concepteur_whatsapp", e.target.value)}
+                        className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                        placeholder="+225 0503681588"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">
+                        Concepteur Email (Footer)
+                      </label>
+                      <input
+                        type="email"
+                        value={sysConfig.concepteur_email || ""}
+                        onChange={(e) => handleSysChange("concepteur_email", e.target.value)}
+                        className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                        placeholder="krsidoine7@gmail.com"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button
+                    type="submit"
+                    disabled={isSavingSys}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-[#D4A017] text-white rounded-xl font-bold shadow-sm transition-all duration-205 cursor-pointer disabled:opacity-50 text-xs"
+                  >
+                    {isSavingSys ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5 text-[#D4A017]" />
+                    )}
+                    <span>Sauvegarder la config</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* Card 2: Webhooks & Calendar API Integration Settings */}
+          <form onSubmit={handleSettingsSubmit} className="space-y-6">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+              <h2 className="text-base font-bold text-slate-850 tracking-tight flex items-center gap-2 pb-4 border-b border-slate-100">
+                <Globe className="w-5 h-5 text-[#D4A017]" />
+                <span>Intégrations & API Webhooks</span>
+              </h2>
+
+              <div className="space-y-4 text-xs font-semibold">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">
+                    Lien de Redirection Général
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={sysConfig.allow_manager_edit}
-                    onChange={handleSysToggle}
-                    className="sr-only peer"
+                    type="url"
+                    value={settings.general_link || ""}
+                    onChange={(e) => handleChange("general_link", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
+                    placeholder="https://votre-lien-externe.com"
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
-                </label>
-              </div>
+                  <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
+                    Lien d'orientation externe général utilisé sur le site.
+                  </p>
+                </div>
 
-              <div className="bg-blue-50/50 border border-blue-200/50 p-4 rounded-2xl text-xs text-blue-800 font-medium">
-                Note : La plateforme est configurée pour accepter uniquement les paiements via **Wave CI**. Chaque zone dispose de son propre compte Wave Marchand.
-              </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">
+                    ID Google Calendar (Agenda Principal)
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.google_calendar_id || ""}
+                    onChange={(e) => handleChange("google_calendar_id", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono"
+                    placeholder="example@group.calendar.google.com"
+                  />
+                </div>
 
-              {/* Contacts Concepteur / Développeur */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
-                  Contacts du Concepteur (Affichés dans le Footer public)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                      Numéro WhatsApp du Concepteur
-                    </label>
-                    <input
-                      type="text"
-                      value={sysConfig.concepteur_whatsapp || ""}
-                      onChange={(e) => setSysConfig(prev => ({ ...prev, concepteur_whatsapp: e.target.value }))}
-                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-gold/30 focus:border-gold outline-none"
-                      placeholder="ex: +225 0503681588"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase">
-                      Email de contact du Concepteur
-                    </label>
-                    <input
-                      type="email"
-                      value={sysConfig.concepteur_email || ""}
-                      onChange={(e) => setSysConfig(prev => ({ ...prev, concepteur_email: e.target.value }))}
-                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:ring-1 focus:ring-gold/30 focus:border-gold outline-none"
-                      placeholder="ex: krsidoine7@gmail.com"
-                    />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">
+                    Secret de Validation de Signature Webhook
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.webhook_secret || ""}
+                    onChange={(e) => handleChange("webhook_secret", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono"
+                    placeholder="secret_de_validation..."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">
+                    URL Webhook Make (CRM / Notification SMS)
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.make_webhook_url || ""}
+                    onChange={(e) => handleChange("make_webhook_url", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
+                    placeholder="https://hook.us1.make.com/..."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">
+                    URL Webhook n8n (Sortant)
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.n8n_webhook_url || ""}
+                    onChange={(e) => handleChange("n8n_webhook_url", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
+                    placeholder="https://n8n.votredomaine.com/webhook/..."
+                  />
+                </div>
+
+                <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex gap-3 text-[11px] text-slate-650 font-medium">
+                  <ShieldAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold block text-slate-800 mb-0.5">Note de Sécurité :</span>
+                    Les identifiants Google Service Account (email client & clé privée RSA) doivent être configurés dans `.env.local` car ils contiennent des clés d'accès cryptographiques sensibles.
                   </div>
                 </div>
               </div>
+
+              <div className="flex justify-end pt-4 border-t border-slate-100">
+                <button
+                  type="submit"
+                  disabled={isSavingSettings}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-[#D4A017] text-white rounded-xl font-bold shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-50 text-xs"
+                >
+                  {isSavingSettings ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5 text-[#D4A017]" />
+                  )}
+                  <span>Sauvegarder les intégrations</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSavingSys}
-              className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-[#D4A017] text-white rounded-xl font-bold shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-50 text-xs"
-            >
-              <Save className="w-4 h-4" />
-              {isSavingSys ? "Enregistrement..." : "Sauvegarder la Configuration Système"}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-xs text-slate-500 font-medium">
-          <ShieldAlert className="w-5 h-5 text-slate-400 inline-block mr-1.5 align-middle" />
-          Les configurations système globales sont verrouillées et visibles uniquement par le **Super-Administrateur**.
+          </form>
         </div>
-      )}
 
-      {/* 2. Integration / Services configuration */}
-      <form onSubmit={handleSettingsSubmit} className="space-y-6">
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2 pb-4 border-b border-slate-100">
-            <Globe className="w-5 h-5 text-[#D4A017]" />
-            Configuration des Services
-          </h2>
+        {/* RIGHT COLUMN: PERSONAL ADMIN ACCOUNT & SECURITY */}
+        <div className="space-y-8">
+          
+          {/* Card 1: Personal Account fields */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row items-center gap-4 pb-4 border-b border-slate-100">
+              <div className="relative w-16 h-16 group flex-shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Avatar"
+                    className="w-16 h-16 rounded-full object-cover border border-slate-200 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 text-[#0F172A] flex items-center justify-center shadow-sm">
+                    <User className="w-8 h-8" />
+                  </div>
+                )}
+                {avatarUploading ? (
+                  <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  </div>
+                ) : (
+                  <label className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 rounded-full flex items-center justify-center text-white text-[9px] font-bold cursor-pointer transition-all">
+                    Modifier
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm">Mon Compte Administrateur</h3>
+                <p className="text-xs text-slate-400 font-medium">Gérez votre identité et vos coordonnées sur la console.</p>
+              </div>
+            </div>
 
-          {/* Google Calendar ID */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              Identifiant d'Agenda Google Calendar (Calendar ID)
-            </label>
-            <input
-              type="text"
-              value={settings.google_calendar_id || ""}
-              onChange={(e) => handleChange("google_calendar_id", e.target.value)}
-              className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
-              placeholder="ex: oge.academie@gmail.com ou oge-calendar-id@group.calendar.google.com"
-            />
-            <p className="text-[11px] text-slate-400 font-medium">
-              Entrez l'adresse email de votre agenda principal ou l'ID de l'agenda partagé sur lequel créer les cours en direct.
-            </p>
+            <form onSubmit={handleProfileSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="aNom" className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                    <User2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Nom</span>
+                  </label>
+                  <input
+                    id="aNom"
+                    type="text"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="aPrenom" className="text-xs font-bold text-slate-700 flex items-center gap-1">
+                    <User2 className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Prénom</span>
+                  </label>
+                  <input
+                    id="aPrenom"
+                    type="text"
+                    value={prenom}
+                    onChange={(e) => setPrenom(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="aEmail" className="text-xs font-bold text-slate-750 flex items-center gap-1">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Adresse Email</span>
+                </label>
+                <input
+                  id="aEmail"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="aWhatsapp" className="text-xs font-bold text-slate-750 flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Numéro WhatsApp</span>
+                </label>
+                <input
+                  id="aWhatsapp"
+                  type="text"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="Ex: +225 07 00 00 00 00"
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingProfile ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5 text-[#D4A017]" />
+                  )}
+                  <span>Enregistrer Profil</span>
+                </button>
+              </div>
+            </form>
           </div>
 
-          {/* Webhook Secret */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-              <Key className="w-4 h-4 text-slate-400" />
-              Clé Secrète de Webhook (Webhook Secret)
-            </label>
-            <input
-              type="text"
-              value={settings.webhook_secret || ""}
-              onChange={(e) => handleChange("webhook_secret", e.target.value)}
-              className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono"
-              placeholder="secret_partage_pour_securiser_les_webhooks"
-            />
-            <p className="text-[11px] text-slate-400 font-medium">
-              Cette clé secrète sera envoyée dans le header `X-OGE-Webhook-Secret` lors des appels sortants. Elle devra aussi être fournie par n8n/Make lors des appels entrants.
-            </p>
-          </div>
-
-          {/* Webhook URL Make */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-slate-400" />
-              URL Webhook Make.com (Sortant)
-            </label>
-            <input
-              type="url"
-              value={settings.make_webhook_url || ""}
-              onChange={(e) => handleChange("make_webhook_url", e.target.value)}
-              className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
-              placeholder="https://hook.eu1.make.com/..."
-            />
-            <p className="text-[11px] text-slate-400 font-medium">
-              URL du scénario Make.com à appeler pour propager la création de cours. Laissez vide si inutilisé.
-            </p>
-          </div>
-
-          {/* Webhook URL n8n */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-slate-400" />
-              URL Webhook n8n (Sortant)
-            </label>
-            <input
-              type="url"
-              value={settings.n8n_webhook_url || ""}
-              onChange={(e) => handleChange("n8n_webhook_url", e.target.value)}
-              className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
-              placeholder="https://n8n.votredomaine.com/webhook/..."
-            />
-            <p className="text-[11px] text-slate-400 font-medium">
-              URL du workflow n8n à appeler pour propager la création de cours. Laissez vide si inutilisé.
-            </p>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex gap-3 text-xs text-slate-650">
-            <ShieldAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          {/* Card 2: Security settings */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
             <div>
-              <span className="font-bold block text-slate-805">Note de Sécurité importante :</span>
-              Les identifiants techniques du compte de service Google (adresse email et clé privée RSA PEM) doivent être configurés dans le fichier `.env.local` du serveur car ils contiennent des clés de sécurité trop longues et sensibles pour être stockées dans une table de contenu ordinaire.
+              <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                <KeyRound className="w-4 h-4 text-amber-500" />
+                <span>Changer de Mot de Passe</span>
+              </h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">Sécurisez l'accès à votre console administrative.</p>
             </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="aPass" className="text-xs font-bold text-slate-700">Nouveau Mot de Passe</label>
+                  <input
+                    id="aPass"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 caractères"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="aConfirm" className="text-xs font-bold text-slate-700">Confirmer</label>
+                  <input
+                    id="aConfirm"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Ressaisir à l'identique"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#D4A017]"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSavingPassword}
+                  className="bg-[#0F172A] hover:bg-[#1E293B] text-white font-bold text-xs py-2 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingPassword ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <KeyRound className="w-3.5 h-3.5 text-[#D4A017]" />
+                  )}
+                  <span>Modifier le Mot de Passe</span>
+                </button>
+              </div>
+            </form>
           </div>
+
         </div>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={isSavingSettings}
-            className="flex items-center gap-2 px-6 py-3 bg-[#D4A017] hover:bg-yellow-600 text-white rounded-xl font-bold shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-50 text-xs"
-          >
-            <Save className="w-4 h-4" />
-            {isSavingSettings ? "Enregistrement..." : "Sauvegarder les Paramètres d'Intégration"}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

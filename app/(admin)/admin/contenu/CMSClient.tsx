@@ -30,12 +30,17 @@ const DEFAULT_CONTENTS: any = {
     cta_primary: "S'inscrire",
     cta_secondary: "Se connecter",
     whatsapp_group_link: "https://chat.whatsapp.com/...",
-    video_url: ""
+    video_url: "",
+    trust_check_1: "Prépa n°1 en Côte d'Ivoire",
+    trust_check_2: "Suivi WhatsApp continu",
+    trust_check_3: "6 zones d'études",
+    trust_check_4: "Supports officiels"
   },
   historique: {
     title: "Notre Histoire & Mission",
     centers_title: "Nos Lieux Physiques & Contacts de Zone",
     centers_subtitle: "Cliquez sur les numéros pour nous appeler directement ou localiser nos centres.",
+    badge: "Depuis Bouaké jusqu'à Abidjan & Yamoussoukro",
     text: "Après deux années d’expérience et de succès à Bouaké, OGE ACADÉMIE franchit une nouvelle étape dans son développement. Cette année, nous avons choisi de nous rapprocher davantage des élèves et étudiants en nous implantant à Yamoussoukro, Yopougon, Abobo, Cocody et Port-Bouët. À travers cette expansion, nous réaffirmons notre engagement à offrir une pédagogie d’excellence et à accompagner chaque apprenant sur le chemin de la réussite.",
     activities: [
       { title: "Supports de cours de qualité", desc: "Rédigés par des enseignants expérimentés et des diplômés des grandes écoles." },
@@ -327,11 +332,15 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
         const newImage = {
           id: Math.random().toString(36).substring(2, 9),
           url: data.url,
-          title: file.name.split(".")[0] || "Nouvelle Affiche"
+          title: file.name.split(".")[0] || "Nouveau Média",
+          type: file.type.startsWith("video/") ? "video" : "image",
+          startDate: "",
+          endDate: "",
+          isActive: true
         };
         const currentImages = Array.isArray(formFields.images) ? formFields.images : [];
         handleFieldChange("images", [...currentImages, newImage]);
-        toast.success("Affiche téléversée avec succès !");
+        toast.success("Média téléversé avec succès !");
       } else {
         toast.error(data.error || "Erreur lors de l'upload de l'affiche.");
       }
@@ -907,6 +916,45 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                       />
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Point de Confiance 1</label>
+                        <input
+                          type="text"
+                          value={formFields.trust_check_1 || ""}
+                          onChange={(e) => handleFieldChange("trust_check_1", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Point de Confiance 2</label>
+                        <input
+                          type="text"
+                          value={formFields.trust_check_2 || ""}
+                          onChange={(e) => handleFieldChange("trust_check_2", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Point de Confiance 3</label>
+                        <input
+                          type="text"
+                          value={formFields.trust_check_3 || ""}
+                          onChange={(e) => handleFieldChange("trust_check_3", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Point de Confiance 4</label>
+                        <input
+                          type="text"
+                          value={formFields.trust_check_4 || ""}
+                          onChange={(e) => handleFieldChange("trust_check_4", e.target.value)}
+                          className="w-full text-sm p-3 rounded-xl border border-slate-250"
+                        />
+                      </div>
+                    </div>
+
                     {/* HERO VIDEO MANAGEMENT BLOCK */}
                     <div className="pt-6 border-t border-slate-100 space-y-4">
                       <h3 className="text-sm font-bold text-slate-800">
@@ -983,6 +1031,15 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
 
                 {activeTab === "historique" && (
                   <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Badge de Surtitre (ex: Depuis Bouaké...)</label>
+                      <input
+                        type="text"
+                        value={formFields.badge || ""}
+                        onChange={(e) => handleFieldChange("badge", e.target.value)}
+                        className="w-full text-sm p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none"
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Titre de la Section</label>
                       <input
@@ -1801,13 +1858,13 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                       {/* Dropzone for Poster Image Upload */}
                       <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-3">
                         <div className="text-center">
-                          <p className="text-xs font-bold text-slate-700 mb-1">Ajouter une nouvelle affiche</p>
-                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG, JPEG, WEBP, GIF (Taille max: 10 Mo)</p>
+                          <p className="text-xs font-bold text-slate-700 mb-1">Ajouter un nouveau média (Affiche ou Vidéo)</p>
+                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG, WEBP, MP4, MOV (Taille max: 10 Mo)</p>
                         </div>
                         <div className="relative">
                           <input
                             type="file"
-                            accept="image/*"
+                            accept="image/*,video/*"
                             onChange={handleAfficheUpload}
                             disabled={imageUploading}
                             className="hidden"
@@ -1819,7 +1876,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                               imageUploading ? "opacity-50 cursor-not-allowed" : ""
                             }`}
                           >
-                            {imageUploading ? "Téléversement en cours..." : "Choisir une image"}
+                            {imageUploading ? "Téléversement en cours..." : "Choisir un fichier"}
                           </label>
                         </div>
                         {imageProgress !== null && (
@@ -1841,52 +1898,111 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                           Aucune affiche n'a été ajoutée pour le moment.
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                           {formFields.images.map((img: any, idx: number) => (
                             <div
                               key={img.id || idx}
-                              className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex gap-4 items-center group shadow-sm hover:border-[#D4A017]/30 transition-all"
+                              className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col md:flex-row gap-4 items-start md:items-center group shadow-sm hover:border-[#D4A017]/30 transition-all w-full"
                             >
                               {/* Preview Mini */}
-                              <div className="w-16 h-20 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 relative">
-                                <img
-                                  src={img.url}
-                                  alt="Affiche"
-                                  className="w-full h-full object-cover"
-                                />
+                              <div className="w-16 h-20 rounded-lg overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 relative flex items-center justify-center">
+                                {img.type === "video" ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-white p-1 text-[8px] font-bold">
+                                    <span>Vidéo</span>
+                                    <span className="truncate max-w-full font-mono text-[6px]">{img.url.split("/").pop()}</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={img.url}
+                                    alt="Affiche"
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
                               </div>
 
-                              {/* Title editing */}
-                              <div className="flex-1 space-y-1.5">
-                                <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                                  Titre de l'affiche
-                                </label>
-                                <input
-                                  type="text"
-                                  value={img.title || ""}
-                                  onChange={(e) => {
+                              {/* Form edit fields */}
+                              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Titre du média
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={img.title || ""}
+                                    onChange={(e) => {
+                                      const updatedImages = [...(formFields.images || [])];
+                                      updatedImages[idx] = { ...updatedImages[idx], title: e.target.value };
+                                      handleFieldChange("images", updatedImages);
+                                    }}
+                                    className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white"
+                                    placeholder="Entrez un titre"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Date Début Publication
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={img.startDate || ""}
+                                    onChange={(e) => {
+                                      const updatedImages = [...(formFields.images || [])];
+                                      updatedImages[idx] = { ...updatedImages[idx], startDate: e.target.value };
+                                      handleFieldChange("images", updatedImages);
+                                    }}
+                                    className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Date Fin Publication
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={img.endDate || ""}
+                                    onChange={(e) => {
+                                      const updatedImages = [...(formFields.images || [])];
+                                      updatedImages[idx] = { ...updatedImages[idx], endDate: e.target.value };
+                                      handleFieldChange("images", updatedImages);
+                                    }}
+                                    className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white font-mono"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Toggle Active status & Delete buttons */}
+                              <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => {
                                     const updatedImages = [...(formFields.images || [])];
-                                    updatedImages[idx] = { ...updatedImages[idx], title: e.target.value };
+                                    updatedImages[idx] = { ...updatedImages[idx], isActive: img.isActive !== false ? false : true };
                                     handleFieldChange("images", updatedImages);
                                   }}
-                                  className="w-full text-xs p-2 rounded-lg border border-slate-250 bg-white"
-                                  placeholder="Entrez un titre descriptif"
-                                />
-                              </div>
+                                  className={`px-2 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
+                                    img.isActive !== false
+                                      ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                      : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  {img.isActive !== false ? "Visible" : "Masqué"}
+                                </button>
 
-                              {/* Delete button */}
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updatedImages = formFields.images.filter((_: any, i: number) => i !== idx);
-                                  handleFieldChange("images", updatedImages);
-                                  toast.info("Affiche retirée (enregistrez pour appliquer)");
-                                }}
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 bg-white"
-                                title="Supprimer cette affiche"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updatedImages = formFields.images.filter((_: any, i: number) => i !== idx);
+                                    handleFieldChange("images", updatedImages);
+                                    toast.info("Affiche retirée (enregistrez pour appliquer)");
+                                  }}
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 bg-white"
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>

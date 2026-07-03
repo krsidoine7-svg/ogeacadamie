@@ -47,17 +47,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/connexion', request.url))
   }
 
-  // Connecté sur page auth (connexion/inscription) → redirection selon rôle
-  if (user && isAuthPage) {
+  // Connecté
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, force_password_reset')
       .eq('id', user.id)
       .single()
 
     const role = profile?.role ?? 'user'
-    const redirect = ROLE_REDIRECTS[role] ?? '/dashboard'
-    return NextResponse.redirect(new URL(redirect, request.url))
+    const forceReset = profile?.force_password_reset ?? false
+
+    // Si réinitialisation forcée et qu'on n'est pas sur la page dédiée
+    if (forceReset && pathname !== '/nouveau-mot-de-passe') {
+      return NextResponse.redirect(new URL('/nouveau-mot-de-passe', request.url))
+    }
+
+    // Connecté sur page d'authentification (ou sur /nouveau-mot-de-passe sans que ce soit forcé)
+    if (isAuthPage || (pathname === '/nouveau-mot-de-passe' && !forceReset)) {
+      const redirectPath = ROLE_REDIRECTS[role] ?? '/dashboard'
+      return NextResponse.redirect(new URL(redirectPath, request.url))
+    }
   }
 
   return supabaseResponse

@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, zoneConfig } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import ZoneSettingsForm from "@/components/dashboard/zone/ZoneSettingsForm";
+import ZoneParametresClient from "@/components/dashboard/zone/ZoneParametresClient";
 import { MapPin } from "lucide-react";
 
 export default async function ZoneParametresPage() {
@@ -76,7 +76,16 @@ export default async function ZoneParametresPage() {
       </div>
 
       {/* Settings Form */}
-      <ZoneSettingsForm initialConfig={initialConfig} />
+      <ZoneParametresClient
+        initialConfig={initialConfig}
+        profile={{
+          nom: managerProfile.nom,
+          prenom: managerProfile.prenom,
+          email: managerProfile.email,
+          whatsapp: managerProfile.whatsapp,
+          avatarUrl: managerProfile.avatarUrl,
+        }}
+      />
     </div>
   );
 }

@@ -63,6 +63,7 @@ export default async function ProfilPage() {
           whatsapp: profile.whatsapp,
           modeFormation: profile.modeFormation,
           zone: profile.zone,
+          avatarUrl: profile.avatarUrl,
         }}
         registeredConcours={registeredConcoursList}
       />

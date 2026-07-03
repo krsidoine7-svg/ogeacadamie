@@ -81,6 +81,13 @@ export default async function SettingsPage() {
         initialSettings={config} 
         isSuperAdmin={isSuperAdmin}
         initialSystemConfig={systemConfig}
+        profile={{
+          nom: adminProfile.nom,
+          prenom: adminProfile.prenom,
+          email: adminProfile.email,
+          whatsapp: adminProfile.whatsapp,
+          avatarUrl: adminProfile.avatarUrl,
+        }}
       />
     </div>
   );

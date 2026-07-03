@@ -59,7 +59,7 @@ export default function ConnexionPage() {
         // Récupérer le rôle dans la table profiles
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, force_password_reset")
           .eq("id", data.user.id)
           .single()
 
@@ -72,6 +72,15 @@ export default function ConnexionPage() {
         }
 
         const role = profile?.role ?? "user"
+        const forceReset = profile?.force_password_reset ?? false
+
+        if (forceReset) {
+          toast.success("Sécurité : Veuillez configurer un nouveau mot de passe.")
+          router.push("/nouveau-mot-de-passe")
+          router.refresh()
+          return
+        }
+
         toast.success("Ravi de vous revoir !")
 
         // Redirection selon le rôle

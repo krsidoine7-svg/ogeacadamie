@@ -412,16 +412,16 @@ export default async function Home() {
               {/* Bottom trust checks matching the PressSync model */}
               <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-12 border-t border-white/5 w-full text-slate-400 text-xs sm:text-sm font-medium">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[#F04438] font-bold">✓</span> Prépa n°1 en Côte d'Ivoire
+                  <span className="text-[#F04438] font-bold">✓</span> {contentMap.hero.trust_check_1 || "Prépa n°1 en Côte d'Ivoire"}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[#F04438] font-bold">✓</span> Suivi WhatsApp continu
+                  <span className="text-[#F04438] font-bold">✓</span> {contentMap.hero.trust_check_2 || "Suivi WhatsApp continu"}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[#F04438] font-bold">✓</span> 6 zones d'études
+                  <span className="text-[#F04438] font-bold">✓</span> {contentMap.hero.trust_check_3 || "6 zones d'études"}
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[#F04438] font-bold">✓</span> Supports officiels
+                  <span className="text-[#F04438] font-bold">✓</span> {contentMap.hero.trust_check_4 || "Supports officiels"}
                 </div>
               </div>
             </div>
@@ -469,13 +469,32 @@ export default async function Home() {
                 </p>
               </div>
 
-              {(!contentMap.affiches.images || contentMap.affiches.images.length === 0) ? (
-                <div className="text-center py-16 px-4 rounded-[24px] border border-dashed border-slate-200 bg-white/50 max-w-lg mx-auto">
-                  <p className="text-sm text-slate-400 font-light">Aucune affiche disponible pour le moment. Revenez bientôt !</p>
-                </div>
-              ) : (
-                <AffichesGallery images={contentMap.affiches.images} />
-              )}
+              {(() => {
+                const now = new Date();
+                const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+                
+                const filteredImages = (contentMap.affiches.images || []).filter((img: any) => {
+                  if (img.isActive === false) return false;
+                  
+                  if (img.startDate && todayStr < img.startDate) {
+                    return false;
+                  }
+                  if (img.endDate && todayStr > img.endDate) {
+                    return false;
+                  }
+                  return true;
+                });
+
+                if (filteredImages.length === 0) {
+                  return (
+                    <div className="text-center py-16 px-4 rounded-[24px] border border-dashed border-slate-200 bg-white/50 max-w-lg mx-auto">
+                      <p className="text-sm text-slate-400 font-light">Aucune affiche disponible pour le moment. Revenez bientôt !</p>
+                    </div>
+                  );
+                }
+
+                return <AffichesGallery images={filteredImages} />;
+              })()}
             </div>
           </section>
         )}
@@ -487,7 +506,7 @@ export default async function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 <div className="lg:col-span-7 space-y-6 text-center flex flex-col items-center">
                   <span className="text-xs font-bold text-[#D4A017] uppercase tracking-wider block">
-                    Depuis Bouaké jusqu'à Abidjan & Yamoussoukro
+                    {contentMap.historique.badge || "Depuis Bouaké jusqu'à Abidjan & Yamoussoukro"}
                   </span>
                   <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     {contentMap.historique.title}
