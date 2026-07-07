@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { createClient } from "@/utils/supabase/client";
 import { 
   toggleSectionActive, 
   updateSectionContent, 
@@ -161,6 +162,7 @@ const CONCOURS = [
 ];
 
 export default function CMSClient({ initialSections, initialTestimonials, initialArticles }: CMSClientProps) {
+  const supabase = createClient();
   const [sections, setSections] = useState<any[]>(initialSections);
   const [testimonials, setTestimonials] = useState<any[]>(initialTestimonials);
   const [articles, setArticles] = useState<any[]>(initialArticles);
@@ -276,28 +278,53 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
     if (!file) return;
 
     setVideoUploading(true);
-    setVideoProgress(15);
-
-    const formData = new FormData();
-    formData.append("file", file);
+    setVideoProgress(5);
 
     try {
-      setVideoProgress(40);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      setVideoProgress(80);
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setVideoProgress(100);
-        handleFieldChange("video_url", data.url);
-        toast.success("Vidéo de présentation téléversée avec succès !");
-      } else {
-        toast.error(data.error || "Erreur lors de l'upload de la vidéo.");
+      // Validate file size on client (Videos: 200MB)
+      const maxVideoSize = 200 * 1024 * 1024;
+      if (file.size > maxVideoSize) {
+        toast.error("Fichier trop volumineux. La limite pour les vidéos est de 200 Mo.");
+        setVideoUploading(false);
+        setVideoProgress(null);
+        return;
       }
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
+      const allowedVideoExts = ["mp4", "webm", "ogg", "mov"];
+      if (!allowedVideoExts.includes(fileExt)) {
+        toast.error(`Extension de vidéo invalide. Extensions autorisées : ${allowedVideoExts.join(", ")}`);
+        setVideoUploading(false);
+        setVideoProgress(null);
+        return;
+      }
+
+      const uniqueId = window.crypto.randomUUID();
+      const fileName = `${uniqueId}.${fileExt}`;
+      const filePath = `public-assets/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+          onUploadProgress: (progress: any) => {
+            const percentage = Math.round((progress.loaded / progress.total) * 100);
+            setVideoProgress(percentage);
+          }
+        } as any);
+
+      if (error) {
+        console.error("Direct upload error:", error);
+        toast.error("Erreur lors de l'upload de la vidéo.");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+      setVideoProgress(100);
+      handleFieldChange("video_url", publicUrl);
+      toast.success("Vidéo de présentation téléversée avec succès !");
     } catch (err) {
       toast.error("Erreur réseau lors de l'upload.");
     } finally {
@@ -312,38 +339,78 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
     if (!file) return;
 
     setImageUploading(true);
-    setImageProgress(15);
-
-    const formData = new FormData();
-    formData.append("file", file);
+    setImageProgress(5);
 
     try {
-      setImageProgress(50);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "";
+      const allowedImageExts = ["jpg", "jpeg", "png", "webp", "gif"];
+      const allowedVideoExts = ["mp4", "webm", "ogg", "mov"];
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
 
-      setImageProgress(85);
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setImageProgress(100);
-        const newImage = {
-          id: Math.random().toString(36).substring(2, 9),
-          url: data.url,
-          title: file.name.split(".")[0] || "Nouveau Média",
-          type: file.type.startsWith("video/") ? "video" : "image",
-          startDate: "",
-          endDate: "",
-          isActive: true
-        };
-        const currentImages = Array.isArray(formFields.images) ? formFields.images : [];
-        handleFieldChange("images", [...currentImages, newImage]);
-        toast.success("Média téléversé avec succès !");
-      } else {
-        toast.error(data.error || "Erreur lors de l'upload de l'affiche.");
+      if (isImage && !allowedImageExts.includes(fileExt)) {
+        toast.error(`Extension d'image invalide. Extensions autorisées : ${allowedImageExts.join(", ")}`);
+        setImageUploading(false);
+        setImageProgress(null);
+        return;
       }
+
+      if (isVideo && !allowedVideoExts.includes(fileExt)) {
+        toast.error(`Extension de vidéo invalide. Extensions autorisées : ${allowedVideoExts.join(", ")}`);
+        setImageUploading(false);
+        setImageProgress(null);
+        return;
+      }
+
+      // Size validation
+      const maxImageSize = 50 * 1024 * 1024;
+      const maxVideoSize = 200 * 1024 * 1024;
+      const sizeLimit = isImage ? maxImageSize : maxVideoSize;
+
+      if (file.size > sizeLimit) {
+        const displayLimit = isImage ? "50 Mo" : "200 Mo";
+        toast.error(`Fichier trop volumineux. La limite pour ce type est de ${displayLimit}.`);
+        setImageUploading(false);
+        setImageProgress(null);
+        return;
+      }
+
+      const uniqueId = window.crypto.randomUUID();
+      const fileName = `${uniqueId}.${fileExt}`;
+      const filePath = `public-assets/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+          onUploadProgress: (progress: any) => {
+            const percentage = Math.round((progress.loaded / progress.total) * 100);
+            setImageProgress(percentage);
+          }
+        } as any);
+
+      if (error) {
+        console.error("Direct upload error:", error);
+        toast.error("Erreur lors de l'upload de l'affiche.");
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from("documents").getPublicUrl(filePath);
+
+      setImageProgress(100);
+      const newImage = {
+        id: Math.random().toString(36).substring(2, 9),
+        url: publicUrl,
+        title: file.name.split(".")[0] || "Nouveau Média",
+        type: isVideo ? "video" : "image",
+        startDate: "",
+        endDate: "",
+        isActive: true
+      };
+      const currentImages = Array.isArray(formFields.images) ? formFields.images : [];
+      handleFieldChange("images", [...currentImages, newImage]);
+      toast.success("Média téléversé avec succès !");
     } catch (err) {
       toast.error("Erreur réseau lors de l'upload.");
     } finally {
