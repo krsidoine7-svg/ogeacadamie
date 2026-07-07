@@ -993,7 +993,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                       <div className="p-5 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-3">
                         <div className="text-center">
                           <p className="text-xs font-bold text-slate-700 mb-1">Téléverser une vidéo</p>
-                          <p className="text-[10px] text-slate-400 font-medium">MP4, WebM, OGG, MOV (Taille max: 100 Mo)</p>
+                          <p className="text-[10px] text-slate-400 font-medium">MP4, WebM, OGG, MOV (Taille max: 200 Mo)</p>
                         </div>
                         <div className="relative">
                           <input
@@ -1859,7 +1859,7 @@ export default function CMSClient({ initialSections, initialTestimonials, initia
                       <div className="p-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 flex flex-col items-center justify-center gap-3">
                         <div className="text-center">
                           <p className="text-xs font-bold text-slate-700 mb-1">Ajouter un nouveau média (Affiche ou Vidéo)</p>
-                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG, WEBP, MP4, MOV (Taille max: 10 Mo)</p>
+                          <p className="text-[10px] text-slate-400 font-medium">PNG, JPG, WEBP, MP4, MOV (Taille max: 50 Mo pour images, 200 Mo pour vidéos)</p>
                         </div>
                         <div className="relative">
                           <input

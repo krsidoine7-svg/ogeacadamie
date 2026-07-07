@@ -96,13 +96,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate size limit (Images: 10MB, Videos: 100MB)
-    const maxImageSize = 10 * 1024 * 1024;
-    const maxVideoSize = 100 * 1024 * 1024;
+    // Validate size limit (Images: 50MB, Videos: 200MB)
+    const maxImageSize = 50 * 1024 * 1024;
+    const maxVideoSize = 200 * 1024 * 1024;
     const sizeLimit = isImage ? maxImageSize : maxVideoSize;
 
     if (file.size > sizeLimit) {
-      const displayLimit = isImage ? "10 Mo" : "100 Mo";
+      const displayLimit = isImage ? "50 Mo" : "200 Mo";
       return NextResponse.json(
         { error: `Fichier trop volumineux. La limite pour ce type est de ${displayLimit}.` },
         { status: 400 }
