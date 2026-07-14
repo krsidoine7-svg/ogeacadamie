@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import Header from "@/components/dashboard/Header";
-import { LayoutDashboard, Users, CreditCard, UserCheck, MapPin, Send, ShieldCheck, Globe, FileText, Settings, LineChart } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, UserCheck, MapPin, Send, ShieldCheck, Globe, FileText, Settings, LineChart, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import AdminMobileNav from "@/components/dashboard/AdminMobileNav";
 
@@ -160,6 +160,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                 >
                   <LineChart className="w-4 h-4 text-slate-400" />
                   <span>Statistiques</span>
+                </Link>
+
+                <Link
+                  href="/admin/logs"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-755 hover:bg-slate-100 font-semibold text-sm tracking-tight transition-all duration-200"
+                >
+                  <ShieldAlert className="w-4 h-4 text-amber-500" />
+                  <span>Journal Erreurs</span>
                 </Link>
               </>
             )}

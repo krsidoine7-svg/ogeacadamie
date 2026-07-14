@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function POST(req: Request) {
   try {
@@ -122,6 +123,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (err: any) {
     console.error("Unhandled error in profile upload API route:", err);
+    await logSystemError({
+      errorMessage: `Erreur upload avatar profil : ${err.message || err}`,
+      level: "critical",
+      source: "upload",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

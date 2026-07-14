@@ -206,6 +206,33 @@ export type ClickEvent = typeof clickEvents.$inferSelect;
 export type NewClickEvent = typeof clickEvents.$inferInsert;
 export type DailyStat = typeof dailyStats.$inferSelect;
 
+// ============================================================
+// Tables et types pour le Journal des Erreurs & Monitoring
+// ============================================================
+
+export const systemErrorLogs = pgTable("system_error_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  level: text("level").default("error").notNull(), // info, warning, error, critical
+  source: text("source").default("client").notNull(), // client, api, database, auth, upload
+  endpoint: text("endpoint"),
+  errorMessage: text("error_message").notNull(),
+  stackTrace: text("stack_trace"),
+  userId: uuid("user_id").references(() => profiles.id, { onDelete: "set null" }),
+  metadata: jsonb("metadata").default({}),
+  status: text("status").default("nouveau").notNull(), // nouveau, en_cours, resolu, ignore
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  levelIdx: index("system_error_logs_level_idx").on(table.level),
+  statusIdx: index("system_error_logs_status_idx").on(table.status),
+  createdAtIdx: index("system_error_logs_created_at_idx").on(table.createdAt),
+}));
+
+export type SystemErrorLog = typeof systemErrorLogs.$inferSelect;
+export type NewSystemErrorLog = typeof systemErrorLogs.$inferInsert;
+
+
 
 
 

@@ -130,9 +130,11 @@ const SecurePage: React.FC<SecurePageProps> = ({
     if (!pdf || !shouldRender) return;
 
     let active = true;
-    setLoading(true);
 
     const renderPage = async () => {
+      await Promise.resolve();
+      if (!active) return;
+      setLoading(true);
       try {
         const page = await pdf.getPage(pageNum);
         if (!active) return;
@@ -319,44 +321,51 @@ export default function SecureViewerClient({
     if (!pdfjs) return;
 
     let active = true;
-    setLoading(true);
-    setLoadError(null);
 
-    const loadingTask = pdfjs.getDocument({
-      url: pdfUrl,
-      withCredentials: true,
-    });
+    const loadPdf = async () => {
+      await Promise.resolve();
+      if (!active) return;
+      setLoading(true);
+      setLoadError(null);
 
-    loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
-      if (progress.total > 0 && active) {
-        const percent = Math.round((progress.loaded / progress.total) * 100);
-        setLoadingPercent(percent);
-      }
+      const loadingTask = pdfjs.getDocument({
+        url: pdfUrl,
+        withCredentials: true,
+      });
+
+      loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
+        if (progress.total > 0 && active) {
+          const percent = Math.round((progress.loaded / progress.total) * 100);
+          setLoadingPercent(percent);
+        }
+      };
+
+      loadingTask.promise
+        .then((pdfDoc: any) => {
+          if (active) {
+            setPdf(pdfDoc);
+            setNumPages(pdfDoc.numPages);
+            setLoading(false);
+
+            // Calculate initial auto scale based on screen size
+            const screenWidth = window.innerWidth;
+            if (screenWidth < 640) setScale(0.6);      // Phone
+            else if (screenWidth < 1024) setScale(0.9); // Tablet
+            else setScale(1.15);                        // Desktop
+          }
+        })
+        .catch((err: any) => {
+          console.error("Error loading PDF document:", err);
+          if (active) {
+            setLoadError(
+              "Le document sécurisé n'a pas pu être décrypté ou téléchargé. Veuillez rafraîchir la page."
+            );
+            setLoading(false);
+          }
+        });
     };
 
-    loadingTask.promise
-      .then((pdfDoc: any) => {
-        if (active) {
-          setPdf(pdfDoc);
-          setNumPages(pdfDoc.numPages);
-          setLoading(false);
-
-          // Calculate initial auto scale based on screen size
-          const screenWidth = window.innerWidth;
-          if (screenWidth < 640) setScale(0.6);      // Phone
-          else if (screenWidth < 1024) setScale(0.9); // Tablet
-          else setScale(1.15);                        // Desktop
-        }
-      })
-      .catch((err: any) => {
-        console.error("Error loading PDF document:", err);
-        if (active) {
-          setLoadError(
-            "Le document sécurisé n'a pas pu être décrypté ou téléchargé. Veuillez rafraîchir la page."
-          );
-          setLoading(false);
-        }
-      });
+    loadPdf();
 
     return () => {
       active = false;

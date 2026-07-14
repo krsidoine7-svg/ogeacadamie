@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { pageSections, profiles, paiements, notifications } from "@/drizzle/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function POST(req: Request) {
   try {
@@ -147,7 +148,12 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   } catch (error: any) {
-    console.error("Webhook processing error:", error);
+    await logSystemError({
+      errorMessage: `Erreur de traitement Webhook n8n : ${error.message || error}`,
+      level: "error",
+      source: "webhook",
+      stackTrace: error.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue." },
       { status: 500 }

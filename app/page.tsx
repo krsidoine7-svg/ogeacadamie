@@ -189,7 +189,7 @@ export default async function Home() {
   } catch (err) {
     console.warn("[Build/Runtime] Database connection timed out or offline. Using default fallbacks.");
   }
-  let dbSections = dbSectionsRaw;
+  const dbSections = dbSectionsRaw;
 
   // Extraire la config système (contact Concepteur) depuis les sections cachées
   const systemConfigRow = dbSections.find((s) => s.cle === "system_config");

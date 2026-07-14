@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Eye, X, ChevronLeft, ChevronRight, Play } from "lucide-react";
 
 interface Affiche {
@@ -17,14 +17,23 @@ interface AffichesGalleryProps {
 export default function AffichesGallery({ images }: AffichesGalleryProps) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
+  useEffect(() => {
+    if (activeIdx !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [activeIdx]);
+
   const openLightbox = (index: number) => {
     setActiveIdx(index);
-    document.body.style.overflow = "hidden";
   };
 
   const closeLightbox = () => {
     setActiveIdx(null);
-    document.body.style.overflow = "unset";
   };
 
   const nextImage = (e: React.MouseEvent) => {

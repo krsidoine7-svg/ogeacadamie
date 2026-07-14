@@ -11,6 +11,7 @@ interface SettingsFormProps {
   initialSettings: {
     webhook_secret: string;
     make_webhook_url: string;
+    make_error_webhook_url?: string;
     n8n_webhook_url: string;
     google_calendar_id: string;
     general_link?: string;
@@ -42,6 +43,7 @@ export default function SettingsForm({
   const [settings, setSettings] = useState({
     webhook_secret: initialSettings.webhook_secret || "",
     make_webhook_url: initialSettings.make_webhook_url || "",
+    make_error_webhook_url: initialSettings.make_error_webhook_url || "",
     n8n_webhook_url: initialSettings.n8n_webhook_url || "",
     google_calendar_id: initialSettings.google_calendar_id || "",
     general_link: initialSettings.general_link || "",
@@ -370,6 +372,23 @@ export default function SettingsForm({
                     className="w-full text-xs p-3 rounded-xl border border-slate-250 focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-blue-600"
                     placeholder="https://hook.us1.make.com/..."
                   />
+                </div>
+
+                <div className="space-y-2 p-4 bg-amber-50/60 rounded-2xl border border-amber-200/80">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                    <ShieldAlert className="w-4 h-4 text-[#D4A017] flex-shrink-0" />
+                    <span>URL Webhook Make (Alerte Journal des Erreurs)</span>
+                  </div>
+                  <input
+                    type="url"
+                    value={settings.make_error_webhook_url || ""}
+                    onChange={(e) => handleChange("make_error_webhook_url", e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-amber-300 bg-white focus:ring-1 focus:ring-[#D4A017] outline-none font-mono text-amber-950 placeholder-slate-400"
+                    placeholder="https://hook.eu1.make.com/xxxxxx..."
+                  />
+                  <p className="text-[11px] text-amber-800/90 font-medium leading-relaxed">
+                    Lorsqu&apos;une erreur de niveau <strong>CRITICAL</strong> ou <strong>ERROR</strong> survient (ex: upload refusé par le serveur 413, crash API ou BDD), la plateforme expédie automatiquement un payload JSON propre et structuré à cette URL. Vous pourrez ainsi configurer votre scénario Make.com pour recevoir une alerte immédiate par email ou SMS.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">

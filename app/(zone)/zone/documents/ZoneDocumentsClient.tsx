@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { managerCreateDocument, managerToggleDocumentActive, managerDeleteDocument } from "../actions";
-import { Plus, Trash2, FileText, Check, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Check, X, Loader2, Eye } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface ZoneDocumentsClientProps {
@@ -143,9 +143,44 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
         body: formData,
       });
 
+      if (!response.ok) {
+        let errorMessage = "Erreur lors du téléversement du support.";
+        if (response.status === 413) {
+          errorMessage = "Le fichier PDF est trop volumineux pour le serveur proxy (Erreur 413 : Request Entity Too Large). Limite Vercel/Cloud : < 4.5 Mo.";
+        } else {
+          try {
+            const errJson = await response.json();
+            if (errJson.error) errorMessage = errJson.error;
+          } catch (e) {
+            const errText = await response.text();
+            if (errText) errorMessage = `Erreur ${response.status} : ${errText.slice(0, 120)}`;
+          }
+        }
+
+        // Envoi automatique de l'anomalie au Journal des Erreurs & Webhook Make (Super Admin)
+        await fetch("/api/logs/error", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            level: response.status === 413 ? "error" : "critical",
+            source: "upload",
+            endpoint: "/api/admin/documents/upload",
+            errorMessage: errorMessage,
+            metadata: {
+              fileSize: file.size,
+              fileName: file.name,
+              fileType: file.type,
+              httpStatus: response.status,
+            },
+          }),
+        }).catch(() => {});
+
+        throw new Error(errorMessage);
+      }
+
       const resData = await response.json();
 
-      if (!response.ok || resData.error) {
+      if (resData.error) {
         throw new Error(resData.error || "Une erreur est survenue lors du téléversement.");
       }
 
@@ -156,7 +191,22 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
     } catch (err: any) {
       clearInterval(progressInterval);
       console.error("Upload error:", err);
-      toast.error(err.message || "Erreur de téléversement.");
+      let userMsg = err.message || "Erreur de téléversement.";
+      if (userMsg.includes("is not valid JSON") || userMsg.includes("Unexpected token")) {
+        userMsg = "Le fichier PDF est probablement trop volumineux ou le serveur a expiré (Réponse non-JSON interceptée).";
+        fetch("/api/logs/error", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            level: "error",
+            source: "upload",
+            endpoint: "/api/admin/documents/upload",
+            errorMessage: userMsg,
+            metadata: { fileSize: file.size, fileName: file.name },
+          }),
+        }).catch(() => {});
+      }
+      toast.error(userMsg);
       setUploadProgress(null);
     }
   };
@@ -397,6 +447,17 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* View PDF Button */}
+                        <a
+                          href={`/api/documents/${doc.id}/view`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
+                          title="Consulter le document PDF"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </a>
+
                         {/* Toggle Active Button */}
                         <button
                           onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
@@ -455,6 +516,17 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* View PDF Button */}
+                    <a
+                      href={`/api/documents/${doc.id}/view`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
+                      title="Consulter le document PDF"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </a>
+
                     {/* Toggle Active Button */}
                     <button
                       onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}

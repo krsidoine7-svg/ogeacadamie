@@ -160,6 +160,7 @@ export default function AnalyticsDashboard() {
 
   const fetchStats = useCallback(
     async (silent = false) => {
+      await Promise.resolve();
       if (!silent) setLoading(true);
       setError(null);
       try {
@@ -183,7 +184,13 @@ export default function AnalyticsDashboard() {
 
   // Chargement initial + rechargement quand la période change
   useEffect(() => {
-    fetchStats();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchStats();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchStats]);
 
   // Auto-refresh toutes les X secondes

@@ -61,6 +61,12 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.27 (Augmentation des limites de téléversement média) :** Augmentation de la taille maximale des fichiers téléversés pour l'administration et le CMS. Les limites passent de 10 Mo à 50 Mo pour les images/affiches, et de 100 Mo à 200 Mo pour les vidéos (présentation et galerie). Mise à jour des constantes de validation dans [route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/upload/route.ts) et des indications textuelles dans [CMSClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/contenu/CMSClient.tsx).
 >
 > **Version 1.28 (Téléversement direct client-side pour le CMS) :** Remplacement du téléversement via proxy API Next.js par un téléversement direct du navigateur vers Supabase Storage dans [CMSClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/contenu/CMSClient.tsx). Cela contourne la limite stricte de 4,5 Mo de Vercel (résolution des erreurs HTTP 413 Payload Too Large) et ajoute un suivi précis de la barre de progression en temps réel pour l'utilisateur.
+>
+> **Version 1.29 (Journal des Erreurs Super Admin & Webhook Make.com) :** Création d'un module centralisé de supervision et de journalisation des erreurs (`system_error_logs`) restreint au Super Admin. Implémentation du service d'alerte (`errorAlertService.ts`) avec envoi de notifications internes Drizzle et expédition d'un payload JSON propre sur le Webhook Make.com (`make_error_webhook_url`). Création de la console Super Admin `app/(admin)/admin/logs` (`page.tsx` et `ErrorLogsClient.tsx`) pour le suivi, l'inspection des stack traces et la purge automatique (> 30j). Interception intelligente du code HTTP 413 lors du téléversement de documents (`DocumentsManagerClient.tsx`) pour éviter les plantages `JSON.parse` et enregistrer l'anomalie en base.
+>
+> **Version 1.30 (Consultation PDF directe pour Responsables de Zone et Administrateurs) :** Ajout d'un bouton de consultation visuelle immédiate (icône Œil) sur les tableaux de gestion des supports PDF dans `ZoneDocumentsClient.tsx` (`/zone/documents`) et `DocumentsManagerClient.tsx` (`/admin/documents`). Les rôles `manager_zone`, `admin` et `super_admin` peuvent ouvrir dans un nouvel onglet et inspecter le rendu des fichiers PDF via `/api/documents/[id]/view`, y compris pour les documents à l'état de brouillon (inactifs) afin de valider leur format et contenu avant publication aux étudiants.
+>
+> **Version 1.31 (Généralisation de la supervision et capture universelle des anomalies) :** Déploiement à l'échelle de toute la plateforme du système de capture d'erreurs. Création des composants clients `GlobalErrorListener.tsx` (monté dans `layout.tsx`), `error.tsx` (boundary de rendu globale) et `global-error.tsx` (boundary de layout racine) pour intercepter les exceptions et promesses non gérées côté navigateur. Intégration de `errorAlertService.logError` (avec interface unifiée et support des stack traces) dans l'ensemble des blocs `catch` backend (webhooks Make et n8n, routes d'upload d'avatars et de reçus de paiement, upload admin et manager avec gestion anti-crash 413, consultation PDF et génération de liens signés).
 
 ---
 
@@ -80,6 +86,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 ## 📄 Fichiers Racine & Documentation
 
 * **[GEMINI.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/GEMINI.md)** : Règles de cadrage et architecture multi-agents ChefsOge.
+* **[error.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/error.tsx)** : Error Boundary global Next.js. Capture les crashs de rendu de n'importe quelle page, consigne l'erreur et affiche une interface utilisateur de récupération premium avec bouton "Réessayer".
+* **[global-error.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/global-error.tsx)** : Root Error Boundary Next.js. Capture les pannes critiques au niveau du layout racine et transmet le journal au Super Admin.
 * **[AGENTS.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/AGENTS.md)** : Règles spécifiques pour le développement Next.js (instructions IA).
 * **[CLAUDE.md](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/CLAUDE.md)** : Fichier d'inclusion des règles pour l'assistant Claude.
 * **[middleware.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/middleware.ts)** : Middleware global Next.js. Gère les redirections basées sur l'état d'authentification et les rôles.
@@ -136,12 +144,18 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[crypto.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/crypto.ts)**
   * **Description :** Service utilitaire de chiffrement et déchiffrement symétrique AES-256-CBC avec dérivation de clé dynamique via SHA-256.
   * **Relations :** Importé par les routes API d'upload d'administration et de consultation sécurisée candidat.
+* **[errorAlertService.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/lib/errorAlertService.ts)**
+  * **Description :** Service centralisé de journalisation en base (`system_error_logs`), de notification Drizzle et d'alerte externe via Webhook Make.com (`make_error_webhook_url`) pour les erreurs système critiques. Expose `logSystemError` et `errorAlertService.logError` avec une interface flexible acceptant indifféremment `message`/`errorMessage` et `stack`/`stackTrace`.
+  * **Relations :** Consommé par `app/api/logs/error/route.ts`, `GlobalErrorListener.tsx`, `error.tsx`, `global-error.tsx`, les webhooks, les endpoints d'upload et l'ensemble des routes API et actions du projet.
 
 ---
 
 ## 🧱 Composants Métier (`/components`)
 
 ### 📂 components/shared
+* **[GlobalErrorListener.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/GlobalErrorListener.tsx)**
+  * **Description :** Écouteur client invisible branché sur `window.addEventListener('error')` et `'unhandledrejection'`. Capture les erreurs JavaScript et échecs réseau globaux et les transmet en arrière-plan à `/api/logs/error`.
+  * **Relations :** Monté au niveau du layout racine `app/layout.tsx`.
 * **[Stepper.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/Stepper.tsx)**
   * **Description :** Indicateur de progression visuel en 3 étapes pour l'onboarding.
   * **Relations :** Consommé par `app/(public)/inscription/page.tsx`.
@@ -318,8 +332,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Route API GET de génération sécurisée de liens signés pour les documents (validité 60 min).
   * **Relations :** Appelé côté serveur par le visualiseur ou les requêtes directes autorisées.
 * **[[id]/view/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/documents/[id]/view/route.ts)**
-  * **Description :** Route API GET de consultation sécurisée. Authentifie le candidat, vérifie son concours/paiement, télécharge le PDF chiffré depuis le Storage, le déchiffre à la volée en mémoire et le sert avec en-têtes anti-cache.
-  * **Relations :** Appelée par le visualiseur de documents candidat `viewer/page.tsx` et consomme `lib/crypto.ts`.
+  * **Description :** Route API GET de consultation sécurisée. Authentifie l'utilisateur : pour un candidat, vérifie son concours/paiement/zone/mode et que le support est actif ; pour un `admin`, `super_admin` ou `manager_zone` (`isAdminOrManager`), autorise l'accès direct aux documents actifs et inactifs (brouillons) sans vérification de paiement ou de concours. Télécharge le PDF chiffré depuis le Storage, le déchiffre à la volée en mémoire et le sert avec en-têtes anti-cache.
+  * **Relations :** Appelée par le visualiseur de documents candidat `viewer/page.tsx`, `ZoneDocumentsClient.tsx` et `DocumentsManagerClient.tsx`. Consomme `lib/crypto.ts`.
 
 #### 📂 app/api/admin/documents/upload
 * **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/documents/upload/route.ts)**
@@ -343,6 +357,16 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[n8n/route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/webhooks/n8n/route.ts)**
   * **Description :** Point de réception d'appels webhooks provenant de n8n pour des traitements similaires.
   * **Relations :** Protégé par signature Webhook Secret.
+
+#### 📂 app/api/logs/error
+* **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/logs/error/route.ts)**
+  * **Description :** Route API POST universelle de capture d'erreurs (client-side ou serveur). Enregistre le log en base de données et déclenche les alertes Super Admin et Webhook Make via `errorAlertService`.
+  * **Relations :** Appelée par le client lors d'échecs (ex: `DocumentsManagerClient.tsx` sur erreur 413 ou réponse non-JSON).
+
+#### 📂 app/api/admin/logs
+* **[route.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/api/admin/logs/route.ts)**
+  * **Description :** Route API de gestion des logs (GET pour lister, PATCH pour changer le statut, DELETE pour supprimer un log ou purger les logs résolus > 30 jours). Restreinte au rôle `super_admin`.
+  * **Relations :** Consommé par `ErrorLogsClient.tsx`.
 
 
 ### Routes Protégées (Espace Administrateur Global)
@@ -400,8 +424,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Page d'administration des supports de cours et de planification des sessions Google Meet.
   * **Relations :** Charge le composant client `DocumentsManagerClient.tsx`.
 * **[documents/DocumentsManagerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/documents/DocumentsManagerClient.tsx)**
-  * **Description :** Panel d'administration interactif permettant d'ajouter des fichiers PDF ou de programmer des directs.
-  * **Relations :** Appelle les server actions `createDocument` et `deleteDocument`.
+  * **Description :** Panel d'administration interactif (admin/super_admin) permettant d'ajouter des fichiers PDF, d'inspecter et d'ouvrir directement les PDF via le bouton Œil, ou de programmer des directs Google Meet. Intègre une interception propre de l'erreur HTTP 413 avec envoi automatique au Journal des Erreurs.
+  * **Relations :** Appelle les server actions `createDocument` et `deleteDocument`, `/api/documents/[id]/view`, ainsi que `/api/logs/error`.
 * **[parametres/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/parametres/page.tsx)**
   * **Description :** Page d'édition des configurations système (IDs d'agenda, secrets, URLs webhooks et toggles généraux).
   * **Relations :** Charge le composant client `SettingsForm.tsx`.
@@ -411,6 +435,12 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 * **[moderation/ModerationClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/moderation/ModerationClient.tsx)**
   * **Description :** Console d'audit interactive permettant d'activer/désactiver les cours, articles de blog, témoignages et médias d'actualités, ainsi que de modifier les profils et réinitialiser les mots de passe de tous les utilisateurs de la plateforme avec déconnexion instantanée de leurs sessions actives.
   * **Relations :** Consommé par `moderation/page.tsx` et appelle les actions serveurs d'administration.
+* **[logs/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/logs/page.tsx)**
+  * **Description :** Page serveur de surveillance du Journal des Erreurs, réservée au rôle `super_admin`. Calcule les statistiques d'anomalies en temps réel et transmet les données.
+  * **Relations :** Charge le composant client `ErrorLogsClient.tsx`.
+* **[logs/ErrorLogsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/logs/ErrorLogsClient.tsx)**
+  * **Description :** Console interactive de supervision Super Admin (filtrage par gravité, statut, source, inspection de Stack Trace en modale et purge des logs résolus > 30 jours).
+  * **Relations :** Consommé par `logs/page.tsx` et communique avec `app/api/admin/logs/route.ts`.
 
 #### 📂 app/(public)/nouveau-mot-de-passe
 * **[page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(public)/nouveau-mot-de-passe/page.tsx)**
@@ -443,8 +473,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
   * **Description :** Page de listing et d'ajout de documents de cours/TD spécifiques à la zone du manager.
   * **Relations :** Charge le composant client `ZoneDocumentsClient.tsx`.
 * **[documents/ZoneDocumentsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/ZoneDocumentsClient.tsx)**
-  * **Description :** Composant client interactif d'upload et de gestion des documents PDF pour la zone.
-  * **Relations :** Appelle les server actions `managerCreateDocument`, `managerToggleDocumentActive`, et `managerDeleteDocument`.
+  * **Description :** Composant client interactif d'upload, de consultation directe de PDF (bouton Œil) et de gestion des documents pour la zone du manager.
+  * **Relations :** Appelle `/api/documents/[id]/view` et les server actions `managerCreateDocument`, `managerToggleDocumentActive`, et `managerDeleteDocument`.
 * **[actions.ts](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/actions.ts)**
   * **Description :** Actions serveur pour valider ou rejeter un paiement de candidat, configurer la zone, ainsi que la création/modification/suppression des documents spécifiques de zone.
   * **Relations :** Importé par `CaptureViewer.tsx`, `ZoneSettingsForm.tsx`, et `ZoneDocumentsClient.tsx`.

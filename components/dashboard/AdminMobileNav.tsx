@@ -16,7 +16,8 @@ import {
   ShieldCheck, 
   Menu, 
   X,
-  LineChart
+  LineChart,
+  ShieldAlert
 } from "lucide-react";
 
 interface AdminMobileNavProps {
@@ -44,7 +45,8 @@ export default function AdminMobileNav({ profile }: AdminMobileNavProps) {
     ...(profile.role === "super_admin"
       ? [
           { href: "/admin/moderation", label: "Centre Modération", icon: ShieldCheck },
-          { href: "/admin/analytics", label: "Statistiques", icon: LineChart }
+          { href: "/admin/analytics", label: "Statistiques", icon: LineChart },
+          { href: "/admin/logs", label: "Journal Erreurs", icon: ShieldAlert }
         ]
       : []),
     { href: "/admin/parametres", label: "Paramètres", icon: Settings },

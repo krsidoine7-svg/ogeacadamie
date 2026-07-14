@@ -51,7 +51,7 @@ export default function AutoplayVideo({ src, poster }: AutoplayVideoProps) {
   };
 
   let containerClass = "relative rounded-[16px] sm:rounded-[24px] overflow-hidden shadow-xl border border-slate-200 bg-slate-950 mx-auto transition-all duration-300";
-  let containerStyle: React.CSSProperties = {};
+  const containerStyle: React.CSSProperties = {};
 
   if (videoDims) {
     const ratio = videoDims.width / videoDims.height;

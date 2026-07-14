@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { profiles, paiements, documents, accesDocuments, concoursInscrits } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { decryptDocument } from "@/lib/crypto";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function GET(
   req: Request,
@@ -76,11 +77,11 @@ export async function GET(
       }
     }
 
-    // 4. Fetch the requested document
+    // 4. Fetch the requested document (admins and managers can view inactive/draft documents)
     const document = await db.query.documents.findFirst({
       where: and(
         eq(documents.id, documentId),
-        eq(documents.isActive, true)
+        isAdminOrManager ? undefined : eq(documents.isActive, true)
       ),
     });
 
@@ -154,8 +155,15 @@ export async function GET(
     let decryptedBuffer: Buffer;
     try {
       decryptedBuffer = decryptDocument(Buffer.from(arrayBuffer));
-    } catch (decryptErr) {
+    } catch (decryptErr: any) {
       console.error("Decryption error:", decryptErr);
+      await logSystemError({
+        errorMessage: `Erreur déchiffrement PDF : ${decryptErr.message || decryptErr}`,
+        level: "critical",
+        source: "api",
+        stackTrace: decryptErr.stack,
+        userId: user?.id,
+      });
       return NextResponse.json(
         { error: "Erreur lors du décodage sécurisé du fichier." },
         { status: 500 }
@@ -197,14 +205,12 @@ export async function GET(
     });
   } catch (err: any) {
     console.error("Unhandled error in secure download view endpoint:", err);
-    try {
-      const fs = require("fs");
-      const path = require("path");
-      fs.appendFileSync(
-        path.join(process.cwd(), "error_log.txt"),
-        `[${new Date().toISOString()}] Unhandled error: ${err.message}\nStack: ${err.stack}\n\n`
-      );
-    } catch (_) {}
+    await logSystemError({
+      errorMessage: `Erreur inattendue consultation PDF : ${err.message || err}`,
+      level: "critical",
+      source: "api",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

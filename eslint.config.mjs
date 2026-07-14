@@ -20,6 +20,10 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scripts/**",
+    ".skills/**",
+    "tests-charge/**",
+    "PROMPTS/**",
+    "memoire-oge-academie/**",
   ]),
 ]);
 

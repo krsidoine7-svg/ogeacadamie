@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { logSystemError } from "@/lib/errorAlertService";
 
 /**
  * Route API de contournement pour les tests de charge (Locust).
@@ -44,6 +45,12 @@ export async function POST(req: Request) {
       }
     });
   } catch (err: any) {
+    await logSystemError({
+      errorMessage: `Erreur API auth test-login : ${err.message || err}`,
+      level: "error",
+      source: "api",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: `Erreur interne: ${err.message}` },
       { status: 500 }

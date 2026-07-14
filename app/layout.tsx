@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import CookieBanner from "@/components/shared/CookieBanner";
+import GlobalErrorListener from "@/components/shared/GlobalErrorListener";
 import { AnalyticsProvider } from "@/components/analytics-provider";
 import "./globals.css";
 
@@ -84,6 +85,7 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col font-sans">
+        <GlobalErrorListener />
         <AnalyticsProvider>
           {children}
         </AnalyticsProvider>

@@ -40,6 +40,7 @@ export default async function SettingsPage() {
   const config = configRow?.contenu as any || {
     webhook_secret: "secret123",
     make_webhook_url: "",
+    make_error_webhook_url: "",
     n8n_webhook_url: "",
     google_calendar_id: "",
   };

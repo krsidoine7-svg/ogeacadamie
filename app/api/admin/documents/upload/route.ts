@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { encryptDocument } from "@/lib/crypto";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function POST(req: Request) {
   try {
@@ -115,7 +116,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, filePath });
   } catch (err: any) {
-    console.error("Unhandled error in secure upload endpoint:", err);
+    await logSystemError({
+      errorMessage: `Erreur upload document PDF sécurisé : ${err.message || err}`,
+      level: "critical",
+      source: "upload",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

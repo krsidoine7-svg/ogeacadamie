@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, paiements, documents, accesDocuments, concoursInscrits } from "@/drizzle/schema";
 import { eq, and, or } from "drizzle-orm";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function GET(req: Request) {
   try {
@@ -119,6 +120,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ signedUrl: signData.signedUrl });
   } catch (err: any) {
     console.error("Unhandled error in documents API:", err);
+    await logSystemError({
+      errorMessage: `Erreur API documents : ${err.message || err}`,
+      level: "critical",
+      source: "api",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, paiements } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logSystemError } from "@/lib/errorAlertService";
 
 export async function POST(req: Request) {
   try {
@@ -143,8 +144,14 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, filePath: fileName });
-  } catch (err) {
+  } catch (err: any) {
     console.error("Unhandled error in payment upload endpoint:", err);
+    await logSystemError({
+      errorMessage: `Erreur upload reçu de paiement : ${err.message || err}`,
+      level: "critical",
+      source: "upload",
+      stackTrace: err.stack,
+    });
     return NextResponse.json(
       { error: "Une erreur interne est survenue lors du traitement." },
       { status: 500 }

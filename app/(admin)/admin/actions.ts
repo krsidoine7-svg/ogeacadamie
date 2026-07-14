@@ -924,6 +924,7 @@ export async function updateSystemSettings(settings: any) {
           contenu: {
             webhook_secret: settings.webhook_secret || "",
             make_webhook_url: settings.make_webhook_url || "",
+            make_error_webhook_url: settings.make_error_webhook_url || "",
             n8n_webhook_url: settings.n8n_webhook_url || "",
             google_calendar_id: settings.google_calendar_id || "",
           },
@@ -937,6 +938,7 @@ export async function updateSystemSettings(settings: any) {
         contenu: {
           webhook_secret: settings.webhook_secret || "",
           make_webhook_url: settings.make_webhook_url || "",
+          make_error_webhook_url: settings.make_error_webhook_url || "",
           n8n_webhook_url: settings.n8n_webhook_url || "",
           google_calendar_id: settings.google_calendar_id || "",
         },
