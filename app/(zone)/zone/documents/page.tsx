@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/lib/db";
 import { profiles, documents } from "@/drizzle/schema";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, or, isNull, desc } from "drizzle-orm";
 import ZoneDocumentsClient from "./ZoneDocumentsClient";
 
 export default async function ZoneDocumentsPage() {
@@ -30,10 +30,13 @@ export default async function ZoneDocumentsPage() {
     redirect("/connexion");
   }
 
-  // 3. Fetch documents for this zone
+  // 3. Fetch documents for this zone (or global 'tous' documents from Admin)
   const dbDocs = await db.query.documents.findMany({
     where: and(
-      eq(documents.zone, profile.zone),
+      or(
+        eq(documents.zone, profile.zone),
+        eq(documents.zone, "tous")
+      ),
       isNull(documents.deletedAt)
     ),
     orderBy: [desc(documents.createdAt)],

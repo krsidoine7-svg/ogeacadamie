@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { managerCreateDocument, managerToggleDocumentActive, managerDeleteDocument } from "../actions";
-import { Plus, Trash2, FileText, Check, X, Loader2, Eye, Globe, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, FileText, Check, X, Loader2, Eye, Globe, ShieldAlert, Building2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface ZoneDocumentsClientProps {
@@ -511,137 +511,167 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150">
-                {documentsList.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-slate-50/40">
-                    <td className="p-4">
-                      <div className="space-y-1">
-                        <p className="font-bold text-slate-900 text-sm leading-snug">{doc.titre}</p>
-                        {doc.description && <p className="text-slate-500 font-medium text-xs line-clamp-1">{doc.description}</p>}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className="capitalize bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                        {doc.type === "cours" ? "Cours" : doc.type === "exercice" ? "Exercice" : "Corrigé"}
-                      </span>
-                    </td>
-                    <td className="p-4 text-xs font-bold text-slate-700 uppercase">
-                      {doc.concours === "tous" ? "Tous Concours" : doc.concours}
-                    </td>
-                    <td className="p-4 text-xs font-semibold text-slate-600 capitalize">
-                      {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
-                    </td>
-                    <td className="p-4">
-                      <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[120px] block" title={doc.fichierUrl}>
-                        {doc.fichierUrl?.split("/").pop()}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* View PDF Button */}
-                        <a
-                          href={`/api/documents/${doc.id}/view`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
-                          title="Consulter le document PDF"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </a>
+                {documentsList.map((doc) => {
+                  const isGlobalAdminDoc = doc.zone === "tous" || (doc.zone !== managerZone);
+                  return (
+                    <tr key={doc.id} className="hover:bg-slate-50/40">
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-bold text-slate-900 text-sm leading-snug">{doc.titre}</p>
+                            {isGlobalAdminDoc && (
+                              <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 border border-amber-300/60 px-2 py-0.5 rounded text-[10px] font-bold shadow-2xs" title="Document global publié par l'Administration Nationale">
+                                <Building2 className="w-3 h-3 text-amber-700" />
+                                Admin Nationale
+                              </span>
+                            )}
+                          </div>
+                          {doc.description && <p className="text-slate-500 font-medium text-xs line-clamp-1">{doc.description}</p>}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <span className="capitalize bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                          {doc.type === "cours" ? "Cours" : doc.type === "exercice" ? "Exercice" : "Corrigé"}
+                        </span>
+                      </td>
+                      <td className="p-4 text-xs font-bold text-slate-700 uppercase">
+                        {doc.concours === "tous" ? "Tous Concours" : doc.concours}
+                      </td>
+                      <td className="p-4 text-xs font-semibold text-slate-600 capitalize">
+                        {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
+                      </td>
+                      <td className="p-4">
+                        <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[120px] block" title={doc.fichierUrl}>
+                          {doc.fichierUrl?.split("/").pop()}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* View PDF Button */}
+                          <a
+                            href={`/api/documents/${doc.id}/view`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
+                            title="Consulter le document PDF"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </a>
 
-                        {/* Toggle Active Button */}
-                        <button
-                          onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
-                          className={`p-1.5 rounded-lg border transition-all ${
-                            doc.isActive
-                              ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                              : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100"
-                          }`}
-                          title={doc.isActive ? "Masquer aux étudiants" : "Afficher aux étudiants"}
-                        >
-                          {doc.isActive ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                        </button>
+                          {!isGlobalAdminDoc && (
+                            <>
+                              {/* Toggle Active Button */}
+                              <button
+                                onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
+                                className={`p-1.5 rounded-lg border transition-all ${
+                                  doc.isActive
+                                    ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                    : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100"
+                                }`}
+                                title={doc.isActive ? "Masquer aux étudiants" : "Afficher aux étudiants"}
+                              >
+                                {doc.isActive ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                              </button>
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteClick(doc.id, doc.titre)}
-                          className="p-1.5 bg-red-55 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
-                          title="Supprimer définitivement"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDeleteClick(doc.id, doc.titre)}
+                                className="p-1.5 bg-red-55 border border-red-200 text-red-700 hover:bg-red-100 rounded-lg transition-all"
+                                title="Supprimer définitivement"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile View: Stacked Cards */}
           <div className="sm:hidden divide-y divide-slate-100">
-            {documentsList.map((doc) => (
-              <div key={doc.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
-                <div className="space-y-1">
-                  <p className="font-bold text-slate-900 text-sm leading-snug">{doc.titre}</p>
-                  {doc.description && <p className="text-slate-500 font-medium text-xs leading-normal">{doc.description}</p>}
-                </div>
+            {documentsList.map((doc) => {
+              const isGlobalAdminDoc = doc.zone === "tous" || (doc.zone !== managerZone);
+              return (
+                <div key={doc.id} className="p-4 space-y-3 font-semibold text-xs text-slate-700 bg-white">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <p className="font-bold text-slate-900 text-sm leading-snug">{doc.titre}</p>
+                      {isGlobalAdminDoc && (
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 border border-amber-300/60 px-2 py-0.5 rounded text-[10px] font-bold shadow-2xs">
+                          <Building2 className="w-3 h-3 text-amber-700" />
+                          Admin Nationale
+                        </span>
+                      )}
+                    </div>
+                    {doc.description && <p className="text-slate-500 font-medium text-xs leading-normal">{doc.description}</p>}
+                  </div>
 
-                <div className="flex gap-2 flex-wrap items-center">
-                  <span className="capitalize bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
-                    {doc.type === "cours" ? "Cours" : doc.type === "exercice" ? "Exercice" : "Corrigé"}
-                  </span>
-                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                    {doc.concours === "tous" ? "Tous Concours" : doc.concours}
-                  </span>
-                  <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold capitalize">
-                    {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
-                  </span>
-                </div>
-
-                <div className="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] gap-2">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[130px] block" title={doc.fichierUrl}>
-                      {doc.fichierUrl?.split("/").pop()}
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <span className="capitalize bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
+                      {doc.type === "cours" ? "Cours" : doc.type === "exercice" ? "Exercice" : "Corrigé"}
+                    </span>
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                      {doc.concours === "tous" ? "Tous Concours" : doc.concours}
+                    </span>
+                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold capitalize">
+                      {doc.modeFormation === "tous" ? "Tous modes" : doc.modeFormation === "presentiel" ? "Présentiel" : "En Ligne"}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* View PDF Button */}
-                    <a
-                      href={`/api/documents/${doc.id}/view`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
-                      title="Consulter le document PDF"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </a>
+                  <div className="pt-2 border-t border-slate-50 flex items-center justify-between text-[11px] gap-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-slate-400 font-medium font-mono text-[10px] truncate max-w-[130px] block" title={doc.fichierUrl}>
+                        {doc.fichierUrl?.split("/").pop()}
+                      </span>
+                    </div>
 
-                    {/* Toggle Active Button */}
-                    <button
-                      onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
-                      className={`p-1.5 rounded-lg border transition-all ${
-                        doc.isActive
-                          ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                          : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100"
-                      }`}
-                      title={doc.isActive ? "Masquer aux étudiants" : "Afficher aux étudiants"}
-                    >
-                      {doc.isActive ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                    </button>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* View PDF Button */}
+                      <a
+                        href={`/api/documents/${doc.id}/view`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-all inline-flex items-center"
+                        title="Consulter le document PDF"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </a>
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDeleteClick(doc.id, doc.titre)}
-                      className="p-1.5 bg-red-50 border border-red-250 text-red-700 hover:bg-red-100 rounded-lg transition-all"
-                      title="Supprimer définitivement"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      {!isGlobalAdminDoc && (
+                        <>
+                          {/* Toggle Active Button */}
+                          <button
+                            onClick={() => handleToggleClick(doc.id, doc.titre, doc.isActive)}
+                            className={`p-1.5 rounded-lg border transition-all ${
+                              doc.isActive
+                                ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                : "bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100"
+                            }`}
+                            title={doc.isActive ? "Masquer aux étudiants" : "Afficher aux étudiants"}
+                          >
+                            {doc.isActive ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDeleteClick(doc.id, doc.titre)}
+                            className="p-1.5 bg-red-50 border border-red-250 text-red-700 hover:bg-red-100 rounded-lg transition-all"
+                            title="Supprimer définitivement"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
