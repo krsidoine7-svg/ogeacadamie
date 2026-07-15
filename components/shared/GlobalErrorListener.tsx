@@ -14,6 +14,14 @@ export default function GlobalErrorListener() {
       // Éviter de boucler si l'erreur vient d'un appel réseau vers /api/logs/error
       if (event.filename && event.filename.includes("/api/logs/error")) return;
 
+      // Ignorer les fausses erreurs cross-origin et scripts injectés par des navigateurs tiers ("Script error." à la ligne 0)
+      if (
+        event.message === "Script error." ||
+        (!event.filename && event.lineno === 0 && event.colno === 0)
+      ) {
+        return;
+      }
+
       try {
         fetch("/api/logs/error", {
           method: "POST",

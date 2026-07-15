@@ -71,6 +71,8 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 > **Version 1.32 (Support des Liens Externes Google Drive & Alerte de Sécurité) :** Ajout de l'option d'ajout de liens externes (`isExternalLink`) dans `drizzle/schema.ts`, les server actions et la route `/api/documents/[id]/view` pour contourner les limites de stockage lors de l'upload de fichiers très volumineux. Intégration d'un sélecteur à 3 modes dans [DocumentsManagerClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(admin)/admin/documents/DocumentsManagerClient.tsx) et [ZoneDocumentsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/ZoneDocumentsClient.tsx) (PDF, Lien Externe, Visioconférence Google Meet) avec un encadré d'avertissement explicite informant que les fichiers hébergés sur Google Drive ne peuvent pas être chiffrés ni protégés contre le téléchargement par OGE Académie.
 >
 > **Version 1.33 (Visibilité des Documents Admin & Super Admin pour les Responsables de Zone) :** Modification de la requête de sélection des supports de cours dans [app/(zone)/zone/documents/page.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/page.tsx) pour inclure `eq(documents.zone, "tous")` en plus de la zone locale du manager. Mise à jour de [ZoneDocumentsClient.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/app/(zone)/zone/documents/ZoneDocumentsClient.tsx) pour afficher le badge `🏢 Admin Nationale` sur les documents globaux et verrouiller en lecture seule les boutons de suppression et de bascule d'activation afin d'éviter toute modification ou suppression d'un cours national par un responsable de zone.
+>
+> **Version 1.34 (Filtrage des fausses erreurs cross-origin Phoenix / TECNO) :** Ajout d'un filtre d'interception dans [GlobalErrorListener.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/GlobalErrorListener.tsx) pour ignorer les erreurs de type `Script error.` (:0:0) causées par la politique CORS sur des scripts externes ou injectés par des navigateurs tiers (notamment Phoenix Browser sur les téléphones TECNO/Infinix), évitant ainsi le spam des journaux Super Admin et des webhooks Make.com.
 
 ---
 
@@ -158,7 +160,7 @@ Ce document sert de cartographie vivante de l'ensemble de la base de code du pro
 
 ### 📂 components/shared
 * **[GlobalErrorListener.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/GlobalErrorListener.tsx)**
-  * **Description :** Écouteur client invisible branché sur `window.addEventListener('error')` et `'unhandledrejection'`. Capture les erreurs JavaScript et échecs réseau globaux et les transmet en arrière-plan à `/api/logs/error`.
+  * **Description :** Écouteur client invisible branché sur `window.addEventListener('error')` et `'unhandledrejection'`. Capture les erreurs JavaScript et échecs réseau globaux et les transmet en arrière-plan à `/api/logs/error`. Filtre automatiquement les fausses alertes CORS (`Script error. :0:0`) et scripts injectés par des navigateurs tiers (ex: Phoenix Browser).
   * **Relations :** Monté au niveau du layout racine `app/layout.tsx`.
 * **[Stepper.tsx](file:///c:/Users/Toto.ADMINISTRATOR/Desktop/oge-academie/components/shared/Stepper.tsx)**
   * **Description :** Indicateur de progression visuel en 3 étapes pour l'onboarding.
