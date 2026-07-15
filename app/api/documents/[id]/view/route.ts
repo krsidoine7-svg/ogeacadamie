@@ -131,6 +131,30 @@ export async function GET(
       }
     }
 
+    // 5.5 If it's an external link (Google Drive / Cloud), log access and return url or redirect
+    if (document.isExternalLink || document.fichierUrl?.startsWith("http://") || document.fichierUrl?.startsWith("https://")) {
+      if (profile.role === "user") {
+        try {
+          await db.insert(accesDocuments).values({
+            userId: user.id,
+            documentId: document.id,
+          });
+        } catch (insertErr) {
+          console.error("Erreur log acces document externe:", insertErr);
+        }
+      }
+
+      const urlObj = new URL(req.url);
+      if (urlObj.searchParams.get("redirect") === "true") {
+        return NextResponse.redirect(document.fichierUrl!);
+      }
+
+      return NextResponse.json({
+        isExternal: true,
+        url: document.fichierUrl,
+      });
+    }
+
     // 6. Download file from private Supabase Storage
     const { data: storageBlob, error: downloadError } = await supabase.storage
       .from("documents")

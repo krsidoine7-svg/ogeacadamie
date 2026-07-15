@@ -1015,6 +1015,7 @@ export async function createDocument(data: any) {
       titre: data.titre,
       description: data.description || null,
       fichierUrl: data.fichierUrl || null,
+      isExternalLink: Boolean(data.isExternalLink),
       concours: data.concours || "tous",
       type: data.type || "cours",
       modeFormation: data.modeFormation || "tous",

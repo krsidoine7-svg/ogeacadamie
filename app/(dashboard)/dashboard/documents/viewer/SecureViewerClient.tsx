@@ -328,6 +328,27 @@ export default function SecureViewerClient({
       setLoading(true);
       setLoadError(null);
 
+      // Check if it's an external link or JSON response first
+      try {
+        const headRes = await fetch(pdfUrl, { credentials: "include" });
+        const contentType = headRes.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const jsonData = await headRes.json();
+          if (jsonData.isExternal && jsonData.url) {
+            window.location.replace(jsonData.url);
+            return;
+          } else if (jsonData.error) {
+            if (active) {
+              setLoadError(jsonData.error);
+              setLoading(false);
+            }
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Error pre-checking document URL:", err);
+      }
+
       const loadingTask = pdfjs.getDocument({
         url: pdfUrl,
         withCredentials: true,

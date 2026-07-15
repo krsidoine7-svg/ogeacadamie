@@ -2,13 +2,14 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Search, BookOpen, FileText, CheckSquare, ExternalLink, HelpCircle, Calendar, GraduationCap, Video, Clock } from "lucide-react";
+import { Search, BookOpen, FileText, CheckSquare, ExternalLink, HelpCircle, Calendar, GraduationCap, Video, Clock, Globe } from "lucide-react";
 
 interface DocumentItem {
   id: string;
   titre: string;
   description: string | null;
   fichierUrl: string | null;
+  isExternalLink?: boolean | null;
   concours: string | null;
   type: "cours" | "exercice" | "corrige" | null;
   createdAt: Date | string | null;
@@ -207,6 +208,7 @@ export default function DocumentsList({
             const schedDate = doc.scheduledAt ? new Date(doc.scheduledAt) : null;
             const isLive = schedDate && now >= schedDate && now <= new Date(schedDate.getTime() + 2 * 60 * 60 * 1000);
             const isUpcoming = schedDate && now < schedDate;
+            const isExternal = doc.isExternalLink || doc.fichierUrl?.startsWith("http://") || doc.fichierUrl?.startsWith("https://");
 
             return (
               <div
@@ -242,6 +244,11 @@ export default function DocumentsList({
                       {isUpcoming && (
                         <span className="text-[10px] font-extrabold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                           Programmé
+                        </span>
+                      )}
+                      {isExternal && !schedDate && (
+                        <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                          <Globe className="w-2.5 h-2.5" /> Drive / Externe
                         </span>
                       )}
                     </div>
@@ -297,6 +304,16 @@ export default function DocumentsList({
                     ) : (
                       <span className="text-[11px] text-slate-400 font-bold italic">Pas de lien</span>
                     )
+                  ) : isExternal ? (
+                    <a
+                      href={`/api/documents/${doc.id}/view?redirect=true`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white hover:text-white rounded-xl text-sm font-bold tracking-tight shadow-md shadow-amber-500/10 hover:shadow-amber-500/20 transition-all duration-300"
+                    >
+                      <span>Ouvrir Drive</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
                   ) : (
                     <Link
                       href={`/dashboard/documents/viewer?id=${doc.id}`}

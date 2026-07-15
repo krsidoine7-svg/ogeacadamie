@@ -333,6 +333,7 @@ export async function managerCreateDocument(data: {
   titre: string;
   description?: string;
   fichierUrl: string;
+  isExternalLink?: boolean;
   concours: string;
   modeFormation: string;
   type: "cours" | "exercice" | "corrige";
@@ -345,7 +346,7 @@ export async function managerCreateDocument(data: {
       return { success: false, error: "Le titre est obligatoire." };
     }
     if (!data.fichierUrl) {
-      return { success: false, error: "Le fichier PDF est obligatoire." };
+      return { success: false, error: "Le fichier PDF ou lien externe est obligatoire." };
     }
 
     // Insert document record in DB, forcing zone to be manager's zone
@@ -353,6 +354,7 @@ export async function managerCreateDocument(data: {
       titre: data.titre,
       description: data.description || null,
       fichierUrl: data.fichierUrl,
+      isExternalLink: Boolean(data.isExternalLink),
       concours: data.concours || "tous",
       type: data.type || "cours",
       modeFormation: data.modeFormation || "tous",

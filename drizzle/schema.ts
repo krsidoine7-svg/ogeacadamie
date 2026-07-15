@@ -68,6 +68,7 @@ export const documents = pgTable("documents", {
   titre: text("titre").notNull(),
   description: text("description"),
   fichierUrl: text("fichier_url"),
+  isExternalLink: boolean("is_external_link").default(false),
   concours: text("concours").default("tous"), // inphb, esatic, cme, tous
   type: documentTypeEnum("type").default("cours"),
   modeFormation: text("mode_formation").default("tous"), // presentiel, en_ligne, tous

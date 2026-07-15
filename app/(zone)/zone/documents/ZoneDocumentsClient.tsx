@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { managerCreateDocument, managerToggleDocumentActive, managerDeleteDocument } from "../actions";
-import { Plus, Trash2, FileText, Check, X, Loader2, Eye } from "lucide-react";
+import { Plus, Trash2, FileText, Check, X, Loader2, Eye, Globe, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface ZoneDocumentsClientProps {
@@ -14,6 +14,7 @@ interface ZoneDocumentsClientProps {
 export default function ZoneDocumentsClient({ initialDocuments, managerZone }: ZoneDocumentsClientProps) {
   const [documentsList, setDocumentsList] = useState<any[]>(initialDocuments);
   const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState<"upload" | "external">("upload");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
@@ -218,8 +219,13 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
       return;
     }
 
-    if (!form.fichierUrl) {
-      toast.error("Veuillez téléverser un document PDF.");
+    if (mode === "upload" && !form.fichierUrl) {
+      toast.error("Veuillez téléverser un document PDF ou choisir le mode Lien Externe.");
+      return;
+    }
+
+    if (mode === "external" && (!form.fichierUrl || (!form.fichierUrl.startsWith("http://") && !form.fichierUrl.startsWith("https://")))) {
+      toast.error("Veuillez saisir un lien externe valide (commençant par http:// ou https://).");
       return;
     }
 
@@ -227,10 +233,11 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
     try {
       const res = await managerCreateDocument({
         ...form,
+        isExternalLink: mode === "external",
         type: form.type as any,
       });
       if (res.success) {
-        toast.success("Document de cours créé avec succès !");
+        toast.success(mode === "external" ? "Lien externe ajouté avec succès !" : "Document de cours créé avec succès !");
         window.location.reload();
       } else {
         toast.error(res.error || "Une erreur est survenue.");
@@ -350,25 +357,108 @@ export default function ZoneDocumentsClient({ initialDocuments, managerZone }: Z
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Fichier PDF *</label>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  required
-                  onChange={handleFileChange}
-                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4A017]/10 file:text-[#D4A017] hover:file:bg-[#D4A017]/20 file:cursor-pointer"
-                />
-                {uploadProgress !== null && (
-                  <div className="mt-2 text-xs flex items-center gap-2">
-                    <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[200px]">
-                      <div className="bg-[#D4A017] h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+              <div className="md:col-span-2 space-y-4 pt-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase">Mode d&apos;hébergement du fichier *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("upload");
+                      setForm((prev) => ({ ...prev, fichierUrl: mode === "external" ? "" : prev.fichierUrl }));
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer ${
+                      mode === "upload"
+                        ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText className={`w-4 h-4 ${mode === "upload" ? "text-[#D4A017]" : "text-slate-500"}`} />
+                      <div>
+                        <div className="font-bold text-xs">Fichier PDF (Upload)</div>
+                        <div className={`text-[10px] ${mode === "upload" ? "text-slate-300" : "text-slate-500"}`}>Stockage chiffré sur serveur OGE</div>
+                      </div>
                     </div>
-                    <span className="font-bold">{uploadProgress}%</span>
+                    {mode === "upload" && <Check className="w-4 h-4 text-[#D4A017]" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("external");
+                      setForm((prev) => ({ ...prev, fichierUrl: mode === "upload" ? "" : prev.fichierUrl }));
+                    }}
+                    className={`p-3 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between gap-3 cursor-pointer ${
+                      mode === "external"
+                        ? "bg-amber-500 border-amber-500 text-white shadow-sm"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Globe className={`w-4 h-4 ${mode === "external" ? "text-white" : "text-amber-600"}`} />
+                      <div>
+                        <div className="font-bold text-xs">Lien Externe / Drive</div>
+                        <div className={`text-[10px] ${mode === "external" ? "text-amber-100" : "text-slate-500"}`}>Pour fichiers volumineux (&gt;4.5 Mo)</div>
+                      </div>
+                    </div>
+                    {mode === "external" && <Check className="w-4 h-4 text-white" />}
+                  </button>
+                </div>
+
+                {mode === "upload" && (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Fichier PDF *</label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      required={mode === "upload"}
+                      onChange={handleFileChange}
+                      className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D4A017]/10 file:text-[#D4A017] hover:file:bg-[#D4A017]/20 file:cursor-pointer"
+                    />
+                    {uploadProgress !== null && (
+                      <div className="mt-2 text-xs flex items-center gap-2">
+                        <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[200px]">
+                          <div className="bg-[#D4A017] h-1.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                        </div>
+                        <span className="font-bold">{uploadProgress}%</span>
+                      </div>
+                    )}
+                    {form.fichierUrl && (
+                      <p className="mt-1 text-xs text-green-700 font-mono font-bold break-all">Fichier prêt : {form.fichierUrl.split("/").pop()}</p>
+                    )}
                   </div>
                 )}
-                {form.fichierUrl && (
-                  <p className="mt-1 text-xs text-green-705 font-mono font-bold">Fichier prêt : {form.fichierUrl.split("/").pop()}</p>
+
+                {mode === "external" && (
+                  <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-2xl space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-amber-900 uppercase mb-1 flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-amber-600" />
+                        Lien du fichier Google Drive / OneDrive / Cloud *
+                      </label>
+                      <input
+                        type="url"
+                        required={mode === "external"}
+                        value={form.fichierUrl}
+                        onChange={(e) => setForm({ ...form, fichierUrl: e.target.value })}
+                        placeholder="https://drive.google.com/file/d/..."
+                        className="w-full p-3 rounded-xl border border-amber-300 bg-white text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800"
+                      />
+                      <p className="mt-1.5 text-[11px] text-amber-800 leading-relaxed">
+                        Assurez-vous d&apos;avoir activé l&apos;accès en lecture dans les paramètres Google Drive (<span className="font-semibold underline">Tous les utilisateurs disposant du lien</span>).
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-amber-100/80 border border-amber-300/80 rounded-xl flex items-start gap-3 text-xs text-amber-950 leading-relaxed shadow-2xs">
+                      <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-extrabold text-amber-900 uppercase tracking-tight mb-1">
+                          ⚠️ Avertissement — Sécurité &amp; Chiffrement :
+                        </strong>
+                        Les fichiers stockés sur un serveur externe (comme Google Drive) <strong className="text-amber-900 font-bold">ne peuvent pas être chiffrés par OGE Académie</strong>. Par conséquent, notre visionneuse sécurisée ne pourra pas bloquer le téléchargement direct ou la capture d&apos;écran par l&apos;étudiant. Si vous souhaitez interdire le téléchargement, configurez cette restriction directement dans les paramètres avancés de partage Google Drive.
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
